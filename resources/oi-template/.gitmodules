@@ -1,0 +1,6 @@
+[submodule "components/Arduino"]
+	path = components/Arduino
+	url = https://github.com/summivox/arduino-esp32.git
+[submodule "components/OpenIndus"]
+	path = components/OpenIndus
+	url = https://gitlab.openindus.com/openindus/oi-soft/oi-library.git
