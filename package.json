@@ -9,7 +9,9 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": ["*"],
+    "activationEvents": [
+        "*"
+    ],
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
@@ -79,6 +81,7 @@
         "vscode-test": "^1.5.0"
     },
     "dependencies": {
+        "platformio-node-helpers": "^9.2.3",
         "python-shell": "^3.0.0"
     }
 }

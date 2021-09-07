@@ -3,6 +3,8 @@ import { PythonShell } from 'python-shell';
 import { multiStepInput } from './multiStepInput';
 import { OIAccessTreeProvider } from './customTreeView';
 import { deviceTypeList } from './deviceTypeList';
+import { stringify } from 'querystring';
+const pioNodeHelpers = require('platformio-node-helpers');
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -21,17 +23,18 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		// Let the user choose the device
-		let comSelected = await vscode.window.showQuickPick(portList, {
-			placeHolder: 'Select the device'
-		});
+		let comSelected: string | undefined =  undefined;
 
-		if (comSelected === undefined) {
-			return;
+		if (portList.length > 1) {
+			comSelected = await vscode.window.showQuickPick(portList, { placeHolder: 'Select the device' });
+		} else if (portList.length = 1) {
+			comSelected = portList[0];
 		}
+		
+		if (comSelected === undefined) { return; }
 				
 		let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/getDeviceId.py';
-		let pyshell = new PythonShell(myPythonScriptPath, { mode: "json", args: [comSelected]});
+		let pyshell = new PythonShell(myPythonScriptPath, { mode: "json", pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe', args: [comSelected]});
 		let idReturn = -1;
 
 		pyshell.on('message', function (message) {
@@ -67,14 +70,15 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		// Let the user choose the device
-		let comSelected = await vscode.window.showQuickPick(portList, {
-			placeHolder: 'Select the device'
-		});
+		let comSelected: string | undefined =  undefined;
 
-		if (comSelected === undefined) {
-			return;
+		if (portList.length > 1) {
+			comSelected = await vscode.window.showQuickPick(portList, { placeHolder: 'Select the device' });
+		} else if (portList.length = 1) {
+			comSelected = portList[0];
 		}
+		
+		if (comSelected === undefined) { return; }
 
 		// Let the user choose the ID
 		let idSelected = await vscode.window.showInputBox({
@@ -91,7 +95,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 				
 		let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/setDeviceId.py';
-		let pyshell = new PythonShell(myPythonScriptPath, { args: [comSelected, idSelected]});
+		let pyshell = new PythonShell(myPythonScriptPath, { pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe', args: [comSelected, idSelected]});
 
 		const { successflash } = await new Promise( resolve => {
 			pyshell.end(function (err: any, code: any) {
@@ -114,7 +118,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('openindus.flashDeviceFirmware', async () => {
 		
 		// Retrieve available devices with getConnectedBoards.py
-
 		let portList = await getPortList(context);
 
 		if (portList === undefined || portList.length === 0) {
@@ -122,36 +125,68 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		// Let the user choose the device
-		let comSelected = await vscode.window.showQuickPick(portList, {
-			placeHolder: 'Select the device'
-		});
+		let comSelected: string | undefined =  undefined;
 
-		if (comSelected === undefined) {
-			return;
+		if (portList.length > 1) {
+			comSelected = await vscode.window.showQuickPick(portList, { placeHolder: 'Select the device' });
+		} else if (portList.length = 1) {
+			comSelected = portList[0];
 		}
+		
+		if (comSelected === undefined) { return; }
 
 		// Let the user choose the ID
-		let deviceSelected = await vscode.window.showQuickPick(deviceTypeList, {
-			placeHolder: 'Choose the device type'
-		});
+		let deviceSelected = await vscode.window.showQuickPick(deviceTypeList, { placeHolder: 'Choose the device type' });
 
-		if (deviceSelected === undefined) {
-			return;
-		}
+		if (deviceSelected === undefined) { return; }
 
 		// Flash the Firmware with flashDeviceFirmware.py
 		let successFlash: Boolean = await vscode.window.withProgress({
 			location: vscode.ProgressLocation.Notification,
-			title: "Flashing " + `${deviceSelected}` + " firmware to device " + `${comSelected}`,
+			title: "Flashing " + `${deviceSelected}` + " on " + `${comSelected}`,
 			cancellable: true
-		}, async () => {
+		}, async (progress) => {
 			const { successFlash } = await new Promise( resolve => {
-				if (comSelected === undefined || deviceSelected === undefined) {
-					return;
+				let bootloader: string;
+				let appFlashEsp32: string;
+				let esptype: string;
+				if (deviceSelected === 'OICore') {
+					bootloader = context.asAbsolutePath('/resources/bin/') + 'bootloader_esp32.bin';
+					appFlashEsp32 = context.asAbsolutePath('/resources/bin/') + 'app_flash_esp32.bin';
+        			esptype = "esp32";
+				} else {
+					bootloader = context.asAbsolutePath('/resources/bin/') + 'bootloader_esp32s2.bin';
+					appFlashEsp32 = context.asAbsolutePath('/resources/bin/') + 'app_flash_esp32s2.bin';
+        			esptype = "esp32s2";
 				}
-				let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/flashDeviceFirmware.py';
-				let pyshell = new PythonShell(myPythonScriptPath, { mode: 'json', args: [comSelected, deviceSelected]});
+
+				let firmware = context.asAbsolutePath('/resources/bin/') + deviceSelected?.toLowerCase().substring(2) + '.bin';
+				let otaDataInitial = context.asAbsolutePath('/resources/bin/') + 'ota_data_initial.bin';
+    			let partitions = context.asAbsolutePath('/resources/bin/') + 'partitions.bin';
+
+				let options = {
+					mode: "text" as "text",
+					pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe',
+					args: ['--chip', esptype,
+							'--port', comSelected?.split(" ")[0],
+							'--baud', '921600',
+							'write_flash',
+							'-z',
+                    		'0x1000', bootloader,
+                    		'0x8000', partitions,
+                    		'0xd000', otaDataInitial, 
+                    		'0x20000', firmware, 
+                    		'0x3C0000', appFlashEsp32
+					] as string[]
+				};
+
+				let myPythonScriptPath = 'C:/Users/aurelien/.platformio/packages/framework-espidf/components/esptool_py/esptool/esptool.py';
+				let pyshell = new PythonShell(myPythonScriptPath, options);
+
+				pyshell.on('message', function (message) {
+					console.log(message);
+				});
+
 				pyshell.end(function (err: any, code: any) {
 					if (code === 0) {
 						resolve({ successFlash: true });
@@ -159,6 +194,58 @@ export function activate(context: vscode.ExtensionContext) {
 						resolve({ successFlash: false });
 					}
 				});
+
+			});
+			return successFlash;
+		});
+			
+		// Prompt a success message or an error message
+		if (successFlash === true) {
+			vscode.window.showInformationMessage("Device " + `${comSelected}` + " flashed successfuly");
+		} else {
+			vscode.window.showErrorMessage("Unexpected error while flashing device !");
+		}
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('openindus.flashDeviceOnBus', async () => {
+		
+		// Retrieve available devices with getConnectedBoards.py
+		let portList = await getPortList(context, 'OICore');
+
+		if (portList === undefined || portList.length === 0) {
+			vscode.window.showWarningMessage("Could not find OICore on any port, please check connection between OICore and computer");
+			return;
+		}
+
+		let comSelected: string | undefined =  undefined;
+
+		if (portList.length > 1) {
+			comSelected = await vscode.window.showQuickPick(portList, { placeHolder: 'Select the device' });
+		} else if (portList.length = 1) {
+			comSelected = portList[0];
+		}
+		
+		if (comSelected === undefined) { return; }
+
+		// Flash the Firmware with flashDeviceFirmware.py
+		let successFlash: Boolean = await vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: "Flashing",
+			cancellable: true
+		}, async (progress) => {
+			const { successFlash } = await new Promise( resolve => {
+
+
+			
+
+				pyshell.end(function (err: any, code: any) {
+					if (code === 0) {
+						resolve({ successFlash: true });
+					} else {
+						resolve({ successFlash: false });
+					}
+				});
+
 			});
 			return successFlash;
 		});
@@ -180,20 +267,21 @@ export function activate(context: vscode.ExtensionContext) {
 // this method is called when your extension is deactivated
 export function deactivate() {}
 
-
-async function getPortList(context: vscode.ExtensionContext): Promise<string[] | undefined> {
+async function getPortList(context: vscode.ExtensionContext, type?: string): Promise<string[] | undefined> {
 
 	// Retrieve available devices with getConnectedBoards.py
 	let portList: string[] = [];
 	let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/getConnectedDevices.py';
-	let pyshell = new PythonShell(myPythonScriptPath, { mode: 'json', pythonPath: });
+	let pyshell = new PythonShell(myPythonScriptPath, { mode: 'json', pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe' });
 
 	pyshell.on('message', function (message) {
 		message.devices.forEach((element: { type: string; port: string; }) => {
-			if (element.type !== "undefined") {
-				portList.push(element.port + " - " + element.type);
-			} else {
-				portList.push(element.port);
+			if (type === undefined || (type !== undefined && element.type === type)) {
+				if (element.type !== "undefined") {
+					portList.push(element.port + " - " + element.type);
+				} else {
+					portList.push(element.port);
+				}
 			}
 		});
 	});
