@@ -3,6 +3,11 @@
     "displayName": "oi-extension",
     "description": "Programming environment for OpenIndus Devices",
     "version": "0.0.1",
+    "publisher": "OpenIndus",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/openindus"
+    },
     "engines": {
         "vscode": "^1.60.0"
     },
@@ -83,5 +88,8 @@
     "dependencies": {
         "platformio-node-helpers": "^9.2.3",
         "python-shell": "^3.0.0"
-    }
+    },
+    "extensionDependencies": [
+        "platformio.platformio-ide"
+    ]
 }
