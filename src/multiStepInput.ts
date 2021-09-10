@@ -3,9 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, ExtensionContext, QuickInputButtons, OpenDialogOptions, Uri, workspace, commands, Position } from 'vscode';
+import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, ExtensionContext, QuickInputButtons, OpenDialogOptions, Uri, workspace, commands } from 'vscode';
 import * as fs from 'fs';
 import { deviceTypeList } from './deviceTypeList';
+import { PythonShell } from 'python-shell';
 
 /**
  * A multi-step input using window.createQuickPick() and window.createInputBox().
@@ -35,7 +36,7 @@ export async function multiStepInput(context: ExtensionContext) {
 
 	async function collectInputs() {
 		const state = {} as Partial<State>;
-		await MultiStepInput.run(input => pickFolder(input, state));
+		await MultiStepInput.run(input => pickBoard(input, state));
 		return state as State;
 	}
 
@@ -50,20 +51,20 @@ export async function multiStepInput(context: ExtensionContext) {
 				throw InputFlowAction.cancel;
 			}
         });
-		return (input: MultiStepInput) => pickBoard(input, state);
+		return (input: MultiStepInput) => inputName(input, state);
 	}
 
 	async function pickBoard(input: MultiStepInput, state: Partial<State>) {
 		state.board = await input.showQuickPick({
 			title,
-			step: 2,
+			step: 1,
 			totalSteps: 3,
 			placeholder: 'Choose a board',
 			items: boardsNames,
 			activeItem: typeof state.board !== 'string' ? state.board : boardsNames[0],
 			shouldResume: shouldResume
 		});
-		return (input: MultiStepInput) => inputName(input, state);
+		return (input: MultiStepInput) => pickFolder(input, state);
 	}
 
 	async function inputName(input: MultiStepInput, state: Partial<State>) {
@@ -81,22 +82,37 @@ export async function multiStepInput(context: ExtensionContext) {
 	}
 
 	async function createApp(input: MultiStepInput, state: State) {
+		
 		window.showInformationMessage(`Creating Application '${state.name}' for '${state.board.label}'`);
-		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/.gitignore')), Uri.file(state.path + '/' + state.name + '/.gitignore'));
-		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/CMakeLists.txt')), Uri.file(state.path + '/' + state.name + '/.CMakeLists.txt'));
-		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/README.md')), Uri.file(state.path + '/' + state.name + '/.README.md'));
-		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/sdkconfig.defaults')), Uri.file(state.path + '/' + state.name + '/.sdkconfig.defaults'));
-		
-		
-		const platformioIniName = Uri.file(context.asAbsolutePath('/resources/oi-template/') + 'platformio_' + state.board.label.toLowerCase() + '.ini');
-		await workspace.fs.copy(platformioIniName, Uri.file(state.path + '/' + state.name + '/platformio.ini'));
 
-		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/main')), Uri.file(state.path + '/' + state.name + '/main/'));
-		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/bin')), Uri.file(state.path + '/' + state.name + '/bin/'));
-		
-		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/components/OpenIndus/')), Uri.file(state.path + '/' + state.name + '/components/OpenIndus/'));
+		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/src')), Uri.file(state.path + '/' + state.name + '/src/'));
 
-		commands.executeCommand('vscode.openFolder', Uri.file(state.path + '/' + state.name));
+		if (state.board.label === 'OICore') {
+			await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/bin/app_flash_esp32.bin')), Uri.file(state.path + '/' + state.name + '/bin/app_flash_esp32.bin'));
+			await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/boards/oi-esp32.json')), Uri.file(state.path + '/' + state.name + '/boards/oi-esp32.json'));	
+		} else {
+			await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/bin/app_flash_esp32s2.bin')), Uri.file(state.path + '/' + state.name + '/bin/app_flash_esp32s2.bin'));
+			await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/boards/oi-esp32s2.json')), Uri.file(state.path + '/' + state.name + '/boards/oi-esp32s2.json'));	
+		}
+		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/boards/partition.csv')), Uri.file(state.path + '/' + state.name + '/boards/partition.csv'));	
+			
+		// Read platformio.ini, replace the build flag and write the file to the folder
+		var data  = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/platformio.ini'), 'utf8');
+		data = data.replace(/REPLACE_BOARD_HERE/g, state.board.label.toUpperCase().substring(2));
+		if (state.board.label === 'OICore') {
+			data = data.replace(/REPLACE_ESP_HERE/g, "oi-esp32");
+		} else {
+			data = data.replace(/REPLACE_ESP_HERE/g, "oi-esp32s2");
+		}
+		fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', data, 'utf8');
+
+		// Read platformio.ini, replace the project name, then write the file
+		var data2 = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/CMakeLists.txt'), 'utf8');
+		data2 = data2.replace(/REPLACE_PROJECT_HERE/g, state.name);
+		
+		fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', data2, 'utf8');
+
+		await commands.executeCommand('vscode.openFolder', Uri.file(state.path + '/' + state.name));
 	}
 
 	function shouldResume() {
@@ -107,12 +123,11 @@ export async function multiStepInput(context: ExtensionContext) {
 	}
 
 	async function validateNameIsUnique(path: string | undefined, name: string) {
-        if (fs.existsSync(path + '/' + name))
-        {
+        if (fs.existsSync(path + '/' + name)) {
             return "Folder already exits";
-        }
-        else
-        {
+        } else if (name.indexOf(' ') >= 0) {
+			return "Project could not contains white space";
+		} else {
             return undefined;
         }
 	}

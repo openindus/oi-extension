@@ -3,7 +3,6 @@ import { PythonShell } from 'python-shell';
 import { multiStepInput } from './multiStepInput';
 import { OIAccessTreeProvider } from './customTreeView';
 import { deviceTypeList } from './deviceTypeList';
-import { stringify } from 'querystring';
 const pioNodeHelpers = require('platformio-node-helpers');
 
 export function activate(context: vscode.ExtensionContext) {
@@ -145,7 +144,7 @@ export function activate(context: vscode.ExtensionContext) {
 			location: vscode.ProgressLocation.Notification,
 			title: "Flashing " + `${deviceSelected}` + " on " + `${comSelected}`,
 			cancellable: true
-		}, async (progress) => {
+		}, async () => {
 			const { successFlash } = await new Promise( resolve => {
 				let bootloader: string;
 				let appFlashEsp32: string;
@@ -180,7 +179,7 @@ export function activate(context: vscode.ExtensionContext) {
 					] as string[]
 				};
 
-				let myPythonScriptPath = 'C:/Users/aurelien/.platformio/packages/framework-espidf/components/esptool_py/esptool/esptool.py';
+				let myPythonScriptPath = pioNodeHelpers.core.getCoreDir() + '/packages/framework-espidf/components/esptool_py/esptool/esptool.py';
 				let pyshell = new PythonShell(myPythonScriptPath, options);
 
 				pyshell.on('message', function (message) {
@@ -209,59 +208,62 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(vscode.commands.registerCommand('openindus.flashDeviceOnBus', async () => {
 		
-		// Retrieve available devices with getConnectedBoards.py
-		let portList = await getPortList(context, 'OICore');
+		// Display an error message because it is not implemented yet
+		vscode.window.showErrorMessage("Sorry but this funtionnality is not implemented yet !");
 
-		if (portList === undefined || portList.length === 0) {
-			vscode.window.showWarningMessage("Could not find OICore on any port, please check connection between OICore and computer");
-			return;
-		}
 
-		let comSelected: string | undefined =  undefined;
+		// // Retrieve available devices with getConnectedBoards.py
+		// let portList = await getPortList(context, 'OICore');
 
-		if (portList.length > 1) {
-			comSelected = await vscode.window.showQuickPick(portList, { placeHolder: 'Select the device' });
-		} else if (portList.length = 1) {
-			comSelected = portList[0];
-		}
+		// if (portList === undefined || portList.length === 0) {
+		// 	vscode.window.showWarningMessage("Could not find OICore on any port, please check connection between OICore and computer");
+		// 	return;
+		// }
+
+		// let comSelected: string | undefined =  undefined;
+
+		// if (portList.length > 1) {
+		// 	comSelected = await vscode.window.showQuickPick(portList, { placeHolder: 'Select the device' });
+		// } else if (portList.length = 1) {
+		// 	comSelected = portList[0];
+		// }
 		
-		if (comSelected === undefined) { return; }
+		// if (comSelected === undefined) { return; }
 
-		// Flash the Firmware with flashDeviceFirmware.py
-		let successFlash: Boolean = await vscode.window.withProgress({
-			location: vscode.ProgressLocation.Notification,
-			title: "Flashing",
-			cancellable: true
-		}, async (progress) => {
-			const { successFlash } = await new Promise( resolve => {
+		// // Flash the Firmware with flashDeviceFirmware.py
+		// let successFlash: Boolean = await vscode.window.withProgress({
+		// 	location: vscode.ProgressLocation.Notification,
+		// 	title: "Flashing",
+		// 	cancellable: true
+		// }, async () => {
+		// 	const { successFlash } = await new Promise( resolve => {
 
+		// 		let myPythonScriptPath = 'C:/Users/aurelien/.platformio/packages/framework-espidf/components/esptool_py/esptool/esptool.py';
+		// 		let pyshell = new PythonShell(myPythonScriptPath);
 
+		// 		pyshell.end(function (err: any, code: any) {
+		// 			if (code === 0) {
+		// 				resolve({ successFlash: true });
+		// 			} else {
+		// 				resolve({ successFlash: false });
+		// 			}
+		// 		});
+
+		// 	});
+		// 	return successFlash;
+		// });
 			
-
-				pyshell.end(function (err: any, code: any) {
-					if (code === 0) {
-						resolve({ successFlash: true });
-					} else {
-						resolve({ successFlash: false });
-					}
-				});
-
-			});
-			return successFlash;
-		});
-			
-		// Prompt a success message or an error message
-		if (successFlash === true) {
-			vscode.window.showInformationMessage("Device " + `${comSelected}` + " flashed successfuly");
-		} else {
-			vscode.window.showErrorMessage("Unexpected error while flashing device !");
-		}
+		// // Prompt a success message or an error message
+		// if (successFlash === true) {
+		// 	vscode.window.showInformationMessage("Device " + `${comSelected}` + " flashed successfuly");
+		// } else {
+		// 	vscode.window.showErrorMessage("Unexpected error while flashing device !");
+		// }
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('openindus.openinduswebsite', () => {
 		vscode.env.openExternal(vscode.Uri.parse('https://openindus.com'));
 	}));
-
 }
 
 // this method is called when your extension is deactivated
@@ -278,7 +280,7 @@ async function getPortList(context: vscode.ExtensionContext, type?: string): Pro
 		message.devices.forEach((element: { type: string; port: string; }) => {
 			if (type === undefined || (type !== undefined && element.type === type)) {
 				if (element.type !== "undefined") {
-					portList.push(element.port + " - " + element.type);
+					portList.push(element.port + " - " + deviceTypeList[parseInt(element.type)]);
 				} else {
 					portList.push(element.port);
 				}

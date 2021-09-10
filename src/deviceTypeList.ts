@@ -2,10 +2,10 @@ export const deviceTypeList: string[] =
 [
     'OICore',
     'OIDiscrete',
-    'OIDiscreteVertical',
+    'OIDiscrete_Vertical',
     'OIStepper',
-    'OIStepperVertical',
+    'OIStepper_Vertical',
     'OIMixed',
-    'OIRelayLP',
-    'OIRelayHP'
+    'OIRelay_LP',
+    'OIRelay_HP'
 ];

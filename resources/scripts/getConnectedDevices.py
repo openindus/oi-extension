@@ -1,7 +1,6 @@
 import json
 import serial
 import serial.tools.list_ports
-import deviceTypeList
 
 result = {
   "devices": []
@@ -45,7 +44,7 @@ for port in l:
                 data = str(data, 'utf-8')
 
                 # get name of board from type
-                result["devices"].append({"port": port.device, "type": deviceTypeList.BOARD_LIST[data[:-2]]})
+                result["devices"].append({"port": port.device, "type": data[:-2]})
 
             except:
                 result["devices"].append({"port": port.device, "type": "undefined"})
