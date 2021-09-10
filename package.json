@@ -1,6 +1,6 @@
 {
     "name": "oi-extension",
-    "displayName": "oi-extension",
+    "displayName": "OpenIndus",
     "description": "Programming environment for OpenIndus Devices",
     "version": "0.0.1",
     "publisher": "OpenIndus",
@@ -8,6 +8,7 @@
         "type": "git",
         "url": "https://github.com/openindus"
     },
+    "icon": "resources/logo.png",
     "engines": {
         "vscode": "^1.60.0"
     },
@@ -50,7 +51,7 @@
                 {
                     "id": "openindus-treeviewcontainer",
                     "title": "OpenIndus",
-                    "icon": "resources/logoOpenIndus.png"
+                    "icon": "resources/logoMenu.png"
                 }
             ]
         },
