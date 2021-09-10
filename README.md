@@ -8,12 +8,6 @@ This extension will offer you the possibility to create a "Hello World" project.
 
 ## Requirements
 
-This extension use platformio.
-
-## Release Notes
-
-### 0.0.1
-
-Initial release of OpenIndus Extension
+This extension depends on platformio extension.
 
 

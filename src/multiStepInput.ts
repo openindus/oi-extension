@@ -85,7 +85,13 @@ export async function multiStepInput(context: ExtensionContext) {
 		
 		window.showInformationMessage(`Creating Application '${state.name}' for '${state.board.label}'`);
 
-		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/src')), Uri.file(state.path + '/' + state.name + '/src/'));
+		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/src/CMakeLists.txt')), Uri.file(state.path + '/' + state.name + '/src/CMakeLists.txt'));
+
+		// Read main.cpp, replace the contents, then write the file
+		var data2 = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/src/main.cpp'), 'utf8');
+		data2 = data2.replace(/REPLACE_CLASS_HERE/g, state.board.label.substring(0,3).toUpperCase() + state.board.label.substring(3).split('_')[0].toLowerCase()); // Write the correct class name
+		data2 = data2.replace(/REPLACE_NAME_HERE/g, state.board.label.substring(2).split('_')[0].toLowerCase()); // Write the correct class name
+		fs.writeFileSync(state.path + '/' + state.name + '/src/main.cpp', data2, 'utf8');
 
 		if (state.board.label === 'OICore') {
 			await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/bin/app_flash_esp32.bin')), Uri.file(state.path + '/' + state.name + '/bin/app_flash_esp32.bin'));
@@ -106,10 +112,9 @@ export async function multiStepInput(context: ExtensionContext) {
 		}
 		fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', data, 'utf8');
 
-		// Read platformio.ini, replace the project name, then write the file
+		// Read CMakeLists.txt, replace the project name, then write the file
 		var data2 = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/CMakeLists.txt'), 'utf8');
 		data2 = data2.replace(/REPLACE_PROJECT_HERE/g, state.name);
-		
 		fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', data2, 'utf8');
 
 		await commands.executeCommand('vscode.openFolder', Uri.file(state.path + '/' + state.name));

@@ -1,10 +1,10 @@
 #include "OpenIndus.h"
 
-OICore core;
+REPLACE_CLASS_HERE REPLACE_NAME_HERE;
 
 extern "C" void app_main()
 {
-    SYSTEM.setModule(&core);
+    SYSTEM.setModule(&REPLACE_NAME_HERE);
     SYSTEM.start();
     CONSOLE.start();
 

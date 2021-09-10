@@ -264,6 +264,12 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('openindus.openinduswebsite', () => {
 		vscode.env.openExternal(vscode.Uri.parse('https://openindus.com'));
 	}));
+
+	// Check if .platformio path contains a space
+	if (pioNodeHelpers.core.getCoreDir().indexOf(' ') >= 0)
+	{
+		vscode.window.showErrorMessage("We detected that you platformio path contains a white space, this will cause an error. Please check for available solutions on our website's FAQ");
+	}
 }
 
 // this method is called when your extension is deactivated
