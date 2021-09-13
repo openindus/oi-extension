@@ -85,13 +85,14 @@ export async function multiStepInput(context: ExtensionContext) {
 		
 		window.showInformationMessage(`Creating Application '${state.name}' for '${state.board.label}'`);
 
-		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/src/CMakeLists.txt')), Uri.file(state.path + '/' + state.name + '/src/CMakeLists.txt'));
+		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/main/CMakeLists.txt')), Uri.file(state.path + '/' + state.name + '/main/CMakeLists.txt'));
+		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/sdkconfig.defaults')), Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'));
 
 		// Read main.cpp, replace the contents, then write the file
-		var data2 = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/src/main.cpp'), 'utf8');
+		var data2 = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/main/main.cpp'), 'utf8');
 		data2 = data2.replace(/REPLACE_CLASS_HERE/g, state.board.label.substring(0,3).toUpperCase() + state.board.label.substring(3).split('_')[0].toLowerCase()); // Write the correct class name
 		data2 = data2.replace(/REPLACE_NAME_HERE/g, state.board.label.substring(2).split('_')[0].toLowerCase()); // Write the correct class name
-		fs.writeFileSync(state.path + '/' + state.name + '/src/main.cpp', data2, 'utf8');
+		fs.writeFileSync(state.path + '/' + state.name + '/main/main.cpp', data2, 'utf8');
 
 		if (state.board.label === 'OICore') {
 			await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/bin/app_flash_esp32.bin')), Uri.file(state.path + '/' + state.name + '/bin/app_flash_esp32.bin'));
@@ -101,7 +102,7 @@ export async function multiStepInput(context: ExtensionContext) {
 			await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/boards/oi-esp32s2.json')), Uri.file(state.path + '/' + state.name + '/boards/oi-esp32s2.json'));	
 		}
 		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/boards/partition.csv')), Uri.file(state.path + '/' + state.name + '/boards/partition.csv'));	
-			
+					
 		// Read platformio.ini, replace the build flag and write the file to the folder
 		var data  = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/platformio.ini'), 'utf8');
 		data = data.replace(/REPLACE_BOARD_HERE/g, state.board.label.toUpperCase().substring(2));
