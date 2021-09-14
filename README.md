@@ -1,6 +1,6 @@
 # OpenIndus Manager
 
-OpenIndus is a company specialized in engineering. We offer modular and connected PLC. The purpose of this extension is to help the user to program our devices.
+OpenIndus is a company specialized in engineering. We offer modular and connected PLCs. The purpose of this extension is to help the user to program our devices.
 
 ## Features
 

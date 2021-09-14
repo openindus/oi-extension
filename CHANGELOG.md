@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.0.4]
+
+- update "start a project" command
+
 ## [0.0.3]
 
 - Update logo
