@@ -5,7 +5,10 @@
 1. Ouvrir la console npm
 1. Initialiser le repertoire npm `npm install` ou bien `npm start`
 1. Ouvrir le dossier dans visual studio
-1. Run > Start debbuging
+1. Run > Start debugging
+
+Si des erreurs surviennent, installer manuellement des packages: ex : `npm install @microsoft/vscode-file-downloader-api`
+
 
 
 # Comment publier l'extension

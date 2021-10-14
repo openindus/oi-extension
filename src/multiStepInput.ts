@@ -6,7 +6,7 @@
 import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, ExtensionContext, QuickInputButtons, OpenDialogOptions, Uri, workspace, commands } from 'vscode';
 import * as fs from 'fs';
 import { deviceTypeList } from './deviceTypeList';
-import { PythonShell } from 'python-shell';
+import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
 
 /**
  * A multi-step input using window.createQuickPick() and window.createInputBox().
@@ -16,6 +16,7 @@ import { PythonShell } from 'python-shell';
 export async function multiStepInput(context: ExtensionContext) {
 
 	const boardsNames: QuickPickItem[] = deviceTypeList.map(label => ({ label }));
+	const fileDownloader: FileDownloader = await getApi();
 
 	const options: OpenDialogOptions = {
 		canSelectMany: false,
@@ -81,44 +82,63 @@ export async function multiStepInput(context: ExtensionContext) {
 		return (input: MultiStepInput) => createApp(input, <State>state);
 	}
 
-	async function createApp(input: MultiStepInput, state: State) {
+	async function createApp(input: MultiStepInput, state: State) {	
 		
 		window.showInformationMessage(`Creating Application '${state.name}' for '${state.board.label}'`);
 
-		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/main/CMakeLists.txt')), Uri.file(state.path + '/' + state.name + '/main/CMakeLists.txt'));
-		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/sdkconfig.defaults')), Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'));
+		// Get list of versions available
+		await fileDownloader.downloadFile(
+			Uri.parse("http://openindus.com/oi-content/firmware/"),
+			"fileList",
+			context,
+			undefined,
+			undefined
+		);
 
-		// Read main.cpp, replace the contents, then write the file
-		var data2 = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/main/main.cpp'), 'utf8');
-		data2 = data2.replace(/REPLACE_CLASS_HERE/g, state.board.label.substring(0,3).toUpperCase() + state.board.label.substring(3).split('_')[0].toLowerCase()); // Write the correct class name
-		data2 = data2.replace(/REPLACE_NAME_HERE/g, state.board.label.substring(2).split('_')[0].toLowerCase()); // Write the correct class name
-		fs.writeFileSync(state.path + '/' + state.name + '/main/main.cpp', data2, 'utf8');
-
-		if (state.board.label === 'OICore') {
-			await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/bin/app_flash_esp32.bin')), Uri.file(state.path + '/' + state.name + '/bin/app_flash_esp32.bin'));
-			await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/boards/oi-esp32.json')), Uri.file(state.path + '/' + state.name + '/boards/oi-esp32.json'));	
-		} else {
-			await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/bin/app_flash_esp32s2.bin')), Uri.file(state.path + '/' + state.name + '/bin/app_flash_esp32s2.bin'));
-			await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/boards/oi-esp32s2.json')), Uri.file(state.path + '/' + state.name + '/boards/oi-esp32s2.json'));	
+		const downloadedFile: Uri | undefined = await fileDownloader.tryGetItem("fileList", context);
+		if (downloadedFile !== undefined) {
+			var html = fs.readFileSync(downloadedFile.fsPath, 'utf8').split(/oi-firmware-/).forEach(function(line) {
+				if (line[0] !== "<") {
+					console.log(line.substring(0, 5));
+				}
+			});
 		}
-		await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/boards/partition.csv')), Uri.file(state.path + '/' + state.name + '/boards/partition.csv'));	
+
+		// await workspace.fs.copy(directory, Uri.file(state.path + '/' + state.name + '/'));
+		// await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/main/CMakeLists.txt')), Uri.file(state.path + '/' + state.name + '/main/CMakeLists.txt'));
+		// await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/sdkconfig.defaults')), Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'));
+
+		// // Read main.cpp, replace the contents, then write the file
+		// var data2 = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/main/main.cpp'), 'utf8');
+		// data2 = data2.replace(/REPLACE_CLASS_HERE/g, state.board.label.substring(0,3).toUpperCase() + state.board.label.substring(3).split('_')[0].toLowerCase()); // Write the correct class name
+		// data2 = data2.replace(/REPLACE_NAME_HERE/g, state.board.label.substring(2).split('_')[0].toLowerCase()); // Write the correct class name
+		// fs.writeFileSync(state.path + '/' + state.name + '/main/main.cpp', data2, 'utf8');
+
+		// if (state.board.label === 'OICore') {
+		// 	await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/bin/app_flash_esp32.bin')), Uri.file(state.path + '/' + state.name + '/bin/app_flash_esp32.bin'));
+		// 	await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/boards/oi-esp32.json')), Uri.file(state.path + '/' + state.name + '/boards/oi-esp32.json'));	
+		// } else {
+		// 	await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/bin/app_flash_esp32s2.bin')), Uri.file(state.path + '/' + state.name + '/bin/app_flash_esp32s2.bin'));
+		// 	await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/boards/oi-esp32s2.json')), Uri.file(state.path + '/' + state.name + '/boards/oi-esp32s2.json'));	
+		// }
+		// await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/boards/partition.csv')), Uri.file(state.path + '/' + state.name + '/boards/partition.csv'));	
 					
-		// Read platformio.ini, replace the build flag and write the file to the folder
-		var data  = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/platformio.ini'), 'utf8');
-		data = data.replace(/REPLACE_BOARD_HERE/g, state.board.label.toUpperCase().substring(2));
-		if (state.board.label === 'OICore') {
-			data = data.replace(/REPLACE_ESP_HERE/g, "oi-esp32");
-		} else {
-			data = data.replace(/REPLACE_ESP_HERE/g, "oi-esp32s2");
-		}
-		fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', data, 'utf8');
+		// // Read platformio.ini, replace the build flag and write the file to the folder
+		// var data  = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/platformio.ini'), 'utf8');
+		// data = data.replace(/REPLACE_BOARD_HERE/g, state.board.label.toUpperCase().substring(2));
+		// if (state.board.label === 'OICore') {
+		// 	data = data.replace(/REPLACE_ESP_HERE/g, "oi-esp32");
+		// } else {
+		// 	data = data.replace(/REPLACE_ESP_HERE/g, "oi-esp32s2");
+		// }
+		// fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', data, 'utf8');
 
-		// Read CMakeLists.txt, replace the project name, then write the file
-		var data2 = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/CMakeLists.txt'), 'utf8');
-		data2 = data2.replace(/REPLACE_PROJECT_HERE/g, state.name);
-		fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', data2, 'utf8');
+		// // Read CMakeLists.txt, replace the project name, then write the file
+		// var data2 = fs.readFileSync(context.asAbsolutePath('/resources/oi-template/CMakeLists.txt'), 'utf8');
+		// data2 = data2.replace(/REPLACE_PROJECT_HERE/g, state.name);
+		// fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', data2, 'utf8');
 
-		await commands.executeCommand('vscode.openFolder', Uri.file(state.path + '/' + state.name));
+		// await commands.executeCommand('vscode.openFolder', Uri.file(state.path + '/' + state.name));
 	}
 
 	function shouldResume() {
