@@ -149,7 +149,4 @@ export async function createProject(context: vscode.ExtensionContext) {
         await vscode.workspace.fs.copy(state.firmwareDirectory, vscode.Uri.file(state.path + '/' + state.name + '/'));
         await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name));
     });
-
-    
-
 }
