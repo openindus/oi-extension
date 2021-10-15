@@ -16,6 +16,8 @@ import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
 export async function multiStepInput(context: ExtensionContext) {
 
 	const boardsNames: QuickPickItem[] = deviceTypeList.map(label => ({ label }));
+	let firmwareVersions: QuickPickItem[] = [];
+
 	const fileDownloader: FileDownloader = await getApi();
 
 	const options: OpenDialogOptions = {
@@ -33,6 +35,7 @@ export async function multiStepInput(context: ExtensionContext) {
 		board: QuickPickItem;
 		name: string;
         path: string;
+		version: QuickPickItem;
 	}
 
 	async function collectInputs() {
@@ -43,6 +46,19 @@ export async function multiStepInput(context: ExtensionContext) {
 
 	const title = 'Create a Template Application';
 
+	async function pickBoard(input: MultiStepInput, state: Partial<State>) {
+		state.board = await input.showQuickPick({
+			title,
+			step: 1,
+			totalSteps: 4,
+			placeholder: 'Choose a board',
+			items: boardsNames,
+			activeItem: typeof state.board !== 'string' ? state.board : boardsNames[0],
+			shouldResume: shouldResume
+		});
+		return (input: MultiStepInput) => pickFolder(input, <State>state);
+	}
+
 	async function pickFolder(input: MultiStepInput, state: Partial<State>) {
 		state.path = await window.showOpenDialog(options).then(fileUri => {
             if (fileUri && fileUri[0]) {
@@ -52,31 +68,61 @@ export async function multiStepInput(context: ExtensionContext) {
 				throw InputFlowAction.cancel;
 			}
         });
-		return (input: MultiStepInput) => inputName(input, state);
-	}
-
-	async function pickBoard(input: MultiStepInput, state: Partial<State>) {
-		state.board = await input.showQuickPick({
-			title,
-			step: 1,
-			totalSteps: 3,
-			placeholder: 'Choose a board',
-			items: boardsNames,
-			activeItem: typeof state.board !== 'string' ? state.board : boardsNames[0],
-			shouldResume: shouldResume
-		});
-		return (input: MultiStepInput) => pickFolder(input, state);
+		return (input: MultiStepInput) => inputName(input, <State>state);
 	}
 
 	async function inputName(input: MultiStepInput, state: Partial<State>) {
 		state.name = await input.showInputBox({
 			title,
 			step: 3,
-			totalSteps: 3,
+			totalSteps: 4,
 			value: state.name || '',
 			prompt: 'Choose a name for your application',
 			validate: validateNameIsUnique,
             path: state.path,
+			shouldResume: shouldResume
+		});
+		return (input: MultiStepInput) => pickVersion(input, <State>state);
+	}
+
+	async function pickVersion(input: MultiStepInput, state: Partial<State>) {
+
+		// Get list of versions available by checking the html page
+		await fileDownloader.downloadFile(
+			Uri.parse("http://openindus.com/oi-content/firmware/"),
+			"fileListAsHtml",
+			context,
+			undefined,
+			undefined
+		);
+
+		const downloadedFile: Uri | undefined = await fileDownloader.tryGetItem("fileListAsHtml", context);
+
+		if (downloadedFile !== undefined) {
+			var html = fs.readFileSync(downloadedFile.fsPath, 'utf8').split(/href="oi-firmware-/).forEach(function(line) {
+				if (line[0] !== "<") {
+					console.log(line.substring(0, 5));
+					firmwareVersions.push({label: line.substring(0, 5)});
+				}
+			});
+
+			firmwareVersions[firmwareVersions.length- 1 ].description = "latest";
+
+			await fileDownloader.deleteItem("fileListAsHtml", context);
+		}
+		else
+		{
+			window.showErrorMessage("Cannot retrieve firmware version, please check your internet conenction");
+			return;
+		}
+
+		state.version = await input.showQuickPick({
+			title,
+			step: 4,
+			totalSteps: 4,
+			placeholder: 'Choose the version',
+			items: firmwareVersions,
+			activeItem: firmwareVersions[firmwareVersions.length - 1],
 			shouldResume: shouldResume
 		});
 		return (input: MultiStepInput) => createApp(input, <State>state);
@@ -84,27 +130,19 @@ export async function multiStepInput(context: ExtensionContext) {
 
 	async function createApp(input: MultiStepInput, state: State) {	
 		
-		window.showInformationMessage(`Creating Application '${state.name}' for '${state.board.label}'`);
+		// window.showInformationMessage(`Creating Application '${state.name}' for '${state.board.label}'`);
 
-		// Get list of versions available
-		await fileDownloader.downloadFile(
-			Uri.parse("http://openindus.com/oi-content/firmware/"),
-			"fileList",
-			context,
-			undefined,
-			undefined
-		);
+		// const firmwareDirectory: Uri = await fileDownloader.downloadFile(
+		// 	Uri.parse("http://openindus.com/oi-content/firmware/oi-firmware-" + state.version.label + ".zip"),
+		// 	"oi-firmware",
+		// 	context,
+		// 	/* cancellationToken */ undefined,
+		// 	/* progressCallback */ undefined,
+		// 	{ shouldUnzip: true }
+		// );
 
-		const downloadedFile: Uri | undefined = await fileDownloader.tryGetItem("fileList", context);
-		if (downloadedFile !== undefined) {
-			var html = fs.readFileSync(downloadedFile.fsPath, 'utf8').split(/oi-firmware-/).forEach(function(line) {
-				if (line[0] !== "<") {
-					console.log(line.substring(0, 5));
-				}
-			});
-		}
+		// await workspace.fs.copy(firmwareDirectory, Uri.file(state.path + '/' + state.name + '/'));
 
-		// await workspace.fs.copy(directory, Uri.file(state.path + '/' + state.name + '/'));
 		// await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/main/CMakeLists.txt')), Uri.file(state.path + '/' + state.name + '/main/CMakeLists.txt'));
 		// await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/sdkconfig.defaults')), Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'));
 
@@ -114,7 +152,7 @@ export async function multiStepInput(context: ExtensionContext) {
 		// data2 = data2.replace(/REPLACE_NAME_HERE/g, state.board.label.substring(2).split('_')[0].toLowerCase()); // Write the correct class name
 		// fs.writeFileSync(state.path + '/' + state.name + '/main/main.cpp', data2, 'utf8');
 
-		// if (state.board.label === 'OICore') {
+		// if (stsate.board.label === 'OICore') {
 		// 	await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/bin/app_flash_esp32.bin')), Uri.file(state.path + '/' + state.name + '/bin/app_flash_esp32.bin'));
 		// 	await workspace.fs.copy(Uri.file(context.asAbsolutePath('/resources/oi-template/boards/oi-esp32.json')), Uri.file(state.path + '/' + state.name + '/boards/oi-esp32.json'));	
 		// } else {
@@ -139,6 +177,8 @@ export async function multiStepInput(context: ExtensionContext) {
 		// fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', data2, 'utf8');
 
 		// await commands.executeCommand('vscode.openFolder', Uri.file(state.path + '/' + state.name));
+
+		return state;
 	}
 
 	function shouldResume() {
