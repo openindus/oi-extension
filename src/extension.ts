@@ -1,16 +1,18 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { multiStepInput } from './multiStepInput';
+import { createProject } from './createProject';
 import { OIAccessTreeProvider } from './customTreeView';
 import { deviceTypeList } from './deviceTypeList';
+import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
+
 const pioNodeHelpers = require('platformio-node-helpers');
 
 export function activate(context: vscode.ExtensionContext) {
 
 	vscode.window.registerTreeDataProvider('openindus-treeview', new OIAccessTreeProvider());
 
-	context.subscriptions.push(vscode.commands.registerCommand('openindus.createproject', () => {
-		multiStepInput(context);
+	context.subscriptions.push(vscode.commands.registerCommand('openindus.createproject', async () => {
+		await createProject(context);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('openindus.getDeviceId', async () => {
