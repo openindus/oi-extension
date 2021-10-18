@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { deviceTypeList, sourceAddress } from './utils';
+import { deviceTypeList, pioProjects, sourceAddress, sourceRefAddress } from './utils';
 import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
 
 export async function createProject(context: vscode.ExtensionContext) {
@@ -56,7 +56,7 @@ export async function createProject(context: vscode.ExtensionContext) {
         });
     }
     else {
-        state.path = require('os').homedir() + '/Documents/PlatformIO/Project';
+        state.path = pioProjects;
     }
     
     if (state.path === undefined) { return; }
@@ -79,21 +79,18 @@ export async function createProject(context: vscode.ExtensionContext) {
     if (state.name === undefined) { return; }
 
     // Fourth STEP:  Get list of versions available by checking the html page and choose one
-    await fileDownloader.downloadFile(
-        vscode.Uri.parse(sourceAddress),
+    const fileListAsHtml = await fileDownloader.downloadFile(
+        vscode.Uri.parse(sourceRefAddress),
         "fileListAsHtml",
         context,
         undefined,
         undefined
     );
 
-    const downloadedFile: vscode.Uri | undefined = await fileDownloader.tryGetItem("fileListAsHtml", context);
+    if (fileListAsHtml !== undefined) {
 
-    if (downloadedFile !== undefined) {
-        fs.readFileSync(downloadedFile.fsPath, 'utf8').split(/href="oi-firmware-/).forEach(function(line) {
-            if (line[0] !== "<") {
-                firmwareVersions.unshift({label: line.split('.zip')[0]});
-            }
+        fs.readFileSync(fileListAsHtml.fsPath, 'utf8').match(/\d+.\d+.\d+.zip/g)?.forEach(function(line) {
+            firmwareVersions.unshift({label: line.split('.zip')[0]});
         });
 
         if (firmwareVersions.length === 0) {
@@ -146,14 +143,12 @@ export async function createProject(context: vscode.ExtensionContext) {
 
         if (state.version === undefined) { return; }
 
-        const firmware = await fileDownloader.tryGetItem("oi-firmware-" + state.version.label, context);
+        let firmware = await fileDownloader.tryGetItem("oi-firmware-" + state.version.label, context);
         
         if (firmware === undefined) {
-
-            vscode.window.showErrorMessage("Please wait while your application is downloading, it can takes several minutes...");
-
-            state.firmwareDirectory = await fileDownloader.downloadFile(
-                vscode.Uri.parse(sourceAddress + "oi-firmware-" + state.version.label + ".zip"),
+            vscode.window.showInformationMessage("Please wait while your application is downloading, it can takes several minutes...");
+            firmware = await fileDownloader.downloadFile(
+                vscode.Uri.parse(sourceAddress + state.version.label + ".zip"),
                 "oi-firmware-" + state.version.label,
                 context,
                 cancellationToken,
@@ -161,23 +156,34 @@ export async function createProject(context: vscode.ExtensionContext) {
                 { shouldUnzip: true }
             );
         }
-        else {
-            state.firmwareDirectory = firmware;
+
+        state.firmwareDirectory = vscode.Uri.file(firmware.fsPath + "/oi-firmware-" + state.version.label + "/"); // firmware is in a subfolder  
+
+        let arduino = await fileDownloader.tryGetItem("arduino-2.0.0", context);
+        
+        if (arduino === undefined) {
+            firmware = await fileDownloader.downloadFile(
+                vscode.Uri.parse("https://github.com/espressif/arduino-esp32/releases/download/2.0.0/esp32-2.0.0.zip"),
+                "arduino-2.0.0",
+                context,
+                cancellationToken,
+                progressCallback,
+                { shouldUnzip: true }
+            );
         }
 
-        state.firmwareDirectory.path;
-
-        if (state.board === undefined) { return; }
+        if (state.board === undefined || arduino === undefined) { return; }
 
         // Replace default_envs by the user selection
-        var data  = fs.readFileSync(state.firmwareDirectory.fsPath + '/platformio.ini', 'utf8');
-        console.log("default_envs = " + state.board.label.toLowerCase().substring(2));
-        console.log(data);
+        var data  = fs.readFileSync(state.firmwareDirectory.fsPath + 'platformio.ini', 'utf8');
 		data = data.replace("default_envs = core", "default_envs = " + state.board.label.toLowerCase().substring(2));
-        console.log(data);
-		fs.writeFileSync(state.firmwareDirectory.fsPath +  '/platformio.ini', data, 'utf8');
+		fs.writeFileSync(state.firmwareDirectory.fsPath +  'platformio.ini', data, 'utf8');
 
+        // Copy source
         await vscode.workspace.fs.copy(state.firmwareDirectory, vscode.Uri.file(state.path + '/' + state.name + '/'));
+        // Add Arduino
+        await vscode.workspace.fs.copy(vscode.Uri.file(arduino.fsPath + '/esp32-2.0.0/'), vscode.Uri.file(state.path + '/' + state.name + '/libraries/Arduino/'), { overwrite: true});
+        // Open workspace
         await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name));
     });
 }

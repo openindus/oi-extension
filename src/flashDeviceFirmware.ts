@@ -33,23 +33,20 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext) {
 
     if (deviceSelected === undefined) { return; }
 
-    await fileDownloader.downloadFile(
+    let binVersions: vscode.QuickPickItem[] = [];
+
+    
+    const fileListAsHtml = await fileDownloader.downloadFile(
         vscode.Uri.parse(binAddress),
         "fileListAsHtml",
         context,
         undefined,
         undefined
     );
-
-    let binVersions: vscode.QuickPickItem[] = [];
-
-    const downloadedFile: vscode.Uri | undefined = await fileDownloader.tryGetItem("fileListAsHtml", context);
-
-    if (downloadedFile !== undefined) {
-        fs.readFileSync(downloadedFile.fsPath, 'utf8').split(/href="oi-firmware-/).forEach(function(line) {
-            if (line[0] !== "<") {
-                binVersions.unshift({label: line.split('/')[0]});
-            }
+    
+    if (fileListAsHtml !== undefined) {
+        fs.readFileSync(fileListAsHtml.fsPath, 'utf8').match(/>oi-firmware-\d+.\d+.\d+/g)?.forEach(function(line) {
+            binVersions.unshift({label: line.substring(">oi-firmware-".length).split('/')[0]});
         });
 
         if (binVersions.length === 0) {
