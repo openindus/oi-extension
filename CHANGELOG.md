@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.0.7]
+
+- get github version of firmware
+
 ## [0.0.6]
 
 - give to the user the choice of different firmware version

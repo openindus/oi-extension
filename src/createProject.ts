@@ -163,7 +163,7 @@ export async function createProject(context: vscode.ExtensionContext) {
         
         if (arduino === undefined) {
             firmware = await fileDownloader.downloadFile(
-                vscode.Uri.parse("https://github.com/espressif/arduino-esp32/releases/download/2.0.0/esp32-2.0.0.zip"),
+                vscode.Uri.parse("https://github.com/espressif/arduino-esp32/archive/refs/tags/2.0.0.zip"),
                 "arduino-2.0.0",
                 context,
                 cancellationToken,
@@ -182,7 +182,7 @@ export async function createProject(context: vscode.ExtensionContext) {
         // Copy source
         await vscode.workspace.fs.copy(state.firmwareDirectory, vscode.Uri.file(state.path + '/' + state.name + '/'));
         // Add Arduino
-        await vscode.workspace.fs.copy(vscode.Uri.file(arduino.fsPath + '/esp32-2.0.0/'), vscode.Uri.file(state.path + '/' + state.name + '/libraries/Arduino/'), { overwrite: true});
+        await vscode.workspace.fs.copy(vscode.Uri.file(arduino.fsPath + '/arduino-esp32-2.0.0/'), vscode.Uri.file(state.path + '/' + state.name + '/libraries/Arduino/'), { overwrite: true});
         // Open workspace
         await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name));
     });
