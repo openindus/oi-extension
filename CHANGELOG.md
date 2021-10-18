@@ -1,9 +1,19 @@
 # Change Log
 
-All notable changes to the "oi-extension" extension will be documented in this file.
+## [0.0.4]
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+- update "start a project" command
 
-## [Unreleased]
+## [0.0.3]
+
+- Update logo
+- Add a function for checking if .platformio path contains a white space
+
+## [0.0.2]
+
+- Adding logo and change display name
+
+## [0.0.1]
 
 - Initial release
+

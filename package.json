@@ -1,15 +1,23 @@
 {
     "name": "oi-extension",
-    "displayName": "oi-extension",
+    "displayName": "OpenIndus",
     "description": "Programming environment for OpenIndus Devices",
-    "version": "0.0.1",
+    "version": "0.0.4",
+    "publisher": "OpenIndus",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/openindus/oi-extension.git"
+    },
+    "icon": "resources/logo.png",
     "engines": {
         "vscode": "^1.60.0"
     },
     "categories": [
         "Other"
     ],
-    "activationEvents": ["*"],
+    "activationEvents": [
+        "*"
+    ],
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
@@ -43,7 +51,7 @@
                 {
                     "id": "openindus-treeviewcontainer",
                     "title": "OpenIndus",
-                    "icon": "resources/logoOpenIndus.png"
+                    "icon": "resources/logoMenu.png"
                 }
             ]
         },
@@ -79,6 +87,12 @@
         "vscode-test": "^1.5.0"
     },
     "dependencies": {
+        "@microsoft/vscode-file-downloader-api": "^1.0.1",
+        "platformio-node-helpers": "^9.2.3",
         "python-shell": "^3.0.0"
-    }
+    },
+    "extensionDependencies": [
+        "platformio.platformio-ide",
+        "mindaro-dev.file-downloader"
+    ]
 }
