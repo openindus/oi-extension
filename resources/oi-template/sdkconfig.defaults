@@ -1,6 +1,0 @@
-# Set log verbosity
-CONFIG_LOG_DEFAULT_LEVEL_INFO=y
-CONFIG_LOG_DEFAULT_LEVEL_VERBOSE=
-
-# configure esp for not rebooting in loop on error
-CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y

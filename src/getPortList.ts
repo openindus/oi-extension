@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { deviceTypeList } from './deviceTypeList';
+import { deviceTypeList } from './utils';
 
 const pioNodeHelpers = require('platformio-node-helpers');
 

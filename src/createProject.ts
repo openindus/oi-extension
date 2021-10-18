@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { deviceTypeList } from './deviceTypeList';
+import { deviceTypeList, sourceAddress } from './utils';
 import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
 
 export async function createProject(context: vscode.ExtensionContext) {
@@ -80,7 +80,7 @@ export async function createProject(context: vscode.ExtensionContext) {
 
     // Fourth STEP:  Get list of versions available by checking the html page and choose one
     await fileDownloader.downloadFile(
-        vscode.Uri.parse("http://openindus.com/oi-content/firmware/"),
+        vscode.Uri.parse(sourceAddress),
         "fileListAsHtml",
         context,
         undefined,
@@ -92,18 +92,21 @@ export async function createProject(context: vscode.ExtensionContext) {
     if (downloadedFile !== undefined) {
         fs.readFileSync(downloadedFile.fsPath, 'utf8').split(/href="oi-firmware-/).forEach(function(line) {
             if (line[0] !== "<") {
-                console.log(line.substring(0, 5));
-                firmwareVersions.unshift({label: line.substring(0, 5)});
+                firmwareVersions.unshift({label: line.split('.zip')[0]});
             }
         });
+
+        if (firmwareVersions.length === 0) {
+            vscode.window.showErrorMessage("Cannot retrieve firmware version, please check your internet connection !");
+            return;
+        }
 
         firmwareVersions[0].description = "latest";
 
         await fileDownloader.deleteItem("fileListAsHtml", context);
     }
-    else
-    {
-        vscode.window.showErrorMessage("Cannot retrieve firmware version, please check your internet connection");
+    else {
+        vscode.window.showErrorMessage("Cannot retrieve firmware version, please check your internet connection !");
         // TODO: check local files instead how returning an error
         return;
     }
@@ -122,18 +125,35 @@ export async function createProject(context: vscode.ExtensionContext) {
         cancellable: true
     }, async (progress, cancellationToken) => {
 
+        let counter = 0;
+
         const progressCallback = (downloadedBytes: number, totalBytes: number | undefined) => {
             // This is not working rigth now, check back later if API has improved
-            // progress.report({ increment: 0, message: `Downloaded ${downloadedBytes}` });
+            if (counter === 0) {
+                progress.report({ message: `Downloading.` });
+            }
+            if (counter === 1) {
+                progress.report({ message: `Downloading..` });
+            }
+            if (counter === 2) {
+                progress.report({ message: `Downloading...` });
+            }
+            counter++;
+            if (counter === 3) {
+                counter = 0;
+            }
         };
 
         if (state.version === undefined) { return; }
 
         const firmware = await fileDownloader.tryGetItem("oi-firmware-" + state.version.label, context);
-        if (firmware === undefined)
-        {
+        
+        if (firmware === undefined) {
+
+            vscode.window.showErrorMessage("Please wait while your application is downloading, it can takes several minutes...");
+
             state.firmwareDirectory = await fileDownloader.downloadFile(
-                vscode.Uri.parse("http://openindus.com/oi-content/firmware/oi-firmware-" + state.version.label + ".zip"),
+                vscode.Uri.parse(sourceAddress + "oi-firmware-" + state.version.label + ".zip"),
                 "oi-firmware-" + state.version.label,
                 context,
                 cancellationToken,
@@ -141,10 +161,21 @@ export async function createProject(context: vscode.ExtensionContext) {
                 { shouldUnzip: true }
             );
         }
-        else
-        {
+        else {
             state.firmwareDirectory = firmware;
         }
+
+        state.firmwareDirectory.path;
+
+        if (state.board === undefined) { return; }
+
+        // Replace default_envs by the user selection
+        var data  = fs.readFileSync(state.firmwareDirectory.fsPath + '/platformio.ini', 'utf8');
+        console.log("default_envs = " + state.board.label.toLowerCase().substring(2));
+        console.log(data);
+		data = data.replace("default_envs = core", "default_envs = " + state.board.label.toLowerCase().substring(2));
+        console.log(data);
+		fs.writeFileSync(state.firmwareDirectory.fsPath +  '/platformio.ini', data, 'utf8');
 
         await vscode.workspace.fs.copy(state.firmwareDirectory, vscode.Uri.file(state.path + '/' + state.name + '/'));
         await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name));
