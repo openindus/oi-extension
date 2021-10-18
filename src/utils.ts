@@ -12,5 +12,7 @@ export const deviceTypeList: string[] =
     'OIRelayHP'
 ];
 
-export const sourceAddress = "http://openindus.com/oi-content/src/";
+export const sourceAddress = "https://github.com/openindus/oi-firmware/archive/refs/tags/";
+export const sourceRefAddress = "https://github.com/openindus/oi-firmware/tags/";
 export const binAddress = "http://openindus.com/oi-content/bin/";
+export const pioProjects = require('os').homedir() + '/Documents/PlatformIO/Projects';
