@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.0.5]
+
+- give to the user the choice of different firmware version
+- add a list of available binaries to flash
+- ask if default location want to be used for new projects
+
 ## [0.0.4]
 
 - update "start a project" command
