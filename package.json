@@ -2,7 +2,7 @@
     "name": "oi-extension",
     "displayName": "OpenIndus",
     "description": "Programming environment for OpenIndus Devices",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "publisher": "OpenIndus",
     "repository": {
         "type": "git",
