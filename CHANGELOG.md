@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.0.5]
+## [0.0.6]
 
 - give to the user the choice of different firmware version
 - add a list of available binaries to flash
