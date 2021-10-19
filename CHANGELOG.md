@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.0.8]
+
+- get local version of firmware
+
 ## [0.0.7]
 
 - get github version of firmware
