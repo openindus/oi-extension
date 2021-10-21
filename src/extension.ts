@@ -3,7 +3,7 @@ import { OIAccessTreeProvider } from './customTreeView';
 import { createProject } from './createProject';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
 import { getDeviceId } from './getDeviceId';
-import { updateDeviceId } from './updateDeviceId';
+import { setDeviceId } from './setDeviceId';
 
 const pioNodeHelpers = require('platformio-node-helpers');
 
@@ -19,8 +19,8 @@ export function activate(context: vscode.ExtensionContext) {
 		await getDeviceId(context);
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand('openindus.updateDeviceId', async () => {
-		await updateDeviceId(context);
+	context.subscriptions.push(vscode.commands.registerCommand('openindus.setDeviceId', async () => {
+		await setDeviceId(context);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('openindus.flashDeviceFirmware', async () => {

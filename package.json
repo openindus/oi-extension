@@ -30,8 +30,8 @@
                 "title": "Get Device ID"
             },
             {
-                "command": "openindus.updateDeviceId",
-                "title": "Update Device ID"
+                "command": "openindus.setDeviceId",
+                "title": "Set Device ID"
             },
             {
                 "command": "openindus.flashDeviceFirmware",

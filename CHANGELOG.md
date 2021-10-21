@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.0.9]
+
+- Id can now be set to "0"
+
 ## [0.0.8]
 
 - get local version of firmware
