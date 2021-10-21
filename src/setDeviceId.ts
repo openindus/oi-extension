@@ -4,7 +4,7 @@ import { getPortList } from './getPortList';
 
 const pioNodeHelpers = require('platformio-node-helpers');
 
-export async function updateDeviceId(context: vscode.ExtensionContext) {
+export async function setDeviceId(context: vscode.ExtensionContext) {
 
     // Retrieve available devices with getConnectedBoards.py
     let portList = await getPortList(context);
@@ -29,7 +29,7 @@ export async function updateDeviceId(context: vscode.ExtensionContext) {
         valueSelection: [1, 254],
         placeHolder: 'Enter the ID',
         validateInput: id => {
-            return (parseInt(id) > 0 && parseInt(id) < 255) ? null : "ID is not valid !";
+            return (parseInt(id) >= 0 && parseInt(id) < 255) ? null : "ID is not valid !";
         }
     });
 
