@@ -1,8 +1,21 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import { PythonShell } from 'python-shell';
 import * as path from 'path';
 import { deviceTypeList, pioProjects, sourceAddress } from './utils';
 import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
+
+import * as cp from "child_process";
+
+const execShell = (cmd: string, path: string) =>
+    new Promise<string>((resolve, reject) => {
+        cp.exec(cmd, {cwd: path}, (err, out) => {
+            if (err) {
+                return reject(err);
+            }
+            return resolve(out);
+        });
+    });
 
 export async function createProject(context: vscode.ExtensionContext) {
     
@@ -34,7 +47,8 @@ export async function createProject(context: vscode.ExtensionContext) {
     // First STEP: select board
     state.board = await vscode.window.showQuickPick(boardsNames, {
         title: "Create a Project",
-        placeHolder: "Select the name of the board you will program on"
+        placeHolder: "Select the name of the board you will program on",
+        ignoreFocusOut: true,
     });
 
     if (state.board === undefined) { return; }
@@ -42,7 +56,8 @@ export async function createProject(context: vscode.ExtensionContext) {
     // Second STEP: select folder
     const customPath = await vscode.window.showQuickPick(yesNoQuickPick, {
         title: "Create a Project",
-        placeHolder: "Do you want to use default location ?"
+        placeHolder: "Do you want to use default location ?",
+        ignoreFocusOut: true,
     });
 
     if (customPath?.label === "no") {
@@ -64,7 +79,9 @@ export async function createProject(context: vscode.ExtensionContext) {
     // Third STEP: select project name
     state.name = await vscode.window.showInputBox({
         title: "Create a Project",
+        value: "my_project",
         prompt: 'Enter a name for your project',
+        ignoreFocusOut: true,
         validateInput: (text: string): string | undefined => {
             if (fs.existsSync(state.path + '/' + text) && text !== "") { // Check is folder already exists
                 return "Folder already exits";
@@ -78,95 +95,46 @@ export async function createProject(context: vscode.ExtensionContext) {
     
     if (state.name === undefined) { return; }
 
-    // Fourth STEP:  Get list of versions available by checking the html page and choose one
-    const fileListAsHtml = await fileDownloader.downloadFile(
-        vscode.Uri.parse(sourceAddress),
-        "fileListAsHtml",
-        context,
-        undefined,
-        undefined
-    );
+    // Fourth STEP: create th eproject directory and copy item
+    
+    // Create directory
+    await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/src'));
+    await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/lib'));
 
-    if (fileListAsHtml !== undefined) {
+    await execShell("pio pkg install --library \"openindus/OpenIndus@^0.0.4\"  --storage-dir ./lib", state.path + '/' + state.name);
 
-        fs.readFileSync(fileListAsHtml.fsPath, 'utf8').match(/\d+.\d+.\d+.zip</g)?.forEach(function(line) {
-            firmwareVersions.unshift({label: line.split('.zip<')[0]});
-        });
+    // let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/getDeviceId.py';
+    // let pyshell = new PythonShell(myPythonScriptPath, { mode: "json", pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe', args: [comSelected]});
+    // let idReturn = -1;
 
-        if (firmwareVersions.length === 0) {
-            vscode.window.showErrorMessage("Cannot retrieve firmware version, please check your internet connection !");
-            return;
-        }
+    // pyshell.on('message', function (message) {
+    //     idReturn = parseInt(message.id);
+    // });
 
-        firmwareVersions[0].description = "latest";
+    // const { successGetId } = await new Promise( resolve => {
+    //     pyshell.end(function (err: any, code: any) {
+    //         if (code === 0) {
+    //             resolve({ successGetId: true });
+    //         } else {
+    //             resolve({ successGetId: false });
+    //         }
+    //     });
+    // });
 
-        await fileDownloader.deleteItem("fileListAsHtml", context);
-    }
-    else {
-        vscode.window.showErrorMessage("Cannot retrieve firmware version, please check your internet connection !");
-        // TODO: check local files instead how returning an error
-        return;
-    }
+    // // Prompt a success message or an error message
+    // if (successGetId === true && idReturn >= 0 && idReturn <= 255) {
+    //     vscode.window.showInformationMessage(`${comSelected}` + " ID is " + `${idReturn}`);
+    // } else {
+    //     vscode.window.showErrorMessage("Unexpected error while getting ID");
+    // }
 
-    state.version = await vscode.window.showQuickPick(firmwareVersions, {
-        title: "Create a Project",
-        placeHolder: "Select the version of the firmware (we highly recommend to use the latest version)",
-    });
-
-    if (state.version === undefined) { return; }
-
-    // Last STEP: Create the application
-    vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: `Creating Application '${state.name}' for ${state.board.label}`,
-        cancellable: true
-    }, async (progress, cancellationToken) => {
-
-        let counter = 0;
-
-        const progressCallback = () => {
-            // This is not working rigth now, check back later if API has improved
-            if (counter === 0) {
-                progress.report({ message: `Downloading.` });
-            }
-            if (counter === 1) {
-                progress.report({ message: `Downloading..` });
-            }
-            if (counter === 2) {
-                progress.report({ message: `Downloading...` });
-            }
-            counter++;
-            if (counter === 3) {
-                counter = 0;
-            }
-        };
-
-        if (state.version === undefined) { return; }
-
-        state.firmware = await fileDownloader.tryGetItem("oi-firmware-" + state.version.label, context);
-
-        if (state.firmware === undefined) {
-            vscode.window.showInformationMessage("Please wait while your application is downloading, it can takes several minutes...");
-            state.firmware = await fileDownloader.downloadFile(
-                vscode.Uri.parse(sourceAddress + "oi-firmware-" + state.version.label + ".zip"),
-                "oi-firmware-" + state.version.label,
-                context,
-                cancellationToken,
-                progressCallback,
-                { shouldUnzip: true }
-            );
-        }
-
-        if (state.board === undefined) { return; }
-
-        // Replace default_envs by the user selection
-        var data  = fs.readFileSync(state.firmware.fsPath + '/platformio.ini', 'utf8');
-		data = data.replace("default_envs = core", "default_envs = " + state.board.label.toLowerCase().substring(2));
-		fs.writeFileSync(state.firmware.fsPath +  '/platformio.ini', data, 'utf8');
-
-        // Copy source
-        await vscode.workspace.fs.copy(state.firmware, vscode.Uri.file(state.path + '/' + state.name + '/'));
-        // Open workspace
-        await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name));
-    });
+    // platformio.ini
+    await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/platformio.ini')), vscode.Uri.file(state.path + '/' + state.name + '/platformio.ini'));
+    // CMakeLists.txt
+    await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/CMakeLists.txt')), vscode.Uri.file(state.path + '/' + state.name + '/CMakeLists.txt'));
+    // sdkconfig.defaults
+    await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/sdkconfig.defaults')), vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'));
+    
+    // Open folfer
+    await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name));
 }

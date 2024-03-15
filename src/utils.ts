@@ -3,11 +3,13 @@
 export const deviceTypeList: string[] = 
 [
     'OICore',
+    'OICoreLite',
     'OIDiscrete',
     'OIDiscreteVE',
     'OIStepper',
     'OIStepperVE',
     'OIMixed',
+    'OIAnalogLS',
     'OIRelayLP',
     'OIRelayHP'
 ];
