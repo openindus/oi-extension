@@ -5,13 +5,13 @@ export const deviceTypeList: string[] =
     'OICore',
     'OICoreLite',
     'OIDiscrete',
-    'OIDiscreteVE',
+    'OIDiscrete_VE',
     'OIStepper',
-    'OIStepperVE',
+    'OIStepper_VE',
     'OIMixed',
-    'OIAnalogLS',
-    'OIRelayLP',
-    'OIRelayHP'
+    'OIAnalog_LS',
+    'OIRelay_LP',
+    'OIRelay_HP'
 ];
 
 export const sourceAddress = "http://openindus.com/oi-content/src/";
