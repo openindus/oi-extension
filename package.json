@@ -26,8 +26,8 @@
                 "title": "Create a Project Application"
             },
             {
-                "command": "openindus.getDeviceId",
-                "title": "Get Device ID"
+                "command": "openindus.getDeviceInfo",
+                "title": "Get Device Info"
             },
             {
                 "command": "openindus.setDeviceId",

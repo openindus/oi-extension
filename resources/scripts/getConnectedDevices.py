@@ -1,58 +1,32 @@
 import json
-import serial
+from OISerial import OISerial
 import serial.tools.list_ports
 
 result = {
   "devices": []
 }
 
-serialPort = serial.Serial(baudrate=115200, timeout=0.1)
-serialPort.dtr = False
-serialPort.rts = False
+target_vid = '10C4'
+
 
 l = list(serial.tools.list_ports.comports())
 
 # iterate through all available ports
 for port in l:
-    
+
     # check if it is a silicon labs
-    if (port.description[:38] == "Silicon Labs CP210x USB to UART Bridge"):
+    if port.vid == int(target_vid, 16):
 
-        # try to open the port
-        try:
-            # open port
-            serialPort.port = port.device
-            serialPort.open()
-
-            # try to et the device type
-            try:
-
-                #flush I/O
-                serialPort.flushInput()
-                serialPort.flushOutput()
-                
-                # set log level
-                serialPort.write(b"log-level 0\r\n")
-                serialPort.readline()
-                serialPort.readline()
-
-                # get type
-                serialPort.write(b"cmd 190\r\n") # CMD_GET_TYPE
-                serialPort.readline()
-                data = serialPort.readline()
-                serialPort.readline()
-                data = str(data, 'utf-8')
-
-                # get name of board from type
-                result["devices"].append({"port": port.device, "type": data[:-2]})
-
-            except:
-                result["devices"].append({"port": port.device, "type": "undefined"})
-            
-            serialPort.close()
-
-        except:
-            None
+        # open port
+        com = OISerial(port.device)
+        
+        if (com.connect()):
+            data = com.getInfo()
+            result["devices"].append({"port": port.device, "type": data["type"], "serialNum": data["serialNum"], "versionHw": data["versionHw"], "versionFw": data["versionFw"]})
+            com.disconnect()
+        else:
+            result["devices"].append({"port": port.device, "type": "undefined", "serial_num": "undefined", "version_hw": "undefined", "version_fw": "undefined"})
+       
 
 print(json.dumps(result))
 

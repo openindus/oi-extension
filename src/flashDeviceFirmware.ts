@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { PythonShell } from 'python-shell';
 import { deviceTypeList, binAddress } from './utils';
-import { getPortList } from './getPortList';
+import { getDeviceInfoList } from './getDeviceInfoList';
 import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
 
 const pioNodeHelpers = require('platformio-node-helpers');
@@ -10,7 +10,7 @@ const pioNodeHelpers = require('platformio-node-helpers');
 export async function flashDeviceFirmware(context: vscode.ExtensionContext) {
 
     // Retrieve available devices with getConnectedBoards.py
-    const portList = await getPortList(context);
+    const portList = await getDeviceInfoList(context);
 	const fileDownloader: FileDownloader = await getApi();
 
     if (portList === undefined || portList.length === 0) {
