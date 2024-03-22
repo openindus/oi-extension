@@ -4,6 +4,7 @@ import { getDeviceInfoList } from './getDeviceInfoList';
 import { getSlaveDeviceInfoList } from './getSlaveDeviceInfoList';
 import { ModuleInfo, caseImg } from './utils';
 import Module from 'module';
+import { createProject } from './createProject';
 
 const pioNodeHelpers = require('platformio-node-helpers');
 
@@ -89,6 +90,20 @@ export async function getDeviceInfo(context: vscode.ExtensionContext, portName?:
      const htmlResources = panel.webview.asWebviewUri(onDiskPath);
 
     panel.webview.html = getWebviewContent(htmlResources, moduleInfo, moduleInfoList);
+
+    // Handle messages from the webview
+    panel.webview.onDidReceiveMessage(
+        message => {
+            switch (message.command) {
+                case 'create-project':
+                    console.log("create project clicked !");
+                    createProject(context, moduleInfo, moduleInfoList);
+                    return;
+            }
+        },
+        undefined,
+        context.subscriptions
+    );
 }
 
 
@@ -127,7 +142,6 @@ function getWebviewContent(htmlResources: vscode.Uri, master: ModuleInfo, slaves
         <title>Cat Coding</title>
         <style>
 body {
-    background-color: #1F1F1F;
     color: #1F1F1F;
     font-family: sans-serif;
     font-size: medium;
@@ -137,13 +151,13 @@ body {
 h1 {
     text-align: left;
     padding: auto;
-    color: #FFF;
+    color: var(--vscode-editor-foreground);
 }
 
 h2 {
     text-align: left;
     padding: auto;
-    color: #FFF;
+    color: var(--vscode-editor-foreground);
 }
 
 h2 {
@@ -223,8 +237,8 @@ canvas {
     
     if (slaves !== undefined) {
         htmlDoc += `
-                    <a href="https://www.example.com"><button>Create project from current configuration</button></a>
-                    <a href="https://www.example.com"><button>Update all modules firmware connected on bus</button></a>`;
+                    <button onclick="createProject()">Create project from current configuration</button>
+                    <button id="update-all">Update all modules firmware connected on bus</button>`;
     }
 
     htmlDoc += `
@@ -263,6 +277,7 @@ canvas {
         </div>
 
         <script type="text/javascript">
+            const vscode = acquireVsCodeApi();
             var canvas = document.getElementById("tree-canvas");
             var slave1 = document.getElementsByClassName("slave")[0];
             var ctx = canvas.getContext("2d");
@@ -279,6 +294,12 @@ canvas {
             ctx.strokeStyle = '#F0F0F0';
             ctx.lineWidth = 5;
             ctx.stroke();
+            function createProject() {
+                vscode.postMessage({
+                    command: 'create-project',
+                    text: ''
+                })
+            }
         </script>
     </body>
     </html>`;

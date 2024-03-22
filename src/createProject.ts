@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { deviceTypeList, pioProjects } from './utils';
+import { ModuleInfo, deviceTypeList, pioProjects } from './utils';
 import * as cp from "child_process";
 
 const execShell = (cmd: string, path: string) =>
@@ -13,7 +13,7 @@ const execShell = (cmd: string, path: string) =>
         });
     });
 
-export async function createProject(context: vscode.ExtensionContext) {
+export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
     
     const boardsNames: vscode.QuickPickItem[] = deviceTypeList.map(label => ({ label }));
     const modeNames: vscode.QuickPickItem[] = [ {label: 'Master', detail:'Choose "master" if the module you are programming on is used to control other modules'},
@@ -118,6 +118,9 @@ export async function createProject(context: vscode.ExtensionContext) {
     // Create src directory and copy main.cpp
     await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/src'));
     await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/main.cpp')), vscode.Uri.file(state.path + '/' + state.name + '/src/main.cpp'));
+    if (master) {
+        // TODO add master
+    }
     // Create lib directory
     await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/lib/' + envName));
     // Copy sdkconfig.defaults
