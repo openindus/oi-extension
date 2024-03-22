@@ -14,7 +14,7 @@ export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, t
 
 	pyshell.on('message', function (message) {
 		console.log(message);
-		message.devices.forEach((element: { port: string; type: string; serialNum: string, versionHw: string, versionSw: string}) => {
+		message.forEach((element: { port: string; type: string; serialNum: string, versionHw: string, versionSw: string}) => {
 			moduleInfoList.push({
 				port: element.port,
 				type: element.type,
@@ -40,7 +40,7 @@ export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, t
 			}
 		});
 	});
-	console.log("ffzefg");
+
 	if (success === false) {
 		return undefined;
 	} else {

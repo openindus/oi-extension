@@ -4,10 +4,7 @@ import json
 import sys
 from OISerial import OISerial
 
-result = {
-  "devices": []
-}
-
+data = [];
 
 # open port
 # print(sys.argv[1])
@@ -15,9 +12,8 @@ com = OISerial(sys.argv[1])
 
 if (com.connect()):
     data = com.getSlaves()
-    result["devices"] = data
     com.disconnect()
 
-print(json.dumps(result))
+print(json.dumps(data))
 
 exit(0)

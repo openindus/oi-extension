@@ -6,7 +6,7 @@ from datetime import datetime
 class OISerial(Serial):
 
     def __init__(self, port):
-        super().__init__(baudrate=115200, timeout=0.1)
+        super().__init__(baudrate=115200, timeout=1)
         self.dtr = False
         self.rts = True
         self.connected = False
@@ -88,9 +88,10 @@ class OISerial(Serial):
             return False
 
 
-    def sendMsgWithReturn(self, args, try_number) -> bool:
-
-        # print(f"Sending message: {args}")
+    def sendMsgWithReturn(self, args, try_number, debug=False) -> bool:
+        
+        if debug:
+            print(f"Sending message: {args}")
         self.last_response = ""
         start_time = datetime.now()
 
@@ -105,6 +106,8 @@ class OISerial(Serial):
 
                 # det the empty/useless line
                 self.last_response = self.readline()
+                if debug:
+                    print(self.last_response)
                 # Looking for echo (what was written in the console)
                 # timeout if no echo
                 while(not args in self.last_response):
@@ -114,8 +117,12 @@ class OISerial(Serial):
 
                 # now we can read response
                 self.last_response = self.readline()
+                if debug:
+                    print(self.last_response)
                 while(b'\x1b' in self.last_response):
                     self.last_response = self.readline()
+                    if debug:
+                        print(self.last_response)
                     if (datetime.now()-start_time).seconds > 1:
                         return self.sendMsgWithReturn(args, try_number+1)
 
@@ -138,13 +145,13 @@ class OISerial(Serial):
 
         deviceInfo = {"type": "undefined", "serialNum": "undefined", "versionHw": "undefined", "versionFw": "undefined"}
 
-        if (self.sendMsgWithReturn(b'get-board-info --type', 0)):
+        if (self.sendMsgWithReturn(b'get-board-info -t', 0)):
             deviceInfo["type"] = self.last_response.decode()
-        if (self.sendMsgWithReturn(b'get-board-info --serial-num', 0)):
+        if (self.sendMsgWithReturn(b'get-board-info -n', 0)):
             deviceInfo["serialNum"] = self.last_response.decode()
-        if (self.sendMsgWithReturn(b'get-board-info --version-hw', 0)):
+        if (self.sendMsgWithReturn(b'get-board-info -h', 0)):
             deviceInfo["versionHw"] = self.last_response.decode()
-        if (self.sendMsgWithReturn(b'get-board-info --version-sw', 0)):
+        if (self.sendMsgWithReturn(b'get-board-info -s', 0)):
             deviceInfo["versionFw"] = self.last_response.decode()
 
         return deviceInfo
@@ -153,21 +160,21 @@ class OISerial(Serial):
         slaveInfo = []
         slaveSNList = []
 
-        return [{"port": "undefined", "type": "OIDiscrete", "serialNum": "0000008", "versionHw": "AD01", "versionFw": "1.0.1"}, {"port": "undefined", "type": "OIStepper", "serialNum": "0000010", "versionHw": "AD02", "versionFw": "1.0.0"}]
+        # return [{"port": "undefined", "type": "OIDiscrete", "serialNum": "0000008", "versionHw": "AD01", "versionSw": "1.0.1"}, {"port": "undefined", "type": "OIStepper", "serialNum": "0000010", "versionHw": "AD02", "versionSw": "1.0.0"}]
 
-        if (self.sendMsgWithReturn(b'get-slave-list', 0)):
-            slaveSNList = self.last_response.decode().split()
-        slaveSNList.append("vvvsdf")
+        if (self.sendMsgWithReturn(b'discover-slaves', 0)):
+            slaveSNList = json.loads(self.last_response.decode())
+
         for slaveSn in slaveSNList:
-            deviceInfo = {"port": "undefined", "type": "undefined", "serialNum": "undefined", "versionHw": "undefined", "versionFw": "undefined"}
-            if (self.sendMsgWithReturn(b'get-slave-info ' + slaveSn.encode() + b' --type', 0)):
+            deviceInfo = {"port": "undefined", "type": "undefined", "serialNum": "undefined", "versionHw": "undefined", "versionSw": "undefined"}
+            if (self.sendMsgWithReturn(b'get-slave-info ' + str(slaveSn["sn"]).encode() + b' -t', 0)):
                 deviceInfo["type"] = self.last_response.decode()
-            if (self.sendMsgWithReturn(b'get-slave-info ' + slaveSn.encode() + b' --serial-num', 0)):
+            if (self.sendMsgWithReturn(b'get-slave-info ' + str(slaveSn["sn"]).encode() + b' -n', 0)):
                 deviceInfo["serialNum"] = self.last_response.decode()
-            if (self.sendMsgWithReturn(b'get-slave-info ' + slaveSn.encode() + b' --version-hw', 0)):
+            if (self.sendMsgWithReturn(b'get-slave-info ' + str(slaveSn["sn"]).encode() + b' -h', 0)):
                 deviceInfo["versionHw"] = self.last_response.decode()
-            if (self.sendMsgWithReturn(b'get-slave-info ' + slaveSn.encode() + b' --version-sw', 0)):
-                deviceInfo["versionFw"] = self.last_response.decode()
+            if (self.sendMsgWithReturn(b'get-slave-info ' + str(slaveSn["sn"]).encode() + b' -s', 0)):
+                deviceInfo["versionSw"] = self.last_response.decode()
             slaveInfo.append(deviceInfo)
 
         return slaveInfo

@@ -105,16 +105,18 @@ function getWebviewContent(htmlResources: vscode.Uri, master: ModuleInfo, slaves
     });
 
     // Find img and case of slave module
-    slaves.forEach((slave: ModuleInfo) => {
-        slave.imgName = caseImg[0].imgName; // add default img
-        slave.caseName = caseImg[0].caseName; // add default case
-        caseImg.forEach((element: { moduleName: string; imgName: string; caseName: string }) => {
-            if (element.moduleName === slave.type) {
-                slave.imgName = element.imgName; // set good img
-                slave.caseName = element.caseName; // set good case
-            }
+    if (slaves !== undefined) {
+        slaves.forEach((slave: ModuleInfo) => {
+            slave.imgName = caseImg[0].imgName; // add default img
+            slave.caseName = caseImg[0].caseName; // add default case
+            caseImg.forEach((element: { moduleName: string; imgName: string; caseName: string }) => {
+                if (element.moduleName === slave.type) {
+                    slave.imgName = element.imgName; // set good img
+                    slave.caseName = element.caseName; // set good case
+                }
+            });
         });
-    });
+    }
     
     
     let htmlDoc = `<!DOCTYPE html>
@@ -217,14 +219,20 @@ canvas {
                         <b>Hardware Version:</b> ${master.versionHw}<br>
                         <b>Software version:</b> v${master.versionSw}
                     </p>
-                    <a href="https://www.example.com"><button>Update firmware</button></a>
+                    <a href="https://www.example.com"><button>Update firmware</button></a>`;
+    
+    if (slaves !== undefined) {
+        htmlDoc += `
                     <a href="https://www.example.com"><button>Create project from current configuration</button></a>
-                    <a href="https://www.example.com"><button>Update all modules firmware connected on bus</button></a>
+                    <a href="https://www.example.com"><button>Update all modules firmware connected on bus</button></a>`;
+    }
+
+    htmlDoc += `
                 </div>
             </div>
         </div>`;
         
-    if (slaves.length > 0) {   
+    if (slaves?.length > 0) {   
         htmlDoc += `
         <div class="slave-container">
             <div id="div-canvas">
