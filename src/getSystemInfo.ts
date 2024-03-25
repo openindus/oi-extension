@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ModuleInfo, caseImg, getSlaveDeviceInfoList, pickDevice } from './utils';
 import { createProject } from './createProject';
+import { flashDeviceFirmware } from './flashDeviceFirmware';
 
 export async function getSystemInfo(context: vscode.ExtensionContext, portName?: string) {
 
@@ -16,7 +17,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
     if (moduleInfo.type !== undefined) { // If type is undefined, we have no chance to get slave devices
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: "Retrieving modules informations",
+            title: "Retrieving saves modules informations",
             cancellable: true
         }, async (progress, token) => {
             if (moduleInfo !== undefined) {
@@ -49,6 +50,21 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
                 case 'create-project':
                     console.log("create project clicked !");
                     createProject(context, moduleInfo, slaveInfoList);
+                    return;
+                case 'flash-device':
+                    console.log("flash device clicked !");
+                    flashDeviceFirmware(context, undefined, moduleInfo);
+                    return;
+                case 'refresh':
+                    console.log("refresh clicked !");
+                    panel.dispose();
+                    getSystemInfo(context, moduleInfo?.port);
+                    return;
+                case 'flash-all-slaves':
+                    console.log("flash all slaves clicked !");
+                    return;
+                case 'flash-slave':
+                    console.log("flash slave: " + message.text + " clicked !");
                     return;
             }
         },
@@ -168,7 +184,7 @@ canvas {
         <h1 id="test">System configuration</h1>
         <div class="button-container">
             <h2>Quick actions: </h2>
-            <a href="https://www.example.com"><button>Refresh</button></a>
+            <button onClick="refresh()">Refresh</button>
             <a href="https://openindus.com/oi-content/doc/index.html"><button>Online Help</button></a>
         </div>
         <div style="border:1px solid #F5F5F5; margin: 15px;"></div>
@@ -184,12 +200,12 @@ canvas {
                         <b>Hardware Version:</b> ${master.versionHw}<br>
                         <b>Software version:</b> v${master.versionSw}
                     </p>
-                    <a href="https://www.example.com"><button>Update firmware</button></a>`;
+                    <button onClick="flashDevice()">Update firmware</button>`;
     
     if (slaves !== undefined) {
         htmlDoc += `
                     <button onclick="createProject()">Create project from current configuration</button>
-                    <button id="update-all">Update all modules firmware connected on bus</button>`;
+                    <button onClick="flashAllSlaves()">Update all modules firmware connected on bus</button>`;
     }
 
     htmlDoc += `
@@ -205,6 +221,7 @@ canvas {
             </div>
             <div class="slaves">`;
 
+        let id = 0;
         slaves.forEach((slave: ModuleInfo) => {
             htmlDoc += 
                 `<div class="flex-container slave">
@@ -218,9 +235,10 @@ canvas {
                             <b>Hardware Version:</b> ${slave.versionHw}<br>
                             <b>Software version:</b> v${slave.versionSw}
                         </p>
-                        <a href="https://www.example.com"><button>Update firmware</button></a>
+                        <button onClick="flashSlave(` + id + `)">Update firmware</button>
                     </div>
                 </div>`;
+                id++;
         });
     } 
         htmlDoc += `
@@ -245,12 +263,43 @@ canvas {
             ctx.strokeStyle = '#F0F0F0';
             ctx.lineWidth = 5;
             ctx.stroke();
+            
+            
+            function refresh() {
+                vscode.postMessage({
+                    command: 'refresh',
+                    text: ''
+                })
+            }
+
             function createProject() {
                 vscode.postMessage({
                     command: 'create-project',
                     text: ''
                 })
             }
+
+            function flashDevice() {
+                vscode.postMessage({
+                    command: 'flash-device',
+                    text: ''
+                })
+            }
+            
+            function flashAllSlaves() {
+                vscode.postMessage({
+                    command: 'flash-all-slaves',
+                    text: ''
+                })
+            }
+
+            function flashSlave(id) {
+                vscode.postMessage({
+                    command: 'flash-slave',
+                    text: String(id)
+                })
+            }
+
         </script>
     </body>
     </html>`;

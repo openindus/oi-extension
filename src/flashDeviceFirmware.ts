@@ -1,14 +1,22 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { deviceTypeList, formatStringOI, getFormatedDeviceList, binAddress, pickDevice } from './utils';
+import { deviceTypeList, formatStringOI, getFormatedDeviceList, binAddress, pickDevice, ModuleInfo } from './utils';
 import * as fs from 'fs';
 const pioNodeHelpers = require('platformio-node-helpers');
 
-export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string) {
+export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string, inputModuleInfo?: ModuleInfo) {
 
-    // Choose the device
-    let moduleInfo = await pickDevice(context, portName);
+    let moduleInfo: ModuleInfo | undefined = undefined;
     let deviceType: string = "";
+
+    // if device type and port are given; do not check again
+    if (inputModuleInfo === undefined) {
+        // Choose the device
+        moduleInfo = await pickDevice(context, portName);
+        
+    } else {
+        moduleInfo = inputModuleInfo; // use given module info
+    }
 
     if (moduleInfo === undefined) { return; }
     if (moduleInfo.port === undefined) { return; }
@@ -19,7 +27,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     } else {
         // TODO: if device type could be read by console, check with espefuse.py --> if firmware is wrong, it could still detect the right device name
         // else ask the user
-        let deviceSelected = await vscode.window.showQuickPick(deviceTypeList, { placeHolder: 'Choose the device type' });
+        let deviceSelected = await vscode.window.showQuickPick(deviceTypeList, { placeHolder: 'Choose the device type', ignoreFocusOut: true});
         if (deviceSelected !== undefined) {
             deviceType = formatStringOI(deviceSelected);
         } else {
