@@ -1,159 +1,116 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import { PythonShell } from 'python-shell';
-import { deviceTypeList, binAddress } from './utils';
-import { getDeviceInfoList } from './getDeviceInfoList';
-import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
-
+import { deviceTypeList, formatStringOI, getFormatedDeviceList, binAddress, pickDevice } from './utils';
+import * as fs from 'fs';
 const pioNodeHelpers = require('platformio-node-helpers');
 
-export async function flashDeviceFirmware(context: vscode.ExtensionContext) {
+export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string) {
 
-    // Retrieve available devices with getConnectedBoards.py
-    const portList = await getDeviceInfoList(context);
-	const fileDownloader: FileDownloader = await getApi();
+    // Choose the device
+    let moduleInfo = await pickDevice(context, portName);
+    let deviceType: string = "";
 
-    if (portList === undefined || portList.length === 0) {
-        vscode.window.showWarningMessage("No device connected, please check connection between device and computer");
-        return;
-    }
+    if (moduleInfo === undefined) { return; }
+    if (moduleInfo.port === undefined) { return; }
 
-    let comSelected: string | undefined =  undefined;
-
-    if (portList.length > 1) {
-        comSelected = await vscode.window.showQuickPick(portList, { placeHolder: 'Select the device' });
-    } else if (portList.length = 1) {
-        comSelected = portList[0];
-    }
-    
-    if (comSelected === undefined) { return; }
-
-    // Let the user choose the ID
-    let deviceSelected = await vscode.window.showQuickPick(deviceTypeList, { placeHolder: 'Choose the device type' });
-
-    if (deviceSelected === undefined) { return; }
-
-    let binVersions: vscode.QuickPickItem[] = [];
-
-    
-    const fileListAsHtml = await fileDownloader.downloadFile(
-        vscode.Uri.parse(binAddress),
-        "fileListAsHtml",
-        context,
-        undefined,
-        undefined
-    );
-    
-    if (fileListAsHtml !== undefined) {
-        fs.readFileSync(fileListAsHtml.fsPath, 'utf8').match(/>oi-firmware-\d+.\d+.\d+/g)?.forEach(function(line) {
-            binVersions.unshift({label: line.substring(">oi-firmware-".length).split('/')[0]});
-        });
-
-        if (binVersions.length === 0) {
-            vscode.window.showErrorMessage("Cannot retrieve binaries version, please check your internet connection !");
+    // Check if device type is known
+    if (getFormatedDeviceList().includes(formatStringOI(moduleInfo.type))) {
+        deviceType = formatStringOI(moduleInfo.type);
+    } else {
+        // TODO: if device type could be read by console, check with espefuse.py --> if firmware is wrong, it could still detect the right device name
+        // else ask the user
+        let deviceSelected = await vscode.window.showQuickPick(deviceTypeList, { placeHolder: 'Choose the device type' });
+        if (deviceSelected !== undefined) {
+            deviceType = formatStringOI(deviceSelected);
+        } else {
             return;
         }
-
-        binVersions[0].description = "latest";
-
-        await fileDownloader.deleteItem("fileListAsHtml", context);
-    }
-    else {
-        vscode.window.showErrorMessage("Cannot retrieve binaries version, please check your internet connection !");
-        // TODO: check local files instead how returning an error
-        return;
     }
 
-    const version = await vscode.window.showQuickPick(binVersions, {
-        placeHolder: "Select the version (choose the same vesion you use for the main firmware)",
+    // Choose the version
+    // Get path to resource on disk
+    let onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'bin');
+    let firmwareVersionList = await vscode.workspace.fs.readDirectory(onDiskPath);
+    let binVersions: vscode.QuickPickItem[] = [];
+    firmwareVersionList.forEach((element) => {
+        if (element[1] === vscode.FileType.Directory) {
+            if (element[0].split('oi-firmware-')[1].length >= 5) { // 0.0.0 --> min lenbgth is 5
+                binVersions.unshift({label: element[0].split('oi-firmware-')[1]});
+            }
+        }
     });
 
-    if (version === undefined) { return; }
+    let version = await vscode.window.showQuickPick(binVersions, {
+        placeHolder: "Select the version (choose the same vesion you use for the main firmware)",
+        ignoreFocusOut: true,
+    });
+
+    // Set the bin path and check it
+    onDiskPath = vscode.Uri.joinPath(onDiskPath, 'oi-firmware-' + version?.label);
+    let bootloader = vscode.Uri.joinPath(onDiskPath, deviceType + '_bootloader-' + version?.label + '.bin');
+    let partitions = vscode.Uri.joinPath(onDiskPath, deviceType + '_partitions-' + version?.label + '.bin');
+    let otaDataInitial = vscode.Uri.joinPath(onDiskPath, deviceType + '_ota_data_initial-' + version?.label + '.bin');
+    let firmware = vscode.Uri.joinPath(onDiskPath, deviceType + '_firmware-' + version?.label + '.bin');
+
+    if (fs.existsSync(bootloader.fsPath) === false) { return; }
+    if (fs.existsSync(partitions.fsPath) === false) { return; }
+    if (fs.existsSync(otaDataInitial.fsPath) === false) { return; }
+    if (fs.existsSync(firmware.fsPath) === false) { return; }
+
     // Flash the Firmware with flashDeviceFirmware.py
-    let successFlash: Boolean = await vscode.window.withProgress({
+    let successFlash = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: "Flashing " + `${deviceSelected}` + " on " + `${comSelected}`,
+        title: "Flashing " + `OI${deviceType}` + " on " + `${moduleInfo.port}`,
         cancellable: true
     }, async (progress, cancellationToken) => {
-        const { successFlash } = await new Promise( async (resolve) => {
-            
-            const bootloader = await fileDownloader.downloadFile(
-                vscode.Uri.parse(binAddress + "oi-firmware-" + version.label + '/' + deviceSelected?.toLowerCase().substring(2) + '_bootloader-' + version.label + '.bin'),
-                deviceSelected?.toLowerCase().substring(2) + '_bootloader-' + version.label + '.bin',
-                context,
-                cancellationToken,
-                undefined
-            );
-
-            const firmware = await fileDownloader.downloadFile(
-                vscode.Uri.parse(binAddress + "oi-firmware-" + version.label + '/' + deviceSelected?.toLowerCase().substring(2) + '_firmware-' + version.label + '.bin'),
-                deviceSelected?.toLowerCase().substring(2) + '_firmware-' + version.label + '.bin',
-                context,
-                cancellationToken,
-                undefined
-            );
-
-            const otaDataInitial = await fileDownloader.downloadFile(
-                vscode.Uri.parse(binAddress + "oi-firmware-" + version.label + '/' + deviceSelected?.toLowerCase().substring(2) + '_ota_data_initial-' + version.label + '.bin'),
-                deviceSelected?.toLowerCase().substring(2) + '_ota_data_initial-' + version.label + '.bin',
-                context,
-                cancellationToken,
-                undefined
-            );
-
-            const partitions = await fileDownloader.downloadFile(
-                vscode.Uri.parse(binAddress + "oi-firmware-" + version.label + '/' + deviceSelected?.toLowerCase().substring(2) + '_partitions-' + version.label + '.bin'),
-                deviceSelected?.toLowerCase().substring(2) + '_partitions-' + version.label + '.bin',
-                context,
-                cancellationToken,
-                undefined
-            );
-
-            let esptype: string;
-
-            if (deviceSelected === 'OICore') {
-                esptype = "esp32";
-            } else {
-                esptype = "esp32s2";
-            }
+        let successFlash = await new Promise( async (resolve) => {
 
             let options = {
                 mode: "text" as "text",
                 pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe',
-                args: ['--chip', esptype,
-                        '--port', comSelected?.split(" ")[0],
+                args: ['--chip', 'esp32s3',
+                        '--port', moduleInfo.port,
                         '--baud', '921600',
                         'write_flash',
                         '-z',
-                        '0x1000', bootloader.fsPath,
+                        '0x0000', bootloader.fsPath,
                         '0x8000', partitions.fsPath,
                         '0xd000', otaDataInitial.fsPath, 
-                        '0x20000', firmware.fsPath
+                        '0x10000', firmware.fsPath
                 ] as string[]
             };
 
-            let myPythonScriptPath = pioNodeHelpers.core.getCoreDir() + '/packages/framework-espidf/components/esptool_py/esptool/esptool.py';
+            let myPythonScriptPath = pioNodeHelpers.core.getCoreDir() + '/packages/tool-esptoolpy/esptool.py';
             let pyshell = new PythonShell(myPythonScriptPath, options);
+            let lastIncrement = 0;
 
             pyshell.on('message', function (message) {
                 console.log(message);
+                if (message.includes('%') && (message.includes("100 %") === false)) { // do not increment for 100% on bootloader, ota and partition
+                    progress.report({increment: Number(message.split('(')[1].substring(0, 2)) - lastIncrement});
+                    lastIncrement = Number(message.split('(')[1].substring(0, 2));
+                }
+            });
+
+            cancellationToken.onCancellationRequested(() => {
+                pyshell.kill();
+                resolve(false);
             });
 
             pyshell.end(function (err: any, code: any) {
                 if (code === 0) {
-                    resolve({ successFlash: true });
+                    resolve(true);
                 } else {
-                    resolve({ successFlash: false });
+                    resolve(false);
                 }
             });
-
         });
         return successFlash;
     });
         
     // Prompt a success message or an error message
     if (successFlash === true) {
-        vscode.window.showInformationMessage("Device " + `${comSelected}` + " flashed successfuly");
+        vscode.window.showInformationMessage("Device " + `${moduleInfo.port}` + " flashed successfuly");
     } else {
         vscode.window.showErrorMessage("Unexpected error while flashing device !");
     }

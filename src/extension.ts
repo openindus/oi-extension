@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { OIAccessTreeProvider } from './customTreeView';
 import { createProject } from './createProject';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
-import { getDeviceInfo } from './getDeviceInfo';
+import { getSystemInfo } from './getSystemInfo';
 
 const pioNodeHelpers = require('platformio-node-helpers');
 
@@ -10,21 +10,16 @@ export function activate(context: vscode.ExtensionContext) {
 
 	vscode.window.registerTreeDataProvider('openindus-treeview', new OIAccessTreeProvider());
 
-	context.subscriptions.push(vscode.commands.registerCommand('openindus.createproject', async () => {
+	context.subscriptions.push(vscode.commands.registerCommand('openindus.createProject', async () => {
 		await createProject(context);
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand('openindus.getDeviceInfo', async () => {
-		await getDeviceInfo(context);
+	context.subscriptions.push(vscode.commands.registerCommand('openindus.getSystemInfo', async () => {
+		await getSystemInfo(context);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('openindus.flashDeviceFirmware', async () => {
 		await flashDeviceFirmware(context);
-	}));
-
-	context.subscriptions.push(vscode.commands.registerCommand('openindus.flashDeviceOnBus', async () => {
-		// Display an error message because it is not implemented yet
-		vscode.window.showErrorMessage("Sorry but this funtionnality is not implemented yet !");
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('openindus.openinduswebsite', () => {

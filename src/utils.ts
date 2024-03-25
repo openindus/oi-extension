@@ -1,4 +1,5 @@
-// Be careful when changing typo of this list, many side effect could occurs, don't touch this list if you don't know what you are doing
+import * as vscode from 'vscode';
+import { PythonShell } from 'python-shell';
 
 export const deviceTypeList: string[] = 
 [
@@ -13,6 +14,16 @@ export const deviceTypeList: string[] =
     'OIRelay_LP',
     'OIRelay_HP'
 ];
+
+export function formatStringOI(input: string): string {
+    return input.toLowerCase().replaceAll('oi', '').replaceAll('_', '').replaceAll('-', '');
+}
+
+export function getFormatedDeviceList(): string[] {
+    let formatedDeviceList: string[] = [];
+    deviceTypeList.forEach((element)=>{formatedDeviceList.push(formatStringOI(element));});
+    return formatedDeviceList;
+}
 
 export const caseImg = [
     {moduleName: "OICore", imgName: "core.png", caseName: "BOI23"},
@@ -40,3 +51,150 @@ export type ModuleInfo = {
 export const sourceAddress = "http://openindus.com/oi-content/src/";
 export const binAddress = "http://openindus.com/oi-content/bin/";
 export const pioProjects = require('os').homedir() + '/Documents/PlatformIO/Projects';
+const pioNodeHelpers = require('platformio-node-helpers');
+
+export async function getDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken): Promise<ModuleInfo[] | undefined> {
+
+	// Retrieve available devices with getConnectedBoards.py
+	let moduleInfoList: ModuleInfo[] = [];
+
+	let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/getConnectedDevices.py';
+	let pyshell = new PythonShell(myPythonScriptPath, { mode: 'json', pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe' });
+
+	pyshell.on('message', function (message) {
+		console.log("List of devices found:");
+        console.log(message);
+		message.devices.forEach((element: { port: string; type: string; serialNum: string, versionHw: string, versionSw: string}) => {
+			moduleInfoList.push({
+				port: element.port,
+				type: element.type,
+				serialNum: element.serialNum,
+				versionHw: element.versionHw,
+				versionSw: element.versionSw,
+				imgName: "",
+				caseName: ""
+			});
+		});
+	});
+
+	let success = await new Promise( resolve => {
+		token.onCancellationRequested(() => {
+			pyshell.kill();
+			resolve(false);
+		});
+		pyshell.end(function (err: any, code: any) {
+			if (code === 0) {
+				resolve(true);
+			} else {
+				resolve(false);
+			}
+		});
+	});
+
+	if (success === false) {
+		return undefined;
+	} else {
+		return moduleInfoList;
+	}
+}
+
+export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken, scanPort: string): Promise<ModuleInfo[] | undefined> {
+
+	// Retrieve available devices with getConnectedBoards.py
+	let moduleInfoList: ModuleInfo[] = [];
+
+	let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/getSlaveDevices.py';
+	let pyshell = new PythonShell(myPythonScriptPath, { mode: 'json', args: [scanPort, scanPort], pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe' });
+
+	pyshell.on('message', function (message) {
+        console.log("List of slaves devices found:");
+		console.log(message);
+		message.forEach((element: { port: string; type: string; serialNum: string, versionHw: string, versionSw: string}) => {
+			moduleInfoList.push({
+				port: element.port,
+				type: element.type,
+				serialNum: element.serialNum,
+				versionHw: element.versionHw,
+				versionSw: element.versionSw,
+				imgName: "",
+				caseName: ""
+			});
+		});
+	});
+
+	let success = await new Promise( resolve => {
+		token.onCancellationRequested(() => {
+			pyshell.kill();
+			resolve(false);
+		});
+		pyshell.end(function (err: any, code: any) {
+			if (code === 0) {
+				resolve(true);
+			} else {
+				resolve(false);
+			}
+		});
+	});
+
+	if (success === false) {
+		return undefined;
+	} else {
+		return moduleInfoList;
+	}
+}
+
+export async function pickDevice(context: vscode.ExtensionContext, portName?: string): Promise<ModuleInfo | undefined> {
+    
+    let moduleInfoList: ModuleInfo[] | undefined;
+
+    // Progress notification with option to cancel while getting device list
+    await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: "Retrieving modules informations",
+        cancellable: true
+    }, async (progress, token) => {
+        moduleInfoList = await getDeviceInfoList(context, token);
+    });
+
+
+    if (moduleInfoList === undefined) {
+        return;
+    }
+    if (moduleInfoList.length === 0) {
+        vscode.window.showWarningMessage("No device connected, please check connection between device and computer");
+        return;
+    }
+
+    // Fill a quick pick item list with info of all connected module
+    const deviceInfoQuickPickItem: vscode.QuickPickItem[] = [];
+    moduleInfoList.forEach((element: ModuleInfo) => {
+        deviceInfoQuickPickItem.push({description: '$(debug-stackframe-dot) ' + element.port, label: element.type, detail: 'S/N: ' + element.serialNum + ' $(debug-stackframe-dot) HW version: ' + element.versionHw + ' $(debug-stackframe-dot) SW version: ' + element.versionSw});
+    }); 
+
+    // Let the user choose his module (only if several modules are connected)
+    let deviceInfoSelected: vscode.QuickPickItem | undefined = undefined;
+
+    if (portName !== undefined) {
+        deviceInfoQuickPickItem.forEach((device: vscode.QuickPickItem) => {
+            if (device.description?.includes(portName)) {
+                deviceInfoSelected = device;
+            }
+        });
+    } 
+    else if (moduleInfoList.length > 1) {
+        deviceInfoSelected = await vscode.window.showQuickPick(deviceInfoQuickPickItem, { placeHolder: 'Select the master device', ignoreFocusOut: true });
+    } 
+    else if (moduleInfoList.length = 1) {
+        deviceInfoSelected = deviceInfoQuickPickItem[0];
+    }
+
+    if (deviceInfoSelected === undefined) { return; }
+
+    // Find the selected item in moduleInfoList
+    let moduleInfo: ModuleInfo | undefined = moduleInfoList[0];
+    moduleInfoList.forEach((element: ModuleInfo) => {
+        if (deviceInfoSelected?.description?.includes(element.port)) { moduleInfo = element; }
+    });
+
+    return moduleInfo;
+}

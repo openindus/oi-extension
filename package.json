@@ -22,24 +22,16 @@
     "contributes": {
         "commands": [
             {
-                "command": "openindus.createproject",
+                "command": "openindus.createProject",
                 "title": "Create a Project Application"
             },
             {
-                "command": "openindus.getDeviceInfo",
-                "title": "Get Device Info"
-            },
-            {
-                "command": "openindus.setDeviceId",
-                "title": "Set Device ID"
+                "command": "openindus.getSystemInfo",
+                "title": "Get System Information"
             },
             {
                 "command": "openindus.flashDeviceFirmware",
                 "title": "Update Device firware"
-            },
-            {
-                "command": "openindus.flashDeviceOnBus",
-                "title": "Update slave device on bus"
             },
             {
                 "command": "openindus.openinduswebsite",

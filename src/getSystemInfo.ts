@@ -1,78 +1,29 @@
 import * as vscode from 'vscode';
-import { PythonShell } from 'python-shell';
-import { getDeviceInfoList } from './getDeviceInfoList';
-import { getSlaveDeviceInfoList } from './getSlaveDeviceInfoList';
-import { ModuleInfo, caseImg } from './utils';
-import Module from 'module';
+import { ModuleInfo, caseImg, getSlaveDeviceInfoList, pickDevice } from './utils';
 import { createProject } from './createProject';
 
-const pioNodeHelpers = require('platformio-node-helpers');
+export async function getSystemInfo(context: vscode.ExtensionContext, portName?: string) {
 
-export async function getDeviceInfo(context: vscode.ExtensionContext, portName?: string) {
-
-    let moduleInfoList: ModuleInfo[] | undefined;
-
-    // Progress notification with option to cancel while getting device list
-    await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: "Retrieving modules informations",
-        cancellable: true
-    }, async (progress, token) => {
-        moduleInfoList = await getDeviceInfoList(context, token);
-    });
-
-
-    if (moduleInfoList === undefined) {
-        return;
-    }
-    if (moduleInfoList.length === 0) {
-        vscode.window.showWarningMessage("No device connected, please check connection between device and computer");
-        return;
-    }
-
-    // Fill a quick pick item list with info of all connected module
-    const deviceInfoQuickPickItem: vscode.QuickPickItem[] = [];
-    moduleInfoList.forEach((element: ModuleInfo) => {
-        deviceInfoQuickPickItem.push({description: '$(debug-stackframe-dot) ' + element.port, label: element.type, detail: 'S/N: ' + element.serialNum + ' $(debug-stackframe-dot) HW version: ' + element.versionHw + ' $(debug-stackframe-dot) SW version: ' + element.versionSw});
-    }); 
-
-    // Let the user choose his module (only if several modules are connected)
-    let deviceInfoSelected: vscode.QuickPickItem | undefined = undefined;
-
-    if (portName !== undefined) {
-        deviceInfoQuickPickItem.forEach((device: vscode.QuickPickItem) => {
-            if (device.description?.includes(portName)) {
-                deviceInfoSelected = device;
-            }
-        });
-    } 
-    else if (moduleInfoList.length > 1) {
-        deviceInfoSelected = await vscode.window.showQuickPick(deviceInfoQuickPickItem, { placeHolder: 'Select the master device', ignoreFocusOut: true });
-    } 
-    else if (moduleInfoList.length = 1) {
-        deviceInfoSelected = deviceInfoQuickPickItem[0];
-    }
-
-    if (deviceInfoSelected === undefined) { return; }
-
-    // Find the selected item in moduleInfoList
-    let moduleInfo: ModuleInfo | undefined = moduleInfoList[0];
-    moduleInfoList.forEach((element: ModuleInfo) => {
-        if (deviceInfoSelected?.description?.includes(element.port)) { moduleInfo = element; }
-    });
+    let moduleInfo = await pickDevice(context, portName);
 
     if (moduleInfo === undefined) { return; }
     if (moduleInfo.port === undefined) { return; }
 
     // Find slave modules on bus
+    let slaveInfoList: ModuleInfo[] | undefined;
+
     // Progress notification with option to cancel while getting device list
-    await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: "Retrieving modules informations",
-        cancellable: true
-    }, async (progress, token) => {
-        moduleInfoList = await getSlaveDeviceInfoList(context, token, moduleInfo.port);
-    });
+    if (moduleInfo.type !== undefined) { // If type is undefined, we have no chance to get slave devices
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "Retrieving modules informations",
+            cancellable: true
+        }, async (progress, token) => {
+            if (moduleInfo !== undefined) {
+                slaveInfoList = await getSlaveDeviceInfoList(context, token, moduleInfo.port);
+            }
+        });
+    }
 
     // Display a webview with all information about the module
 
@@ -89,7 +40,7 @@ export async function getDeviceInfo(context: vscode.ExtensionContext, portName?:
     // And get the special URI to use with the webview
      const htmlResources = panel.webview.asWebviewUri(onDiskPath);
 
-    panel.webview.html = getWebviewContent(htmlResources, moduleInfo, moduleInfoList);
+    panel.webview.html = getWebviewContent(htmlResources, moduleInfo, slaveInfoList);
 
     // Handle messages from the webview
     panel.webview.onDidReceiveMessage(
@@ -97,7 +48,7 @@ export async function getDeviceInfo(context: vscode.ExtensionContext, portName?:
             switch (message.command) {
                 case 'create-project':
                     console.log("create project clicked !");
-                    createProject(context, moduleInfo, moduleInfoList);
+                    createProject(context, moduleInfo, slaveInfoList);
                     return;
             }
         },
@@ -107,7 +58,7 @@ export async function getDeviceInfo(context: vscode.ExtensionContext, portName?:
 }
 
 
-function getWebviewContent(htmlResources: vscode.Uri, master: ModuleInfo, slaves: ModuleInfo[]) {
+function getWebviewContent(htmlResources: vscode.Uri, master: ModuleInfo, slaves: ModuleInfo[] | undefined) {
 
     // Find img and case of master module
     master.imgName = caseImg[0].imgName; // add default img
@@ -246,7 +197,7 @@ canvas {
             </div>
         </div>`;
         
-    if (slaves?.length > 0) {   
+    if (slaves !== undefined && slaves.length !== undefined && slaves.length > 0) {   
         htmlDoc += `
         <div class="slave-container">
             <div id="div-canvas">
