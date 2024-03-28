@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
+import * as cp from "child_process";
 
 export const deviceTypeList: string[] = 
 [
@@ -16,13 +17,17 @@ export const deviceTypeList: string[] =
 ];
 
 export function formatStringOI(input: string): string {
-    return input.toLowerCase().replaceAll('oi', '').replaceAll('_', '').replaceAll('-', '');
+    return capitalizeFirstLetter(input.toLowerCase().replaceAll('oi', '').replaceAll('_', '').replaceAll('-', ''));
 }
 
 export function getFormatedDeviceList(): string[] {
     let formatedDeviceList: string[] = [];
     deviceTypeList.forEach((element)=>{formatedDeviceList.push(formatStringOI(element));});
     return formatedDeviceList;
+}
+
+export function capitalizeFirstLetter(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 export const caseImg = [

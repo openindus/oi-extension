@@ -1,9 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { ModuleInfo, deviceTypeList, execShell, pioProjects } from './utils';
-import * as cp from "child_process";
-
-
+import { ModuleInfo, deviceTypeList, execShell, formatStringOI, pioProjects } from './utils';
 
 export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
     
@@ -34,11 +31,19 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     let state = {} as Partial<State>;
 
     // First STEP: select board
-    state.board = await vscode.window.showQuickPick(boardsNames, {
-        title: "Create a Project",
-        placeHolder: "Select the name of the board you will program on",
-        ignoreFocusOut: true,
-    });
+    if (master !== undefined) {
+        boardsNames.forEach((boardsName: vscode.QuickPickItem) => {
+            if (formatStringOI(boardsName.label) === formatStringOI(master.type)) {
+                state.board = boardsName;
+            }
+        });
+    } else {
+        state.board = await vscode.window.showQuickPick(boardsNames, {
+            title: "Create a Project",
+            placeHolder: "Select the name of the board you will program on",
+            ignoreFocusOut: true,
+        });
+    }
 
     if (state.board === undefined) { return; }
 
@@ -89,29 +94,49 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     if (state.name === undefined) { return; }
 
     // Fourth STEP: select project mode: master, standalone or slave
-    state.mode = await vscode.window.showQuickPick(modeNames, {
-        title: "Choose your configuration",
-        placeHolder: "Which configuration do you want to use ?",
-        ignoreFocusOut: true,
-    });
+    if (master !== undefined) {
+        state.mode = modeNames[0];
+    } else {
+        state.mode = await vscode.window.showQuickPick(modeNames, {
+            title: "Choose your configuration",
+            placeHolder: "Which configuration do you want to use ?",
+            ignoreFocusOut: true,
+        });
+    }
 
     if (state.mode === undefined) { return; }
 
     // Fith STEP: check last version of openindus library
-    var data = await execShell("pio pkg show \"openindus/OpenIndus\"", "./");
-    var libVersionResults = data?.match(/\d+.\d+.\d+/);
-    var libVersion = "";
+    let data = await execShell("pio pkg show \"openindus/OpenIndus\"", "./");
+    let libVersionResults = data?.match(/\d+.\d+.\d+/);
+    let libVersion = "";
     if (libVersionResults !== null) {
         libVersion = "@^" + libVersionResults[0];
     }
-    var envName = state.board.label.toLowerCase().substring(2);
+    let envName = state.board.label.toLowerCase().substring(2);
 
     // Sixth STEP: create the project directory and copy item
     // Create src directory and copy main.cpp
     await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/src'));
     await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/main.cpp')), vscode.Uri.file(state.path + '/' + state.name + '/src/main.cpp'));
+    // Add modules instance to main.cpp
     if (master) {
-        // TODO add master
+        var mainSetupText: string = 'void setup(void)';
+        var mainInitText: string = "OI" + formatStringOI(master.type) + " " + formatStringOI(master.type) + ";\r\n";
+
+        if (slaves !== undefined) {
+            let i = 1;
+            slaves.forEach((slave: ModuleInfo) => {
+                mainInitText += "OI" + formatStringOI(slave.type) + " " + formatStringOI(slave.type) + String(i) + ";\r\n";
+                i++;
+            });
+        }
+        mainInitText += "\r\n";
+        mainInitText += mainSetupText;
+
+        let mainFile = fs.readFileSync(state.path + '/' + state.name + '/src/main.cpp', 'utf8');
+        mainFile = mainFile.replaceAll(mainSetupText, mainInitText);
+        fs.writeFileSync(state.path + '/' + state.name + '/src/main.cpp', mainFile, 'utf8');
     }
     // Create lib directory
     await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/lib/' + envName));
@@ -121,13 +146,13 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     await execShell("pio pkg install --library \"openindus/OpenIndus" + libVersion + "\"  --storage-dir ./lib/" + envName, state.path + '/' + state.name);
     // Copy platformio.ini and replace *ENV* by the user selection
     await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/platformio.ini')), vscode.Uri.file(state.path + '/' + state.name + '/platformio.ini'));
-    var data  = fs.readFileSync(state.path + '/' + state.name + '/platformio.ini', 'utf8');
-    data = data.replaceAll("*ENV*", envName);
-    data = data.replace("*LIB_VERSION*", libVersion);
-    data = data.replace("*MODULE*", envName.toUpperCase());
-    data = data.replace("*MODE*", state.mode?.label.toUpperCase());
+    let pioFile  = fs.readFileSync(state.path + '/' + state.name + '/platformio.ini', 'utf8');
+    pioFile = pioFile.replaceAll("*ENV*", envName);
+    pioFile = pioFile.replace("*LIB_VERSION*", libVersion);
+    pioFile = pioFile.replace("*MODULE*", envName.toUpperCase());
+    pioFile = pioFile.replace("*MODE*", state.mode?.label.toUpperCase());
     
-    fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', data, 'utf8');
+    fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', pioFile, 'utf8');
     
     // Last STEP: Open folfer
     await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name));

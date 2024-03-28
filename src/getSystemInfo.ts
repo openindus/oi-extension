@@ -209,7 +209,7 @@ canvas {
     if (slaves !== undefined) {
         htmlDoc += `
                     <button onclick="createProject()">Create project from current configuration</button>
-                    <button onClick="flashAllSlaves()">Update all modules firmware connected on bus</button>`;
+                    <button onClick="flashAllSlaves()">Update firmware of all modules connected on bus</button>`;
     }
 
     htmlDoc += `
