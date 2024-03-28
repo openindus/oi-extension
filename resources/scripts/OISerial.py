@@ -4,8 +4,6 @@ from serial import Serial
 from time import sleep
 from datetime import datetime
 
-from reset import HardReset
-
 class OISerial(Serial):
 
     def __init__(self, port):
