@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ModuleInfo, caseImg, getSlaveDeviceInfoList, pickDevice } from './utils';
 import { createProject } from './createProject';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
+import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
 
 export async function getSystemInfo(context: vscode.ExtensionContext, portName?: string) {
 
@@ -65,6 +66,9 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
                     return;
                 case 'flash-slave':
                     console.log("flash slave: " + message.text + " clicked !");
+                    if (moduleInfo !== undefined && slaveInfoList !== undefined) {
+                        flashSlaveDeviceFirmware(context, moduleInfo.port, slaveInfoList[Number(message.text)]);
+                    }
                     return;
             }
         },

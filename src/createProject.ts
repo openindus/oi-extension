@@ -1,17 +1,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { ModuleInfo, deviceTypeList, pioProjects } from './utils';
+import { ModuleInfo, deviceTypeList, execShell, pioProjects } from './utils';
 import * as cp from "child_process";
 
-const execShell = (cmd: string, path: string) =>
-    new Promise<string>((resolve, reject) => {
-        cp.exec(cmd, {cwd: path}, (err, out) => {
-            if (err) {
-                return reject(err);
-            }
-            return resolve(out);
-        });
-    });
+
 
 export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
     

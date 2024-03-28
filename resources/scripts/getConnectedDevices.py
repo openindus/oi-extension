@@ -29,5 +29,4 @@ for port in l:
        
 
 print(json.dumps(result))
-
 exit(0)

@@ -1,19 +1,32 @@
 import json
+import os
 from serial import Serial
 from time import sleep
 from datetime import datetime
+
+from reset import HardReset
 
 class OISerial(Serial):
 
     def __init__(self, port):
         super().__init__(baudrate=115200, timeout=1)
-        self.dtr = False
-        self.rts = True
+        self._setDTR(True)
+        self._setRTS(True)
+        self.rtscts
         self.connected = False
         self.last_response = bytes()
         self.port = port
         self.prompt = str()
 
+    def _setDTR(self, state):
+        self.setDTR(state)
+
+    def _setRTS(self, state):
+        self.setRTS(state)
+        # Work-around for adapters on Windows using the usbser.sys driver:
+        # generate a dummy change to DTR so that the set-control-line-state
+        # request is sent with the updated RTS state and the same DTR state
+        self.setDTR(self.dtr)
 
     def connect(self) -> bool:
 
@@ -27,32 +40,36 @@ class OISerial(Serial):
             self.prompt = self.getPromt()
             if (self.prompt != ""):
                 self.connected = True
-                # print(f"Prompt is {self.prompt}")
                 return True
         
         except Exception as e:
-                # print(str(e))
-                return False
+            return False
+        
+        
         
         return False
     
 
     def disconnect(self) -> None:
 
-            if not self.connected:
-                return
-            self.close()
-            self.connected = False
+        if not self.connected:
+            return
+        self.close()
+        self.connected = False
+        self._setDTR(True)
+        self._setRTS(True)
 
     
     def getPromt(self) -> str:
 
-        self.dtr = True # reset device
-        sleep(0.1) # wait for init
+        # Reset board by toggling RTS and DTR lines
+        self._setDTR(False)
+        self._setRTS(False)
+        sleep(0.05)
+        # check if init is OK
+        self.flush()
         self.write(b'console')
         sleep(0.1)
-        self.flush()
-        # check if init is OK
         start_time = datetime.now()
         line = self.readline()
         while not b'>' in line:
@@ -178,6 +195,12 @@ class OISerial(Serial):
             slaveInfo.append(deviceInfo)
 
         return slaveInfo
+    
+    def logLevel(self, level):
+        return self.sendMsg(b'log ' + level.encode(), 0)
+
+    def program(self, num):
+        return self.sendMsg(b'program ' + str(num).encode(), 0)
     
 # serial = OISerial('COM17')
 # serial.connect()

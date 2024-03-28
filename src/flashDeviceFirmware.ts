@@ -49,7 +49,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     });
 
     let version = await vscode.window.showQuickPick(binVersions, {
-        placeHolder: "Select the version (choose the same vesion you use for the main firmware)",
+        placeHolder: "Select the version (choose the same version used for the main firmware)",
         ignoreFocusOut: true,
     });
 
@@ -65,7 +65,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     if (fs.existsSync(otaDataInitial.fsPath) === false) { return; }
     if (fs.existsSync(firmware.fsPath) === false) { return; }
 
-    // Flash the Firmware with flashDeviceFirmware.py
+    // Flash the Firmware
     let successFlash = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: "Flashing " + `OI${deviceType}` + " on " + `${moduleInfo.port}`,
@@ -80,7 +80,6 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                         '--port', moduleInfo.port,
                         '--baud', '921600',
                         'write_flash',
-                        '-z',
                         '0x0000', bootloader.fsPath,
                         '0x8000', partitions.fsPath,
                         '0xd000', otaDataInitial.fsPath, 

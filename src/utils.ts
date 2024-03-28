@@ -53,6 +53,16 @@ export const binAddress = "http://openindus.com/oi-content/bin/";
 export const pioProjects = require('os').homedir() + '/Documents/PlatformIO/Projects';
 const pioNodeHelpers = require('platformio-node-helpers');
 
+export const execShell = (cmd: string, path: string) =>
+    new Promise<string>((resolve, reject) => {
+        cp.exec(cmd, {cwd: path}, (err, out) => {
+            if (err) {
+                return reject(err);
+            }
+            return resolve(out);
+        });
+    });
+
 export async function getDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken): Promise<ModuleInfo[] | undefined> {
 
 	// Retrieve available devices with getConnectedBoards.py
