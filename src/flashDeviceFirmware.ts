@@ -6,14 +6,13 @@ const pioNodeHelpers = require('platformio-node-helpers');
 
 export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string, inputModuleInfo?: ModuleInfo) {
 
-    let moduleInfo: ModuleInfo | undefined = undefined;
+    let moduleInfo: ModuleInfo | undefined;
     let deviceType: string = "";
 
     // if device type and port are given; do not check again
     if (inputModuleInfo === undefined) {
         // Choose the device
         moduleInfo = await pickDevice(context, portName);
-        
     } else {
         moduleInfo = inputModuleInfo; // use given module info
     }

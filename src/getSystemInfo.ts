@@ -19,7 +19,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
     if (moduleInfo.type !== undefined) { // If type is undefined, we have no chance to get slave devices
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: "Retrieving saves modules informations",
+            title: "Reading slaves modules informations",
             cancellable: true
         }, async (progress, token) => {
             if (moduleInfo !== undefined) {

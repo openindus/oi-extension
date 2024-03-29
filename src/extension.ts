@@ -3,10 +3,11 @@ import { OIAccessTreeProvider } from './customTreeView';
 import { createProject } from './createProject';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
 import { getSystemInfo } from './getSystemInfo';
+import { execShell } from './utils';
 
 const pioNodeHelpers = require('platformio-node-helpers');
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 
 	vscode.window.registerTreeDataProvider('openindus-treeview', new OIAccessTreeProvider());
 
@@ -33,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	// Install esptool if not already installed
-	
+	console.log(await execShell(pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe -m pip install esptool', './'));
 }
 
 // this method is called when your extension is deactivated
