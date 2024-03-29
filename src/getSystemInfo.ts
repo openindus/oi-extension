@@ -3,6 +3,7 @@ import { ModuleInfo, caseImg, getSlaveDeviceInfoList, pickDevice } from './utils
 import { createProject } from './createProject';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
 import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
+import Module from 'module';
 
 export async function getSystemInfo(context: vscode.ExtensionContext, portName?: string) {
 
@@ -63,11 +64,16 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
                     return;
                 case 'flash-all-slaves':
                     console.log("flash all slaves clicked !");
+                    if (moduleInfo !== undefined && slaveInfoList !== undefined) {
+                        flashSlaveDeviceFirmware(context, moduleInfo.port, slaveInfoList);
+                    }
                     return;
                 case 'flash-slave':
                     console.log("flash slave: " + message.text + " clicked !");
                     if (moduleInfo !== undefined && slaveInfoList !== undefined) {
-                        flashSlaveDeviceFirmware(context, moduleInfo.port, slaveInfoList[Number(message.text)]);
+                        let selectedSlaveInfoList: ModuleInfo[] = []; // We need a list even if there is only one module
+                        selectedSlaveInfoList.push(slaveInfoList[Number(message.text)]);
+                        flashSlaveDeviceFirmware(context, moduleInfo.port, selectedSlaveInfoList);
                     }
                     return;
             }

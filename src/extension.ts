@@ -31,6 +31,9 @@ export function activate(context: vscode.ExtensionContext) {
 	{
 		vscode.window.showErrorMessage("We detected that you platformio path contains a white space, this will cause an error. Please check for available solutions on our website's FAQ");
 	}
+
+	// Install esptool if not already installed
+	
 }
 
 // this method is called when your extension is deactivated

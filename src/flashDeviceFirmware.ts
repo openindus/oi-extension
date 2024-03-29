@@ -87,7 +87,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                 ] as string[]
             };
 
-            let myPythonScriptPath = pioNodeHelpers.core.getCoreDir() + '/packages/tool-esptoolpy/esptool.py';
+            let myPythonScriptPath = pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/esptool.exe';
             let pyshell = new PythonShell(myPythonScriptPath, options);
             let lastIncrement = 0;
 
@@ -118,7 +118,5 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     // Prompt a success message or an error message
     if (successFlash === true) {
         vscode.window.showInformationMessage("Device " + `${moduleInfo.port}` + " flashed successfuly");
-    } else {
-        vscode.window.showErrorMessage("Unexpected error while flashing device !");
     }
 }
