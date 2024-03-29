@@ -72,6 +72,8 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     }, async (progress, cancellationToken) => {
         let successFlash = await new Promise( async (resolve) => {
 
+            if (moduleInfo === undefined) { return; }
+
             let options = {
                 mode: "text" as "text",
                 pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe',
@@ -116,6 +118,8 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
         
     // Prompt a success message or an error message
     if (successFlash === true) {
-        vscode.window.showInformationMessage("Device " + `${moduleInfo.port}` + " flashed successfuly");
+        vscode.window.showInformationMessage(`Device ${moduleInfo.type}  on ${moduleInfo.port} flashed successfully !`);
+    } else {
+        vscode.window.showErrorMessage("Unexpected error while flashing device !");
     }
 }

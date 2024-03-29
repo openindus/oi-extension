@@ -3,7 +3,6 @@ import { ModuleInfo, caseImg, getSlaveDeviceInfoList, pickDevice } from './utils
 import { createProject } from './createProject';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
 import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
-import Module from 'module';
 
 export async function getSystemInfo(context: vscode.ExtensionContext, portName?: string) {
 

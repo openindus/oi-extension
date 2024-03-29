@@ -50,7 +50,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     // Second STEP: select folder
     const customPath = await vscode.window.showQuickPick(yesNoQuickPick, {
         title: "Create a Project",
-        placeHolder: "Do you want to use default location ?",
+        placeHolder: "Do you want to use default location ? (Documents/PlatformIO/Projects)",
         ignoreFocusOut: true,
     });
 
@@ -85,7 +85,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
                 return "Project name can not contains white space";
             } else if (text.indexOf('*') >= 0) { // Check for "*"
                 return "Project name can not contains *";
-            }else {
+            } else {
                 return undefined;
             }
         }
@@ -95,62 +95,69 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
 
     // Fourth STEP: select project mode: master, standalone or slave
     if (master !== undefined) {
-        state.mode = modeNames[0];
+        state.mode = modeNames[0]; // If master infos are given; select "master" mode without asking
     } else {
         state.mode = await vscode.window.showQuickPick(modeNames, {
             title: "Choose your configuration",
             placeHolder: "Which configuration do you want to use ?",
             ignoreFocusOut: true,
+            
         });
     }
 
     if (state.mode === undefined) { return; }
 
-    // Fith STEP: check last version of openindus library
+    // Fith STEP: check last version of openindus library in pio registry
     let data = await execShell("pio pkg show \"openindus/OpenIndus\"", "./");
     let libVersionResults = data?.match(/\d+.\d+.\d+/);
     let libVersion = "";
     if (libVersionResults !== null) {
         libVersion = "@^" + libVersionResults[0];
     }
-    let envName = state.board.label.toLowerCase().substring(2);
+    let envName = formatStringOI(state.board.label).toLowerCase();
 
     // Sixth STEP: create the project directory and copy item
     // Create src directory and copy main.cpp
     await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/src'));
     await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/main.cpp')), vscode.Uri.file(state.path + '/' + state.name + '/src/main.cpp'));
+    
     // Add modules instance to main.cpp
+    let mainSetupText: string = "%MODULE_INIT%";
+    var mainInitText: string = "";
     if (master) {
-        var mainSetupText: string = 'void setup(void)';
-        var mainInitText: string = "OI" + formatStringOI(master.type) + " " + formatStringOI(master.type) + ";\r\n";
+        mainInitText += '\r\n'; // empty line
+        var mainInitText: string = "OI" + formatStringOI(master.type) + " " + formatStringOI(master.type) + ";\r\n";  // master instance line
 
         if (slaves !== undefined) {
             let i = 1;
             slaves.forEach((slave: ModuleInfo) => {
-                mainInitText += "OI" + formatStringOI(slave.type) + " " + formatStringOI(slave.type) + String(i) + ";\r\n";
+                mainInitText += "OI" + formatStringOI(slave.type) + " " + formatStringOI(slave.type) + String(i) + ";\r\n"; // slave instance line
                 i++;
             });
         }
-        mainInitText += "\r\n";
-        mainInitText += mainSetupText;
-
-        let mainFile = fs.readFileSync(state.path + '/' + state.name + '/src/main.cpp', 'utf8');
-        mainFile = mainFile.replaceAll(mainSetupText, mainInitText);
-        fs.writeFileSync(state.path + '/' + state.name + '/src/main.cpp', mainFile, 'utf8');
+        mainInitText += '\r\n'; // empty line
     }
+    // Replave text in main.cpp
+    let mainFile = fs.readFileSync(state.path + '/' + state.name + '/src/main.cpp', 'utf8');
+    mainFile = mainFile.replaceAll(mainSetupText, mainInitText);
+    fs.writeFileSync(state.path + '/' + state.name + '/src/main.cpp', mainFile, 'utf8');
+    
     // Create lib directory
     await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/lib/' + envName));
+    
     // Copy sdkconfig.defaults
     await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/sdkconfig.defaults')), vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'));
+    
     // Install lib manually (by doing this, pio can find board and scripts before making initialization)
     await execShell("pio pkg install --library \"openindus/OpenIndus" + libVersion + "\"  --storage-dir ./lib/" + envName, state.path + '/' + state.name);
-    // Copy platformio.ini and replace *ENV* by the user selection
+    
+    // Copy platformio.ini and replace %VAR% by the user selection
     await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/platformio.ini')), vscode.Uri.file(state.path + '/' + state.name + '/platformio.ini'));
     let pioFile  = fs.readFileSync(state.path + '/' + state.name + '/platformio.ini', 'utf8');
-    pioFile = pioFile.replaceAll("*ENV*", envName);
-    pioFile = pioFile.replace("*LIB_VERSION*", libVersion);
-    pioFile = pioFile.replace("*MODULE*", envName.toUpperCase());
-    pioFile = pioFile.replace("*MODE*", state.mode?.label.toUpperCase());
+    pioFile = pioFile.replaceAll("%ENV%", envName);
+    pioFile = pioFile.replace("%LIB_VERSION%", libVersion);
+    pioFile = pioFile.replace("%MODULE%", state.board.label.toUpperCase().substring(2));
+    pioFile = pioFile.replace("%MODE%", state.mode?.label.toUpperCase());
     
     fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', pioFile, 'utf8');
     

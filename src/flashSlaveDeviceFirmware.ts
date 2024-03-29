@@ -136,7 +136,5 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
     // Prompt a success message or an error message
     if (numberFlashedSuccessfully === slavesModuleInfo.length) {
         vscode.window.showInformationMessage(`${slavesModuleInfo.length} device${slavesModuleInfo.length>1?"s":""} flashed successfuly !`);
-    } else {
-        vscode.window.showErrorMessage("Unexpected error while flashing device !");
     }
 }

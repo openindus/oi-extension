@@ -16,6 +16,7 @@ export const deviceTypeList: string[] =
     'OIRelay_HP'
 ];
 
+// Return a board without 'OI', '_' and '-' and withfist letter capitalize
 export function formatStringOI(input: string): string {
     return capitalizeFirstLetter(input.toLowerCase().replaceAll('oi', '').replaceAll('_', '').replaceAll('-', ''));
 }
@@ -42,6 +43,7 @@ export const caseImg = [
     {moduleName: "OIRelayLP", imgName: "stepper.png", caseName: "BOI13"},
     {moduleName: "OIRelayLP", imgName: "stepper.png", caseName: "BOI13"}
 ];
+
 
 export type ModuleInfo = {
     port: string;
