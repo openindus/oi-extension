@@ -114,6 +114,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     if (libVersionResults !== null) {
         libVersion = "@^" + libVersionResults[0];
     }
+    libVersion = "openindus/OpenIndus" + libVersion;
     let envName = formatStringOI(state.board.label).toLowerCase();
 
     // Sixth STEP: create the project directory and copy item
@@ -149,8 +150,15 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/sdkconfig.defaults')), vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'));
     
     // Install lib manually (by doing this, pio can find board and scripts before making initialization)
-    await execShell("pio pkg install --library \"openindus/OpenIndus" + libVersion + "\"  --storage-dir ./lib/" + envName, state.path + '/' + state.name);
+    await execShell("pio pkg install --library \"" + libVersion + "\"  --storage-dir ./lib/" + envName, state.path + '/' + state.name);
     
+
+    if (formatStringOI(state.board.label) === formatStringOI("OICore")) {
+        libVersion = "\r\n\t" + libVersion;
+        libVersion += "\r\n\tpaulstoffregen/Ethernet@^2.0.0";
+        libVersion += "\r\n\tfelis/USB-Host-Shield-20@^1.6.0";
+    }
+
     // Copy platformio.ini and replace %VAR% by the user selection
     await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/platformio.ini')), vscode.Uri.file(state.path + '/' + state.name + '/platformio.ini'));
     let pioFile  = fs.readFileSync(state.path + '/' + state.name + '/platformio.ini', 'utf8');

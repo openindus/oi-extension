@@ -209,12 +209,11 @@ canvas {
                         <b>Hardware Version:</b> ${master.versionHw}<br>
                         <b>Software version:</b> v${master.versionSw}
                     </p>
-                    <button onClick="flashDevice()">Update firmware</button>`;
+                    <button onClick="flashDevice()">Update firmware</button>
+                    <button onclick="createProject()">Create project from current configuration</button>`;
     
-    if (slaves !== undefined) {
-        htmlDoc += `
-                    <button onclick="createProject()">Create project from current configuration</button>
-                    <button onClick="flashAllSlaves()">Update firmware of all modules connected on bus</button>`;
+    if (slaves !== undefined && slaves.length !== undefined && slaves.length > 0) {
+        htmlDoc += `<button onClick="flashAllSlaves()">Update firmware of all modules connected on bus</button>`;
     }
 
     htmlDoc += `
