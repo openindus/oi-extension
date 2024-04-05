@@ -3,7 +3,7 @@ import { OIAccessTreeProvider } from './customTreeView';
 import { createProject } from './createProject';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
 import { getSystemInfo } from './getSystemInfo';
-import { execShell } from './utils';
+import { execShell, getPlatformIOPythonPath } from './utils';
 
 const pioNodeHelpers = require('platformio-node-helpers');
 
@@ -34,7 +34,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	// Install esptool if not already installed
-	console.log(await execShell(pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe -m pip install esptool', './'));
+	console.log(await execShell(getPlatformIOPythonPath() + ' -m pip install esptool', './'));
 }
 
 // this method is called when your extension is deactivated

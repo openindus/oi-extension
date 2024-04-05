@@ -59,6 +59,7 @@ export const sourceAddress = "http://openindus.com/oi-content/src/";
 export const binAddress = "http://openindus.com/oi-content/bin/";
 export const pioProjects = require('os').homedir() + '/Documents/PlatformIO/Projects';
 const pioNodeHelpers = require('platformio-node-helpers');
+var path = require('path');
 
 export const execShell = (cmd: string, path: string) =>
     new Promise<string>((resolve, reject) => {
@@ -70,13 +71,17 @@ export const execShell = (cmd: string, path: string) =>
         });
     });
 
+export const IS_WINDOWS = process.platform.startsWith('win');
+export function getPlatformIOPythonPath() : string { return path.join(pioNodeHelpers.core.getEnvBinDir(), IS_WINDOWS ? 'python.exe': 'python'); }
+export function getEsptoolPath() : string { return path.join(pioNodeHelpers.core.getEnvBinDir(), IS_WINDOWS ? 'esptool.exe': 'esptool'); }
+
 export async function getDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken): Promise<ModuleInfo[] | undefined> {
 
 	// Retrieve available devices with getConnectedBoards.py
 	let moduleInfoList: ModuleInfo[] = [];
 
 	let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/getConnectedDevices.py';
-	let pyshell = new PythonShell(myPythonScriptPath, { mode: 'json', pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe' });
+	let pyshell = new PythonShell(myPythonScriptPath, { mode: 'json', pythonPath: getPlatformIOPythonPath() });
 
 	pyshell.on('message', function (message) {
 		console.log("List of devices found:");
@@ -121,7 +126,7 @@ export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, t
 	let moduleInfoList: ModuleInfo[] = [];
 
 	let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/getSlaveDevices.py';
-	let pyshell = new PythonShell(myPythonScriptPath, { mode: 'json', args: [scanPort, scanPort], pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe' });
+	let pyshell = new PythonShell(myPythonScriptPath, { mode: 'json', args: [scanPort, scanPort], pythonPath: getPlatformIOPythonPath() });
 
 	pyshell.on('message', function (message) {
         console.log("List of slaves devices found:");

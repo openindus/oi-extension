@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { deviceTypeList, formatStringOI, getFormatedDeviceList, binAddress, pickDevice, ModuleInfo } from './utils';
+import { deviceTypeList, formatStringOI, getFormatedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath } from './utils';
 import * as fs from 'fs';
-const pioNodeHelpers = require('platformio-node-helpers');
 
 export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext, masterPortName: string, slavesModuleInfo: ModuleInfo[], version?: string) {
 
@@ -60,7 +59,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
 
             // Set the slave in program mode
             let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/program.py';
-            let pyshell = new PythonShell(myPythonScriptPath, { mode: 'text', args: [masterPortName, slaveModuleInfo.serialNum], pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe' });
+            let pyshell = new PythonShell(myPythonScriptPath, { mode: 'text', args: [masterPortName, slaveModuleInfo.serialNum], pythonPath: getPlatformIOPythonPath() });
 
             pyshell.on('message', function (message) {
                 console.log(message);
@@ -85,7 +84,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
 
                 let options = {
                     mode: "text" as "text",
-                    pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe',
+                    pythonPath: getPlatformIOPythonPath(),
                     args: [ '--port', masterPortName,
                             '--baud', '921600',
                             '--before', 'no_reset',
@@ -95,8 +94,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
                     ] as string[]
                 };
 
-                let myPythonScriptPath = pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/esptool.exe';
-                let pyshell = new PythonShell(myPythonScriptPath, options);
+                let pyshell = new PythonShell(getEsptoolPath(), options);
                 let lastIncrement = 0;
 
                 pyshell.on('message', function (message) {

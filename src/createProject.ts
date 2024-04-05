@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { ModuleInfo, deviceTypeList, execShell, formatStringOI, pioProjects } from './utils';
-const pioNodeHelpers = require('platformio-node-helpers');
+import { ModuleInfo, deviceTypeList, execShell, formatStringOI, pioProjects, getPlatformIOPythonPath } from './utils';
 
 export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
     
@@ -106,8 +105,6 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         });
     }
 
-    
-
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: `Creating project ${state.name}`,
@@ -118,7 +115,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         if (state.board === undefined) { return; }
 
         // Fith STEP: check last version of openindus library in pio registry
-        let data = await execShell(pioNodeHelpers.core.getCoreDir() + "/penv/Scripts/pio.exe pkg show \"openindus/OpenIndus\"", "./");
+        let data = await execShell(getPlatformIOPythonPath() + " -m platformio pkg show \"openindus/OpenIndus\"", "./");
         let libVersionResults = data?.match(/\d+.\d+.\d+/);
         let libVersion = "";
         if (libVersionResults !== null) {
@@ -160,7 +157,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/sdkconfig.defaults')), vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'));
         
         // Install lib manually (by doing this, pio can find board and scripts before making initialization)
-        await execShell(pioNodeHelpers.core.getCoreDir() + "/penv/Scripts/pio.exe pkg install --library \"" + libVersion + "\"  --storage-dir ./lib/" + envName, state.path + '/' + state.name);
+        await execShell(getPlatformIOPythonPath() + " -m platformio pkg install --library \"" + libVersion + "\"  --storage-dir ./lib/" + envName, state.path + '/' + state.name);
         
 
         if (formatStringOI(state.board.label) === formatStringOI("OICore")) {

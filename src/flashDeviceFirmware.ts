@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { deviceTypeList, formatStringOI, getFormatedDeviceList, binAddress, pickDevice, ModuleInfo } from './utils';
+import { deviceTypeList, formatStringOI, getFormatedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath } from './utils';
 import * as fs from 'fs';
-const pioNodeHelpers = require('platformio-node-helpers');
 
 export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string, inputModuleInfo?: ModuleInfo) {
 
@@ -76,7 +75,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
 
             let options = {
                 mode: "text" as "text",
-                pythonPath: pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/python.exe',
+                pythonPath: getPlatformIOPythonPath(),
                 args: ['--chip', 'esp32s3',
                         '--port', moduleInfo.port,
                         '--baud', '921600',
@@ -88,8 +87,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                 ] as string[]
             };
 
-            let myPythonScriptPath = pioNodeHelpers.core.getCoreDir() + '/penv/Scripts/esptool.exe';
-            let pyshell = new PythonShell(myPythonScriptPath, options);
+            let pyshell = new PythonShell(getEsptoolPath(), options);
             let lastIncrement = 0;
 
             pyshell.on('message', function (message) {
