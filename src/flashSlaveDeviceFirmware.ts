@@ -115,6 +115,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
 
                 pyshell.end(function (err: any, code: any) {
                     if (code === 0) {
+                        console.log(err);
                         resolve(true);
                     } else {
                         resolve(false);

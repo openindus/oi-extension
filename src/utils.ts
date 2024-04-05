@@ -73,7 +73,7 @@ export const execShell = (cmd: string, path: string) =>
 
 export const IS_WINDOWS = process.platform.startsWith('win');
 export function getPlatformIOPythonPath() : string { return path.join(pioNodeHelpers.core.getEnvBinDir(), IS_WINDOWS ? 'python.exe': 'python'); }
-export function getEsptoolPath() : string { return path.join(pioNodeHelpers.core.getEnvBinDir(), IS_WINDOWS ? 'esptool.exe': 'esptool'); }
+export function getEsptoolPath() : string { return path.join(pioNodeHelpers.core.getEnvBinDir(), IS_WINDOWS ? 'esptool.exe': 'esptool.py'); }
 
 export async function getDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken): Promise<ModuleInfo[] | undefined> {
 

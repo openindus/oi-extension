@@ -53,10 +53,10 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
 
     // Set the bin path and check it
     onDiskPath = vscode.Uri.joinPath(onDiskPath, 'oi-firmware-' + version?.label);
-    let bootloader = vscode.Uri.joinPath(onDiskPath, deviceType + '_bootloader-' + version?.label + '.bin');
-    let partitions = vscode.Uri.joinPath(onDiskPath, deviceType + '_partitions-' + version?.label + '.bin');
-    let otaDataInitial = vscode.Uri.joinPath(onDiskPath, deviceType + '_ota_data_initial-' + version?.label + '.bin');
-    let firmware = vscode.Uri.joinPath(onDiskPath, deviceType + '_firmware-' + version?.label + '.bin');
+    let bootloader = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase() + '_bootloader-' + version?.label + '.bin');
+    let partitions = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase() + '_partitions-' + version?.label + '.bin');
+    let otaDataInitial = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase() + '_ota_data_initial-' + version?.label + '.bin');
+    let firmware = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase() + '_firmware-' + version?.label + '.bin');
 
     if (fs.existsSync(bootloader.fsPath) === false) { return; }
     if (fs.existsSync(partitions.fsPath) === false) { return; }
@@ -105,6 +105,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
 
             pyshell.end(function (err: any, code: any) {
                 if (code === 0) {
+                    console.log(err);
                     resolve(true);
                 } else {
                     resolve(false);
