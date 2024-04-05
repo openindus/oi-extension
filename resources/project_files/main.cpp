@@ -1,6 +1,6 @@
 #include "OpenIndus.h"
 #include "Arduino.h"
-
+%MODULE_INIT%
 void setup(void)
 {
     // put your setup code here, to run once:

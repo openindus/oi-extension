@@ -23,11 +23,9 @@ export class OIAccessTreeProvider implements vscode.TreeDataProvider<OIItem> {
   	
 	constructor() {
 		this.data = [
-			new OIItem('Start a new project', 'openindus.createproject', 'notebook-mimetype'),
-			new OIItem('Get device ID', 'openindus.getDeviceId', 'key'),
-			new OIItem('Set device ID', 'openindus.setDeviceId', 'symbol-number'),
+			new OIItem('Start a new project', 'openindus.createProject', 'notebook-mimetype'),
+			new OIItem('Get system informations', 'openindus.getSystemInfo', 'key'),
 			new OIItem('Update device firmware', 'openindus.flashDeviceFirmware', 'flame'),
-			new OIItem('Update slave devices on bus', 'openindus.flashDeviceOnBus', 'zap'),
 			new OIItem('Get started', 'openindus.openinduswebsite', 'remote-explorer-documentation'),
 		];
 	}
