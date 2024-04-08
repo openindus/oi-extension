@@ -45,7 +45,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
             // Check if device type is known
             let deviceType: string = "";
             if (getFormatedDeviceList().includes(formatStringOI(slaveModuleInfo.type))) {
-                deviceType = formatStringOI(slaveModuleInfo.type);
+                deviceType = formatStringOI(slaveModuleInfo.type).toLowerCase();
             } else {
                 continue;
             }  
