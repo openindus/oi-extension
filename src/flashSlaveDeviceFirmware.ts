@@ -45,7 +45,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
             // Check if device type is known
             let deviceType: string = "";
             if (getFormatedDeviceList().includes(formatStringOI(slaveModuleInfo.type))) {
-                deviceType = formatStringOI(slaveModuleInfo.type).toLowerCase();
+                deviceType = formatStringOI(slaveModuleInfo.type);
             } else {
                 continue;
             }  
@@ -54,7 +54,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
             progress.report({message: `OI${deviceType} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`});
 
             // Set the bin path and check it
-            let firmware = vscode.Uri.joinPath(onDiskPath, deviceType + '_firmware-' + version + '.bin');
+            let firmware = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase() + '_firmware-' + version + '.bin');
             if (fs.existsSync(firmware.fsPath) === false) { return; }
 
             // Set the slave in program mode
