@@ -134,12 +134,12 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         var mainInitText: string = "";
         if (master) {
             mainInitText += '\r\n'; // empty line
-            var mainInitText: string = "OI" + formatStringOI(master.type) + " " + formatStringOI(master.type) + ";\r\n";  // master instance line
+            mainInitText += "OI" + formatStringOI(master.type) + " " + formatStringOI(master.type).toLowerCase() + ";\r\n";  // master instance line
 
             if (slaves !== undefined) {
                 let i = 1;
                 slaves.forEach((slave: ModuleInfo) => {
-                    mainInitText += "OI" + formatStringOI(slave.type) + " " + formatStringOI(slave.type) + String(i) + ";\r\n"; // slave instance line
+                    mainInitText += "OI" + formatStringOI(slave.type) + " " + formatStringOI(slave.type).toLowerCase() + String(i) + ";\r\n"; // slave instance line
                     i++;
                 });
             }
