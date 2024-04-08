@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { ModuleInfo, caseImg, getSlaveDeviceInfoList, pickDevice } from './utils';
 import { createProject } from './createProject';
-import { flashDeviceFirmware } from './flashDeviceFirmware';
 import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
 
 export async function getSystemInfo(context: vscode.ExtensionContext, portName?: string) {
@@ -50,21 +49,21 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
             switch (message.command) {
                 case 'create-project':
                     console.log("create project clicked !");
-                    createProject(context, moduleInfo, slaveInfoList);
+                    vscode.commands.executeCommand('openindus.createproject', moduleInfo, slaveInfoList);
                     return;
                 case 'flash-device':
                     console.log("flash device clicked !");
-                    flashDeviceFirmware(context, undefined, moduleInfo);
+                    vscode.commands.executeCommand('openindus.flashDeviceFirmware', undefined, moduleInfo);
                     return;
                 case 'refresh':
                     console.log("refresh clicked !");
+                    vscode.commands.executeCommand('openindus.getSystemInfo', moduleInfo.port);
                     panel.dispose();
-                    getSystemInfo(context, moduleInfo?.port);
                     return;
                 case 'flash-all-slaves':
                     console.log("flash all slaves clicked !");
                     if (moduleInfo !== undefined && slaveInfoList !== undefined) {
-                        flashSlaveDeviceFirmware(context, moduleInfo.port, slaveInfoList);
+                        vscode.commands.executeCommand('openindus.flashSlavesDevicesFirmware', moduleInfo.port, slaveInfoList);
                     }
                     return;
                 case 'flash-slave':
@@ -72,7 +71,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
                     if (moduleInfo !== undefined && slaveInfoList !== undefined) {
                         let selectedSlaveInfoList: ModuleInfo[] = []; // We need a list even if there is only one module
                         selectedSlaveInfoList.push(slaveInfoList[Number(message.text)]);
-                        flashSlaveDeviceFirmware(context, moduleInfo.port, selectedSlaveInfoList);
+                        vscode.commands.executeCommand('openindus.flashSlavesDevicesFirmware', moduleInfo.port, selectedSlaveInfoList);
                     }
                     return;
             }
