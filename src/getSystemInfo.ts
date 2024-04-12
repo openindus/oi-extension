@@ -57,8 +57,10 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
                     return;
                 case 'refresh':
                     console.log("refresh clicked !");
-                    vscode.commands.executeCommand('openindus.getSystemInfo', moduleInfo.port);
-                    panel.dispose();
+                    if (moduleInfo !== undefined) {
+                        vscode.commands.executeCommand('openindus.getSystemInfo', moduleInfo.port);
+                        panel.dispose();
+                    }
                     return;
                 case 'flash-all-slaves':
                     console.log("flash all slaves clicked !");
