@@ -1,16 +1,16 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
-import { deviceTypeList, pioProjects, sourceAddress } from './utils';
-import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
+import { ModuleInfo, deviceTypeList, execShell, formatStringOI, pioProjects, getPlatformIOPythonPath } from './utils';
 
-export async function createProject(context: vscode.ExtensionContext) {
+export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
     
     const boardsNames: vscode.QuickPickItem[] = deviceTypeList.map(label => ({ label }));
+    const modeNames: vscode.QuickPickItem[] = [ {label: 'Master', detail:'Choose "master" if the module you are programming on is used to control other modules'},
+                                                {label: 'Standalone', detail: 'Choose "standalone" if the module you are programming on is use alone'},
+                                                {label: 'Slave', detail: 'Choose "slave" if the module is controlled by a "master" module (not recommended)'}];
 	const yesNoList: string[] = ['yes', 'no'];
     const yesNoQuickPick: vscode.QuickPickItem[] = yesNoList.map(label => ({ label }));
-    let firmwareVersions: vscode.QuickPickItem[] = [];
-	const fileDownloader: FileDownloader = await getApi();
+    const path = require('path');
 
 	const optionsSelectFolder: vscode.OpenDialogOptions = {
 		canSelectMany: false,
@@ -25,24 +25,33 @@ export async function createProject(context: vscode.ExtensionContext) {
 		board: vscode.QuickPickItem;
 		name: string;
         path: string;
-		version: vscode.QuickPickItem;
-        firmware: vscode.Uri;
+        mode: vscode.QuickPickItem;
 	}
 
     let state = {} as Partial<State>;
 
     // First STEP: select board
-    state.board = await vscode.window.showQuickPick(boardsNames, {
-        title: "Create a Project",
-        placeHolder: "Select the name of the board you will program on"
-    });
+    if (master !== undefined) {
+        boardsNames.forEach((boardsName: vscode.QuickPickItem) => {
+            if (formatStringOI(boardsName.label) === formatStringOI(master.type)) {
+                state.board = boardsName;
+            }
+        });
+    } else {
+        state.board = await vscode.window.showQuickPick(boardsNames, {
+            title: "Create a Project",
+            placeHolder: "Select the name of the board you will program on",
+            ignoreFocusOut: true,
+        });
+    }
 
     if (state.board === undefined) { return; }
 
     // Second STEP: select folder
     const customPath = await vscode.window.showQuickPick(yesNoQuickPick, {
         title: "Create a Project",
-        placeHolder: "Do you want to use default location ?"
+        placeHolder: "Do you want to use default location ? (Documents/PlatformIO/Projects)",
+        ignoreFocusOut: true,
     });
 
     if (customPath?.label === "no") {
@@ -64,12 +73,18 @@ export async function createProject(context: vscode.ExtensionContext) {
     // Third STEP: select project name
     state.name = await vscode.window.showInputBox({
         title: "Create a Project",
+        value: "my_project",
         prompt: 'Enter a name for your project',
+        ignoreFocusOut: true,
         validateInput: (text: string): string | undefined => {
-            if (fs.existsSync(state.path + '/' + text) && text !== "") { // Check is folder already exists
+            if (text !== path.basename(text)) { 
+                return "Name is not valid";
+            } else if (fs.existsSync(state.path + '/' + text) && text !== "") { // Check is folder already exists
                 return "Folder already exits";
             } else if (text.indexOf(' ') >= 0) { // Check for white space
-                return "Project could not contains white space";
+                return "Project name can not contains white space";
+            } else if (text.indexOf('*') >= 0) { // Check for "*"
+                return "Project name can not contains *";
             } else {
                 return undefined;
             }
@@ -78,95 +93,91 @@ export async function createProject(context: vscode.ExtensionContext) {
     
     if (state.name === undefined) { return; }
 
-    // Fourth STEP:  Get list of versions available by checking the html page and choose one
-    const fileListAsHtml = await fileDownloader.downloadFile(
-        vscode.Uri.parse(sourceAddress),
-        "fileListAsHtml",
-        context,
-        undefined,
-        undefined
-    );
-
-    if (fileListAsHtml !== undefined) {
-
-        fs.readFileSync(fileListAsHtml.fsPath, 'utf8').match(/\d+.\d+.\d+.zip</g)?.forEach(function(line) {
-            firmwareVersions.unshift({label: line.split('.zip<')[0]});
+    // Fourth STEP: select project mode: master, standalone or slave
+    if (master !== undefined) {
+        state.mode = modeNames[0]; // If master infos are given; select "master" mode without asking
+    } else {
+        state.mode = await vscode.window.showQuickPick(modeNames, {
+            title: "Choose your configuration",
+            placeHolder: "Which configuration do you want to use ?",
+            ignoreFocusOut: true,
+            
         });
-
-        if (firmwareVersions.length === 0) {
-            vscode.window.showErrorMessage("Cannot retrieve firmware version, please check your internet connection !");
-            return;
-        }
-
-        firmwareVersions[0].description = "latest";
-
-        await fileDownloader.deleteItem("fileListAsHtml", context);
-    }
-    else {
-        vscode.window.showErrorMessage("Cannot retrieve firmware version, please check your internet connection !");
-        // TODO: check local files instead how returning an error
-        return;
     }
 
-    state.version = await vscode.window.showQuickPick(firmwareVersions, {
-        title: "Create a Project",
-        placeHolder: "Select the version of the firmware (we highly recommend to use the latest version)",
-    });
-
-    if (state.version === undefined) { return; }
-
-    // Last STEP: Create the application
-    vscode.window.withProgress({
+    await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: `Creating Application '${state.name}' for ${state.board.label}`,
-        cancellable: true
-    }, async (progress, cancellationToken) => {
+        title: `Creating project ${state.name}`,
+        cancellable: false
+    }, async (progress) => {
 
-        let counter = 0;
-
-        const progressCallback = () => {
-            // This is not working rigth now, check back later if API has improved
-            if (counter === 0) {
-                progress.report({ message: `Downloading.` });
-            }
-            if (counter === 1) {
-                progress.report({ message: `Downloading..` });
-            }
-            if (counter === 2) {
-                progress.report({ message: `Downloading...` });
-            }
-            counter++;
-            if (counter === 3) {
-                counter = 0;
-            }
-        };
-
-        if (state.version === undefined) { return; }
-
-        state.firmware = await fileDownloader.tryGetItem("oi-firmware-" + state.version.label, context);
-
-        if (state.firmware === undefined) {
-            vscode.window.showInformationMessage("Please wait while your application is downloading, it can takes several minutes...");
-            state.firmware = await fileDownloader.downloadFile(
-                vscode.Uri.parse(sourceAddress + "oi-firmware-" + state.version.label + ".zip"),
-                "oi-firmware-" + state.version.label,
-                context,
-                cancellationToken,
-                progressCallback,
-                { shouldUnzip: true }
-            );
-        }
-
+        if (state.mode === undefined) { return; }
         if (state.board === undefined) { return; }
 
-        // Replace default_envs by the user selection
-        var data  = fs.readFileSync(state.firmware.fsPath + '/platformio.ini', 'utf8');
-		data = data.replace("default_envs = core", "default_envs = " + state.board.label.toLowerCase().substring(2));
-		fs.writeFileSync(state.firmware.fsPath +  '/platformio.ini', data, 'utf8');
+        // Fith STEP: check last version of openindus library in pio registry
+        let data = await execShell(getPlatformIOPythonPath() + " -m platformio pkg show \"openindus/OpenIndus\"", "./");
+        let libVersionResults = data?.match(/\d+.\d+.\d+/);
+        let libVersion = "";
+        if (libVersionResults !== null) {
+            libVersion = "@^" + libVersionResults[0];
+        }
+        libVersion = "openindus/OpenIndus" + libVersion;
+        let envName = formatStringOI(state.board.label).toLowerCase();
 
-        // Copy source
-        await vscode.workspace.fs.copy(state.firmware, vscode.Uri.file(state.path + '/' + state.name + '/'));
-        // Open workspace
-        await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name));
+        // Sixth STEP: create the project directory and copy item
+        // Create src directory and copy main.cpp
+        await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/src'));
+        await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/main.cpp')), vscode.Uri.file(state.path + '/' + state.name + '/src/main.cpp'));
+        
+        // Add modules instance to main.cpp
+        let mainSetupText: string = "%MODULE_INIT%";
+        var mainInitText: string = "";
+        if (master) {
+            mainInitText += '\r\n'; // empty line
+            mainInitText += "OI" + formatStringOI(master.type) + " " + formatStringOI(master.type).toLowerCase() + ";\r\n";  // master instance line
+
+            if (slaves !== undefined) {
+                let i = 1;
+                slaves.forEach((slave: ModuleInfo) => {
+                    mainInitText += "OI" + formatStringOI(slave.type) + " " + formatStringOI(slave.type).toLowerCase() + String(i) + ";\r\n"; // slave instance line
+                    i++;
+                });
+            }
+            mainInitText += '\r\n'; // empty line
+        }
+        // Replave text in main.cpp
+        let mainFile = fs.readFileSync(state.path + '/' + state.name + '/src/main.cpp', 'utf8');
+        mainFile = mainFile.replaceAll(mainSetupText, mainInitText);
+        fs.writeFileSync(state.path + '/' + state.name + '/src/main.cpp', mainFile, 'utf8');
+        
+        // Create lib directory
+        await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/lib/' + envName));
+        
+        // Copy sdkconfig.defaults
+        await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/sdkconfig.defaults')), vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'));
+        
+        // Install lib manually (by doing this, pio can find board and scripts before making initialization)
+        await execShell(getPlatformIOPythonPath() + " -m platformio pkg install --library \"" + libVersion + "\"  --storage-dir ./lib/" + envName, state.path + '/' + state.name);
+        
+
+        if (formatStringOI(state.board.label) === formatStringOI("OICore")) {
+            libVersion = "\r\n\t" + libVersion;
+            libVersion += "\r\n\tpaulstoffregen/Ethernet@^2.0.0";
+            libVersion += "\r\n\tfelis/USB-Host-Shield-20@^1.6.0";
+        }
+
+        // Copy platformio.ini and replace %VAR% by the user selection
+        await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/platformio.ini')), vscode.Uri.file(state.path + '/' + state.name + '/platformio.ini'));
+        let pioFile  = fs.readFileSync(state.path + '/' + state.name + '/platformio.ini', 'utf8');
+        pioFile = pioFile.replaceAll("%ENV%", envName);
+        pioFile = pioFile.replace("%LIB_VERSION%", libVersion);
+        pioFile = pioFile.replace("%MODULE%", state.board.label.toUpperCase().substring(2));
+        pioFile = pioFile.replace("%MODE%", state.mode.label.toUpperCase());
+        
+        fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', pioFile, 'utf8');
+    
     });
+
+    // Last STEP: Open folfer
+    await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name),  { forceNewWindow: true });
 }

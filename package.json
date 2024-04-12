@@ -2,44 +2,36 @@
     "name": "oi-extension",
     "displayName": "OpenIndus",
     "description": "Programming environment for OpenIndus Devices",
-    "version": "0.0.9",
+    "version": "1.0.0",
     "publisher": "OpenIndus",
     "repository": {
         "type": "git",
         "url": "https://github.com/openindus/oi-extension.git"
     },
-    "icon": "resources/logo.png",
+    "icon": "resources/logo_blanc.png",
     "engines": {
-        "vscode": "^1.60.0"
+        "vscode": "^1.87.0"
     },
     "categories": [
         "Other"
     ],
     "activationEvents": [
-        "*"
+        "onStartupFinished"
     ],
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
             {
-                "command": "openindus.createproject",
+                "command": "openindus.createProject",
                 "title": "Create a Project Application"
             },
             {
-                "command": "openindus.getDeviceId",
-                "title": "Get Device ID"
-            },
-            {
-                "command": "openindus.setDeviceId",
-                "title": "Set Device ID"
+                "command": "openindus.getSystemInfo",
+                "title": "Get System Information"
             },
             {
                 "command": "openindus.flashDeviceFirmware",
                 "title": "Update Device firware"
-            },
-            {
-                "command": "openindus.flashDeviceOnBus",
-                "title": "Update slave device on bus"
             },
             {
                 "command": "openindus.openinduswebsite",
@@ -70,29 +62,22 @@
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
-        "lint": "eslint src --ext ts",
-        "test": "node ./out/test/runTest.js"
+        "lint": "eslint src --ext ts"
     },
     "devDependencies": {
-        "@types/glob": "^7.1.3",
-        "@types/mocha": "^8.0.4",
         "@types/node": "^12.11.7",
         "@types/vscode": "^1.60.0",
         "@typescript-eslint/eslint-plugin": "^4.14.1",
         "@typescript-eslint/parser": "^4.14.1",
         "eslint": "^7.19.0",
-        "glob": "^7.1.6",
-        "mocha": "^8.2.1",
-        "typescript": "^4.1.3",
-        "vscode-test": "^1.5.0"
+        "typescript": "^4.1.3"
     },
     "dependencies": {
         "@microsoft/vscode-file-downloader-api": "^1.0.1",
-        "platformio-node-helpers": "^9.2.3",
+        "platformio-node-helpers": "11.2.0",
         "python-shell": "^3.0.0"
     },
     "extensionDependencies": [
-        "platformio.platformio-ide",
-        "mindaro-dev.file-downloader"
+        "platformio.platformio-ide"
     ]
 }
