@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.0.0]
+
+- Refactor extension
+
 ## [0.0.9]
 
 - Id can now be set to "0"
