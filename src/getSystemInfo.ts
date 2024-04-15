@@ -49,7 +49,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
             switch (message.command) {
                 case 'create-project':
                     console.log("create project clicked !");
-                    vscode.commands.executeCommand('openindus.createproject', moduleInfo, slaveInfoList);
+                    vscode.commands.executeCommand('openindus.createProject', moduleInfo, slaveInfoList);
                     return;
                 case 'flash-device':
                     console.log("flash device clicked !");
