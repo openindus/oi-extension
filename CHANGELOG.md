@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.0.1]
+
+- Add monitor options in platformio.ini
+
 ## [1.0.0]
 
 - Refactor extension

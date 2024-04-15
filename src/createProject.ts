@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { ModuleInfo, deviceTypeList, execShell, formatStringOI, pioProjects, getPlatformIOPythonPath } from './utils';
+import { ModuleInfo, deviceTypeList, execShell, formatStringOI, pioProjects, getPlatformIOPythonPath, IS_WINDOWS } from './utils';
 
 export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
     
@@ -174,6 +174,11 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         pioFile = pioFile.replace("%MODULE%", state.board.label.toUpperCase().substring(2));
         pioFile = pioFile.replace("%MODE%", state.mode.label.toUpperCase());
         
+        if (IS_WINDOWS === false) {
+            pioFile = pioFile.replace("monitor_rts = 1", "monitor_rts = 0");
+            pioFile = pioFile.replace("monitor_dtr = 1", "monitor_dtr = 0");
+        }
+
         fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', pioFile, 'utf8');
     
     });
