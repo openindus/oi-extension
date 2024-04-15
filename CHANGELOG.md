@@ -3,6 +3,8 @@
 ## [1.0.1]
 
 - Add monitor options in platformio.ini
+- Add master to default project
+- Fix createProject error in getSysteminfo pannel
 
 ## [1.0.0]
 
