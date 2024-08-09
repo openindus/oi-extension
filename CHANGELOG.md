@@ -1,5 +1,17 @@
 # Change Log
 
+## [1.1.0]
+
+- Change type from string to number
+- Add corelite and stepperve cases
+- Add version 1.2.0
+
+## [1.0.1]
+
+- Add monitor options in platformio.ini
+- Add master to default project
+- Fix createProject error in getSysteminfo pannel
+
 ## [1.0.0]
 
 - Refactor extension

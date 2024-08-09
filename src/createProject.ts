@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { ModuleInfo, deviceTypeList, execShell, formatStringOI, pioProjects, getPlatformIOPythonPath } from './utils';
+import { ModuleInfo, deviceTypeList, execShell, formatStringOI, pioProjects, getPlatformIOPythonPath, IS_WINDOWS } from './utils';
 
 export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
     
@@ -46,6 +46,11 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     }
 
     if (state.board === undefined) { return; }
+
+    console.log(state.board.label);
+    // OICore should be initialized as an OICore :
+    state.board.label = state.board.label.replace("lite", "");
+    console.log(state.board.label);
 
     // Second STEP: select folder
     const customPath = await vscode.window.showQuickPick(yesNoQuickPick, {
@@ -132,20 +137,24 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         // Add modules instance to main.cpp
         let mainSetupText: string = "%MODULE_INIT%";
         var mainInitText: string = "";
-        if (master) {
-            mainInitText += '\r\n'; // empty line
-            mainInitText += "OI" + formatStringOI(master.type) + " " + formatStringOI(master.type).toLowerCase() + ";\r\n";  // master instance line
-
-            if (slaves !== undefined) {
-                let i = 1;
-                slaves.forEach((slave: ModuleInfo) => {
-                    mainInitText += "OI" + formatStringOI(slave.type) + " " + formatStringOI(slave.type).toLowerCase() + String(i) + ";\r\n"; // slave instance line
-                    i++;
-                });
-            }
-            mainInitText += '\r\n'; // empty line
+        
+        mainInitText += '\r\n// First, init the master device\r\n'; // empty line + master comment
+        mainInitText += "OI" + formatStringOI(state.board.label) + " " + formatStringOI(state.board.label).toLowerCase() + ";\r\n";  // master instance line
+        mainInitText += "\r\// Then add slaves devices here :\r\n";
+        if (slaves !== undefined) {
+            let i = 1;
+            slaves.forEach((slave: ModuleInfo) => {
+                // /!\ OIStepperVE = OIStepper
+                mainInitText += "OI" + formatStringOI(slave.type).replace("ve","") + " " + formatStringOI(slave.type).toLowerCase() + String(i) + ";\r\n"; // slave instance line
+                i++;
+            });
+        } else {
+            // Put examples in comment
+            mainInitText += "// OIDiscrete discrete1;\r\n// OIDiscrete discrete2;\r\n// ...\r\n";
         }
-        // Replave text in main.cpp
+        mainInitText += '\r\n'; // empty line
+            
+        // Replace text in main.cpp
         let mainFile = fs.readFileSync(state.path + '/' + state.name + '/src/main.cpp', 'utf8');
         mainFile = mainFile.replaceAll(mainSetupText, mainInitText);
         fs.writeFileSync(state.path + '/' + state.name + '/src/main.cpp', mainFile, 'utf8');
@@ -174,6 +183,11 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         pioFile = pioFile.replace("%MODULE%", state.board.label.toUpperCase().substring(2));
         pioFile = pioFile.replace("%MODE%", state.mode.label.toUpperCase());
         
+        if (IS_WINDOWS === false) {
+            pioFile = pioFile.replace("monitor_rts = 1", "monitor_rts = 0");
+            pioFile = pioFile.replace("monitor_dtr = 1", "monitor_dtr = 0");
+        }
+
         fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', pioFile, 'utf8');
     
     });

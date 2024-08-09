@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { deviceTypeList, formatStringOI, getFormatedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath } from './utils';
+import { deviceTypeList, formatStringOI, getFormatedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, nameToType } from './utils';
 import * as fs from 'fs';
 
 export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext, masterPortName: string, slavesModuleInfo: ModuleInfo[], version?: string) {
@@ -54,12 +54,12 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
             progress.report({message: `OI${deviceType} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`});
 
             // Set the bin path and check it
-            let firmware = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase() + '_firmware-' + version + '.bin');
+            let firmware = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace('lite', '') + '_firmware-' + version + '.bin');
             if (fs.existsSync(firmware.fsPath) === false) { return; }
 
             // Set the slave in program mode
             let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/program.py';
-            let pyshell = new PythonShell(myPythonScriptPath, { mode: 'text', args: [masterPortName, slaveModuleInfo.serialNum], pythonPath: getPlatformIOPythonPath() });
+            let pyshell = new PythonShell(myPythonScriptPath, { mode: 'text', args: [masterPortName, nameToType(deviceType), slaveModuleInfo.serialNum], pythonPath: getPlatformIOPythonPath() });
 
             pyshell.on('message', function (message) {
                 console.log(message);

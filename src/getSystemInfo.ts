@@ -49,7 +49,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
             switch (message.command) {
                 case 'create-project':
                     console.log("create project clicked !");
-                    vscode.commands.executeCommand('openindus.createproject', moduleInfo, slaveInfoList);
+                    vscode.commands.executeCommand('openindus.createProject', moduleInfo, slaveInfoList);
                     return;
                 case 'flash-device':
                     console.log("flash device clicked !");
@@ -207,7 +207,7 @@ canvas {
                     <p>
                         Connected on ${master.port}<br>
                         <b>Serial Number:</b> ${master.serialNum}<br>
-                        <b>Hardware Version:</b> ${master.versionHw}<br>
+                        <b>Hardware Version:</b> ${master.hardwareVar}<br>
                         <b>Software version:</b> v${master.versionSw}
                     </p>
                     <button onClick="flashDevice()">Update firmware</button>
@@ -241,7 +241,7 @@ canvas {
                         <p>
                             Connected on Bus<br>
                             <b>Serial Number:</b> ${slave.serialNum}<br>
-                            <b>Hardware Version:</b> ${slave.versionHw}<br>
+                            <b>Hardware Version:</b> ${slave.hardwareVar}<br>
                             <b>Software version:</b> v${slave.versionSw}
                         </p>
                         <button onClick="flashSlave(` + id + `)">Update firmware</button>

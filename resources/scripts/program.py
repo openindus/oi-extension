@@ -5,7 +5,7 @@ import sys
 from OISerial import OISerial
 
 # open port
-print(sys.argv[1] + " | SN" +  sys.argv[2])
+print(sys.argv[1] + " | TYPE" +  sys.argv[2] + " | SN" +  sys.argv[3])
 com = OISerial(sys.argv[1])
 
 if (com.connect()):
@@ -16,7 +16,7 @@ if (com.connect()):
         exit(-1)
 
     # send program command to slave
-    if (com.program(sys.argv[2]) == False):
+    if (com.program(sys.argv[2], sys.argv[3]) == False):
         com.disconnect()
         exit(-1)
 

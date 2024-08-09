@@ -158,14 +158,14 @@ class OISerial(Serial):
 
     def getInfo(self) -> dict[str, str]:
 
-        deviceInfo = {"type": "undefined", "serialNum": "undefined", "versionHw": "undefined", "versionFw": "undefined"}
+        deviceInfo = {"type": "undefined", "serialNum": "undefined", "hardwareVar": "undefined", "versionFw": "undefined"}
 
         if (self.sendMsgWithReturn(b'get-board-info -t')):
             deviceInfo["type"] = self.last_response.decode()
         if (self.sendMsgWithReturn(b'get-board-info -n')):
             deviceInfo["serialNum"] = self.last_response.decode()
         if (self.sendMsgWithReturn(b'get-board-info -h')):
-            deviceInfo["versionHw"] = self.last_response.decode()
+            deviceInfo["hardwareVar"] = self.last_response.decode()
         if (self.sendMsgWithReturn(b'get-board-info -s')):
             deviceInfo["versionFw"] = self.last_response.decode()
 
@@ -175,20 +175,20 @@ class OISerial(Serial):
         slaveInfo = []
         slaveSNList = []
 
-        # return [{"port": "undefined", "type": "OIDiscrete", "serialNum": "0000008", "versionHw": "AD01", "versionSw": "1.0.1"}, {"port": "undefined", "type": "OIStepper", "serialNum": "0000010", "versionHw": "AD02", "versionSw": "1.0.0"}]
+        # return [{"port": "undefined", "type": "OIDiscrete", "serialNum": "0000008", "hardwareVar": "0", "versionSw": "1.0.1"}, {"port": "undefined", "type": "OIStepper", "serialNum": "0000010", "hardwareVar": "0", "versionSw": "1.0.0"}]
 
         if (self.sendMsgWithReturn(b'discover-slaves')):
             slaveSNList = json.loads(self.last_response.decode())
 
         for slaveSn in slaveSNList:
-            deviceInfo = {"port": "undefined", "type": "undefined", "serialNum": "undefined", "versionHw": "undefined", "versionSw": "undefined"}
-            if (self.sendMsgWithReturn(b'get-slave-info ' + str(slaveSn["sn"]).encode() + b' -t')):
+            deviceInfo = {"port": "undefined", "type": "undefined", "serialNum": "undefined", "hardwareVar": "undefined", "versionSw": "undefined"}
+            if (self.sendMsgWithReturn(b'get-slave-info ' + str(slaveSn["type"]).encode() + b' ' + str(slaveSn["sn"]).encode() + b' -t')):
                 deviceInfo["type"] = self.last_response.decode()
-            if (self.sendMsgWithReturn(b'get-slave-info ' + str(slaveSn["sn"]).encode() + b' -n')):
+            if (self.sendMsgWithReturn(b'get-slave-info ' + str(slaveSn["type"]).encode() + b' '  + str(slaveSn["sn"]).encode() + b' -n')):
                 deviceInfo["serialNum"] = self.last_response.decode()
-            if (self.sendMsgWithReturn(b'get-slave-info ' + str(slaveSn["sn"]).encode() + b' -h')):
-                deviceInfo["versionHw"] = self.last_response.decode()
-            if (self.sendMsgWithReturn(b'get-slave-info ' + str(slaveSn["sn"]).encode() + b' -s')):
+            if (self.sendMsgWithReturn(b'get-slave-info ' + str(slaveSn["type"]).encode() + b' '  + str(slaveSn["sn"]).encode() + b' -h')):
+                deviceInfo["hardwareVar"] = self.last_response.decode()
+            if (self.sendMsgWithReturn(b'get-slave-info ' + str(slaveSn["type"]).encode() + b' '  + str(slaveSn["sn"]).encode() + b' -s')):
                 deviceInfo["versionSw"] = self.last_response.decode()
             slaveInfo.append(deviceInfo)
 
@@ -197,8 +197,8 @@ class OISerial(Serial):
     def logLevel(self, level):
         return self.sendMsg(b'log ' + level.encode())
 
-    def program(self, num):
-        return self.sendMsg(b'program ' + str(num).encode())
+    def program(self, type, num):
+        return self.sendMsg(b'program ' + str(type).encode() + b' ' + str(num).encode())
     
 # serial = OISerial('COM17')
 # serial.connect()

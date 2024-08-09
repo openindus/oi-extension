@@ -22,10 +22,10 @@ for port in l:
         
         if (com.connect()):
             data = com.getInfo()
-            result["devices"].append({"port": port.device, "type": data["type"], "serialNum": data["serialNum"], "versionHw": data["versionHw"], "versionSw": data["versionFw"]})
+            result["devices"].append({"port": port.device, "type": data["type"], "serialNum": data["serialNum"], "hardwareVar": data["hardwareVar"], "versionSw": data["versionFw"]})
             com.disconnect()
         else:
-            result["devices"].append({"port": port.device, "type": "undefined", "serialNum": "undefined", "versionHw": "undefined", "versionSw": "undefined"})
+            result["devices"].append({"port": port.device, "type": "undefined", "serialNum": "undefined", "hardwareVar": "undefined", "versionSw": "undefined"})
        
 
 print(json.dumps(result))

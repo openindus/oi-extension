@@ -40,7 +40,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     let binVersions: vscode.QuickPickItem[] = [];
     firmwareVersionList.forEach((element) => {
         if (element[1] === vscode.FileType.Directory) {
-            if (element[0].split('oi-firmware-')[1].length >= 5) { // 0.0.0 --> min lenbgth is 5
+            if (element[0].split('oi-firmware-')[1].length >= 5) { // 0.0.0 --> min length is 5
                 binVersions.unshift({label: element[0].split('oi-firmware-')[1]});
             }
         }
@@ -52,11 +52,17 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     });
 
     // Set the bin path and check it
+    // Remove 'lite' in OICoreLite because there is no special firmware for this board
     onDiskPath = vscode.Uri.joinPath(onDiskPath, 'oi-firmware-' + version?.label);
-    let bootloader = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase() + '_bootloader-' + version?.label + '.bin');
-    let partitions = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase() + '_partitions-' + version?.label + '.bin');
-    let otaDataInitial = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase() + '_ota_data_initial-' + version?.label + '.bin');
-    let firmware = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase() + '_firmware-' + version?.label + '.bin');
+    let bootloader = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_bootloader-' + version?.label + '.bin');
+    let partitions = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_partitions-' + version?.label + '.bin');
+    let otaDataInitial = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_ota_data_initial-' + version?.label + '.bin');
+    let firmware = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_firmware-' + version?.label + '.bin');
+    
+    console.log(bootloader);
+    console.log(partitions);
+    console.log(otaDataInitial);
+    console.log(firmware);
 
     if (fs.existsSync(bootloader.fsPath) === false) { return; }
     if (fs.existsSync(partitions.fsPath) === false) { return; }
@@ -73,10 +79,14 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
 
             if (moduleInfo === undefined) { return; }
 
+            let chip = 'esp32s3';
+            // Hack for old modules
+            if (deviceType === "Stepperve") { chip = 'esp32s2'; }
+
             let options = {
                 mode: "text" as "text",
                 pythonPath: getPlatformIOPythonPath(),
-                args: ['--chip', 'esp32s3',
+                args: ['--chip', chip,
                         '--port', moduleInfo.port,
                         '--baud', '921600',
                         'write_flash',
