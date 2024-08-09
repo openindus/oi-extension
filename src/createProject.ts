@@ -47,6 +47,11 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
 
     if (state.board === undefined) { return; }
 
+    console.log(state.board.label);
+    // OICore should be initialized as an OICore :
+    state.board.label = state.board.label.replace("lite", "");
+    console.log(state.board.label);
+
     // Second STEP: select folder
     const customPath = await vscode.window.showQuickPick(yesNoQuickPick, {
         title: "Create a Project",
@@ -139,7 +144,8 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         if (slaves !== undefined) {
             let i = 1;
             slaves.forEach((slave: ModuleInfo) => {
-                mainInitText += "OI" + formatStringOI(slave.type) + " " + formatStringOI(slave.type).toLowerCase() + String(i) + ";\r\n"; // slave instance line
+                // /!\ OIStepperVE = OIStepper
+                mainInitText += "OI" + formatStringOI(slave.type).replace("ve","") + " " + formatStringOI(slave.type).toLowerCase() + String(i) + ";\r\n"; // slave instance line
                 i++;
             });
         } else {

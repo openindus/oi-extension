@@ -207,7 +207,7 @@ canvas {
                     <p>
                         Connected on ${master.port}<br>
                         <b>Serial Number:</b> ${master.serialNum}<br>
-                        <b>Hardware Version:</b> ${master.versionHw}<br>
+                        <b>Hardware Version:</b> ${master.hardwareVar}<br>
                         <b>Software version:</b> v${master.versionSw}
                     </p>
                     <button onClick="flashDevice()">Update firmware</button>
@@ -241,7 +241,7 @@ canvas {
                         <p>
                             Connected on Bus<br>
                             <b>Serial Number:</b> ${slave.serialNum}<br>
-                            <b>Hardware Version:</b> ${slave.versionHw}<br>
+                            <b>Hardware Version:</b> ${slave.hardwareVar}<br>
                             <b>Software version:</b> v${slave.versionSw}
                         </p>
                         <button onClick="flashSlave(` + id + `)">Update firmware</button>

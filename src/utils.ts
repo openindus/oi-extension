@@ -5,16 +5,77 @@ import * as cp from "child_process";
 export const deviceTypeList: string[] = 
 [
     'OICore',
-    'OICoreLite',
+    'OICorelite',
     'OIDiscrete',
-    'OIDiscrete_VE',
+    'OIDiscreteVE',
     'OIStepper',
-    'OIStepper_VE',
+    'OIStepperVE',
     'OIMixed',
     'OIAnalog_LS',
     'OIRelay_LP',
-    'OIRelay_HP'
+    'OIRelay_HP',
+    'OIDc'
 ];
+
+export function typeToName(input: string): string {
+    
+    switch (input) {
+        case '3':
+            return 'OICore';
+        case '4':
+            return 'OICorelite';
+        case '6':
+            return 'OIDiscrete';
+        case '7':
+            return 'OIDiscreteVE';
+        case '11':
+            return 'OIStepper';
+        case '12':
+            return 'OIStepperVE'
+        case '8':
+            return 'OIMixed';
+        case '9':
+            return 'OIRelayLP';
+        case '10':
+            return 'OIRelayHP';
+        case '13':
+            return 'OIAnalogLS';
+        case '21':
+            return 'OIDc';
+        default:
+            return 'Unknown';
+    }
+}
+
+export function nameToType(input: string): string {
+    
+    switch (input) {
+        case 'Core':
+            return '3';
+        case 'Corelite':
+            return '4';
+        case 'Discrete':
+            return '6';
+        case 'Discreteve':
+            return '7';
+        case 'Stepper':
+            return '11';
+        case 'Stepperve':
+            return '12'
+        case 'Mixed':
+            return '8';
+        case 'Relaylp':
+            return '9';
+        case 'Relayhp':
+            return '10';
+        case 'Analogls':
+            return '13';
+        case 'Dc':
+            return '21';
+        default:
+            return '0';
+    }
+}
 
 // Return a board without 'OI', '_' and '-' and withfist letter capitalize
 export function formatStringOI(input: string): string {
@@ -49,7 +110,7 @@ export type ModuleInfo = {
     port: string;
     type: string;
     serialNum: string;
-    versionHw: string;
+    hardwareVar: string;
     versionSw: string;
     imgName: string;
     caseName: string;
@@ -86,12 +147,12 @@ export async function getDeviceInfoList(context: vscode.ExtensionContext, token:
 	pyshell.on('message', function (message) {
 		console.log("List of devices found:");
         console.log(message);
-		message.devices.forEach((element: { port: string; type: string; serialNum: string, versionHw: string, versionSw: string}) => {
+		message.devices.forEach((element: { port: string; type: string; serialNum: string, hardwareVar: string, versionSw: string}) => {
 			moduleInfoList.push({
 				port: element.port,
-				type: element.type,
+				type: typeToName(element.type),
 				serialNum: element.serialNum,
-				versionHw: element.versionHw,
+				hardwareVar: element.hardwareVar,
 				versionSw: element.versionSw,
 				imgName: "",
 				caseName: ""
@@ -131,12 +192,12 @@ export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, t
 	pyshell.on('message', function (message) {
         console.log("List of slaves devices found:");
 		console.log(message);
-		message.forEach((element: { port: string; type: string; serialNum: string, versionHw: string, versionSw: string}) => {
+		message.forEach((element: { port: string; type: string; serialNum: string, hardwareVar: string, versionSw: string}) => {
 			moduleInfoList.push({
 				port: element.port,
-				type: element.type,
+				type: typeToName(element.type),
 				serialNum: element.serialNum,
-				versionHw: element.versionHw,
+				hardwareVar: element.hardwareVar,
 				versionSw: element.versionSw,
 				imgName: "",
 				caseName: ""
@@ -190,7 +251,7 @@ export async function pickDevice(context: vscode.ExtensionContext, portName?: st
     // Fill a quick pick item list with info of all connected module
     const deviceInfoQuickPickItem: vscode.QuickPickItem[] = [];
     moduleInfoList.forEach((element: ModuleInfo) => {
-        deviceInfoQuickPickItem.push({description: '$(debug-stackframe-dot) ' + element.port, label: element.type, detail: 'S/N: ' + element.serialNum + ' $(debug-stackframe-dot) HW version: ' + element.versionHw + ' $(debug-stackframe-dot) SW version: ' + element.versionSw});
+        deviceInfoQuickPickItem.push({description: '$(debug-stackframe-dot) ' + element.port, label: element.type, detail: 'S/N: ' + element.serialNum + ' $(debug-stackframe-dot) HW version: ' + element.hardwareVar + ' $(debug-stackframe-dot) SW version: ' + element.versionSw});
     }); 
 
     // Let the user choose his module (only if several modules are connected)
