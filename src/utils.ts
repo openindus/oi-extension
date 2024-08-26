@@ -82,7 +82,7 @@ export function formatStringOI(input: string): string {
     return capitalizeFirstLetter(input.toLowerCase().replaceAll('oi', '').replaceAll('_', '').replaceAll('-', ''));
 }
 
-export function getFormatedDeviceList(): string[] {
+export function getFormattedDeviceList(): string[] {
     let formatedDeviceList: string[] = [];
     deviceTypeList.forEach((element)=>{formatedDeviceList.push(formatStringOI(element));});
     return formatedDeviceList;

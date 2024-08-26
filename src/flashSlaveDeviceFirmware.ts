@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { deviceTypeList, formatStringOI, getFormatedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, nameToType } from './utils';
+import { deviceTypeList, formatStringOI, getFormattedDeviceList as getFormattedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, nameToType } from './utils';
 import * as fs from 'fs';
 
 export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext, masterPortName: string, slavesModuleInfo: ModuleInfo[], version?: string) {
@@ -12,7 +12,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
     let binVersions: vscode.QuickPickItem[] = [];
     firmwareVersionList.forEach((element) => {
         if (element[1] === vscode.FileType.Directory) {
-            if (element[0].split('oi-firmware-')[1].length >= 5) { // 0.0.0 --> min lenbgth is 5
+            if (element[0].split('oi-firmware-')[1].length >= 5) { // 0.0.0 --> min length is 5
                 binVersions.unshift({label: element[0].split('oi-firmware-')[1]});
             }
         }
@@ -31,6 +31,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
     onDiskPath = vscode.Uri.joinPath(onDiskPath, 'oi-firmware-' + version);
 
     var numberFlashedSuccessfully = 0;
+    var flashErrorList: string[] = [];
 
     // Flash the Firmware
     let successFlash = await vscode.window.withProgress({
@@ -44,7 +45,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
             
             // Check if device type is known
             let deviceType: string = "";
-            if (getFormatedDeviceList().includes(formatStringOI(slaveModuleInfo.type))) {
+            if (getFormattedDeviceList().includes(formatStringOI(slaveModuleInfo.type))) {
                 deviceType = formatStringOI(slaveModuleInfo.type);
             } else {
                 continue;
@@ -123,17 +124,32 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
                 });
             });
 
+            if (cancellationToken.isCancellationRequested) {
+                break;
+            }
+
             if (successFlash === false) {
                 vscode.window.showErrorMessage(`Unexpected error while flashing device OI${deviceType} (SN:${slaveModuleInfo.serialNum}) !`);
+                flashErrorList.push(`OI${deviceType} (SN:${slaveModuleInfo.serialNum})`);
                 continue;
             } else {
                 numberFlashedSuccessfully++;
             }
+
         };
     });
 
     // Prompt a success message or an error message
-    if (numberFlashedSuccessfully === slavesModuleInfo.length) {
-        vscode.window.showInformationMessage(`${slavesModuleInfo.length} device${slavesModuleInfo.length>1?"s":""} flashed successfuly !`);
+    if (flashErrorList.length > 0) {
+        let message: string = "";
+        message += `Error while flashing device${flashErrorList.length>0?"s":""}:\r\n`;
+        for (const flashError of flashErrorList) {
+            message += '- ';
+            message += flashError;
+            message += '\r\n';
+        }
+        vscode.window.showErrorMessage(message, {modal: true});
+    } else if (numberFlashedSuccessfully === slavesModuleInfo.length) {
+        vscode.window.showInformationMessage(`${slavesModuleInfo.length} device${slavesModuleInfo.length>1?"s":""} flashed successfully !`);
     }
 }

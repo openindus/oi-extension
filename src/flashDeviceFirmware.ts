@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { deviceTypeList, formatStringOI, getFormatedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath } from './utils';
+import { deviceTypeList, formatStringOI, getFormattedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath } from './utils';
 import * as fs from 'fs';
 
 export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string, inputModuleInfo?: ModuleInfo) {
@@ -20,7 +20,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     if (moduleInfo.port === undefined) { return; }
 
     // Check if device type is known
-    if (getFormatedDeviceList().includes(formatStringOI(moduleInfo.type))) {
+    if (getFormattedDeviceList().includes(formatStringOI(moduleInfo.type))) {
         deviceType = formatStringOI(moduleInfo.type);
     } else {
         // TODO: if device type could be read by console, check with espefuse.py --> if firmware is wrong, it could still detect the right device name
