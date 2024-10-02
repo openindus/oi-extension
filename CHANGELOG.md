@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.1]
+
+- Add v1.3.0 binaries
+
 ## [1.1.0]
 
 - Change type from string to number
