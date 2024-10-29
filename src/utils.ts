@@ -56,19 +56,19 @@ export function nameToType(input: string): string {
             return '4';
         case 'Discrete':
             return '6';
-        case 'Discreteve':
+        case 'DiscreteVE':
             return '7';
         case 'Stepper':
             return '11';
-        case 'Stepperve':
+        case 'StepperVE':
             return '12'
         case 'Mixed':
             return '8';
-        case 'Relaylp':
+        case 'RelayLP':
             return '9';
-        case 'Relayhp':
+        case 'RelayHP':
             return '10';
-        case 'Analogls':
+        case 'AnalogLS':
             return '13';
         case 'Dc':
             return '21';
@@ -77,9 +77,15 @@ export function nameToType(input: string): string {
     }
 }
 
-// Return a board without 'OI', '_' and '-' and withfist letter capitalize
+// Return a board without 'OI', '_' and '-' and withfist letter capitalize and 'hp', 'ls' capitalized
 export function formatStringOI(input: string): string {
-    return capitalizeFirstLetter(input.toLowerCase().replaceAll('oi', '').replaceAll('_', '').replaceAll('-', ''));
+    return capitalizeFirstLetter(input.toLowerCase().replaceAll('oi', '')
+                                                    .replaceAll('_', '')
+                                                    .replaceAll('-', '')
+                                                    .replaceAll('ls', 'LS')
+                                                    .replaceAll('hp', 'HP')
+                                                    .replaceAll('ve', 'VE')
+                                                    .replaceAll('lp', 'LP'));
 }
 
 export function getFormattedDeviceList(): string[] {
@@ -102,7 +108,8 @@ export const caseImg = [
     {moduleName: "OIMixed", imgName: "discrete.png", caseName: "BOI12"},
     {moduleName: "OIAnalogLS", imgName: "discrete.png", caseName: "BOI12"},
     {moduleName: "OIRelayLP", imgName: "stepper.png", caseName: "BOI13"},
-    {moduleName: "OIRelayLP", imgName: "stepper.png", caseName: "BOI13"}
+    {moduleName: "OIRelayLP", imgName: "stepper.png", caseName: "BOI13"},
+    {moduleName: "OIDc", imgName: "stepper.png", caseName: "BOI13"}
 ];
 
 
