@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.3]
+
+- Add 1.4.0 binaries
+
 ## [1.1.2]
 
 - Fix lettercase error for 'hp' and 'ls' in board names
