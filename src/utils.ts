@@ -31,7 +31,7 @@ export function typeToName(input: string): string {
         case '11':
             return 'OIStepper';
         case '12':
-            return 'OIStepperVE'
+            return 'OIStepperVE';
         case '8':
             return 'OIMixed';
         case '9':
@@ -61,7 +61,7 @@ export function nameToType(input: string): string {
         case 'Stepper':
             return '11';
         case 'StepperVE':
-            return '12'
+            return '12';
         case 'Mixed':
             return '8';
         case 'RelayLP':

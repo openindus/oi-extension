@@ -47,10 +47,8 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
 
     if (state.board === undefined) { return; }
 
-    console.log(state.board.label);
     // OICoreLite should be initialized as an OICore :
     state.board.label = state.board.label.replace("lite", "");
-    console.log(state.board.label);
 
     // Second STEP: select folder
     const customPath = await vscode.window.showQuickPick(yesNoQuickPick, {
@@ -162,7 +160,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         // Create lib directory
         await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/lib/' + envName));
         
-        // Copy sdkconfig.defaults and CMakeLists.txt
+        // Copy sdkconfig.defaults
         await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/sdkconfig.defaults')), vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'));
         
         // Install lib manually (by doing this, pio can find board and scripts before making initialization)
@@ -174,10 +172,19 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             libVersion += "\r\n\tpaulstoffregen/Ethernet@^2.0.0";
             libVersion += "\r\n\tfelis/USB-Host-Shield-20@^1.6.0";
         }
+        
+        // Copy CMakeLists.txt and replace %VAR% by the user selection
+        await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/CMakeLists.txt')), vscode.Uri.file(state.path + '/' + state.name + '/CMakeLists.txt'));
+        await new Promise(f => setTimeout(f, 1000));
+        let cmakelistsFile = fs.readFileSync(state.path + '/' + state.name + '/CMakeLists.txt', 'utf8');
+        console.log(cmakelistsFile);
+        cmakelistsFile = cmakelistsFile.replace("%ENV%", envName);
+        cmakelistsFile = cmakelistsFile.replace("%PROJECT%", state.name!);
+        fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
 
         // Copy platformio.ini and replace %VAR% by the user selection
         await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/platformio.ini')), vscode.Uri.file(state.path + '/' + state.name + '/platformio.ini'));
-        let pioFile  = fs.readFileSync(state.path + '/' + state.name + '/platformio.ini', 'utf8');
+        let pioFile = fs.readFileSync(state.path + '/' + state.name + '/platformio.ini', 'utf8');
         pioFile = pioFile.replaceAll("%ENV%", envName);
         pioFile = pioFile.replace("%LIB_VERSION%", libVersion);
         pioFile = pioFile.replace("%MODULE%", state.board.label.toUpperCase().substring(2));
@@ -187,14 +194,8 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             pioFile = pioFile.replace("monitor_dtr = 1", "monitor_dtr = 0");
         }
         fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', pioFile, 'utf8');
-
-        // Copy CMakeLists.txt and replace %VAR% by the user selection
-        await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/CMakeLists.txt')), vscode.Uri.file(state.path + '/' + state.name + '/CMakeLists.txt'));
-        let cmakelistsFile  = fs.readFileSync(state.path + '/' + state.name + '/CMakeLists.txt', 'utf8');
-        cmakelistsFile = cmakelistsFile.replaceAll("%ENV%", envName);
-        fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
     });
 
     // Last STEP: Open folfer
-    await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name),  { forceNewWindow: true });
+    await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name), { forceNewWindow: true });
 }

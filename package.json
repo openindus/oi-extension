@@ -16,7 +16,6 @@
         "Other"
     ],
     "activationEvents": [
-        "onView:openindus-treeview"
     ],
     "main": "./out/extension.js",
     "contributes": {
