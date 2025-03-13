@@ -178,7 +178,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         await new Promise(f => setTimeout(f, 1000));
         let cmakelistsFile = fs.readFileSync(state.path + '/' + state.name + '/CMakeLists.txt', 'utf8');
         console.log(cmakelistsFile);
-        cmakelistsFile = cmakelistsFile.replace("%ENV%", envName);
+        cmakelistsFile = cmakelistsFile.replaceAll("%ENV%", envName);
         cmakelistsFile = cmakelistsFile.replace("%PROJECT%", state.name!);
         fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
 

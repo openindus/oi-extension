@@ -128,6 +128,8 @@ export const binAddress = "http://openindus.com/oi-content/bin/";
 export const pioProjects = require('os').homedir() + '/Documents/PlatformIO/Projects';
 const pioNodeHelpers = require('platformio-node-helpers');
 var path = require('path');
+import * as https from 'https';
+import * as fs from 'fs';
 
 export const execShell = (cmd: string, path: string) =>
     new Promise<string>((resolve, reject) => {
@@ -288,3 +290,63 @@ export async function pickDevice(context: vscode.ExtensionContext, portName?: st
 
     return moduleInfo;
 }
+
+// export async function updateAndSelectFirmwarePath(context: vscode.ExtensionContext) : Promise<string> {
+
+//     return new Promise<string>(async (resolve, reject) => {
+//         // Download firmware online
+//         async function listDirectoryNames(uri: vscode.Uri): Promise<string[]> {
+//             const directoryEntries = await vscode.workspace.fs.readDirectory(uri);
+//             return directoryEntries
+//                 .filter(([name, type]) => type === vscode.FileType.Directory)
+//                 .map(([name]) => name);
+//         }
+
+//         const firmwareDirectoryUri = vscode.Uri.joinPath(context.extensionUri, 'resources', 'bin');
+//         const firmwareDirectories = await listDirectoryNames(firmwareDirectoryUri);
+//     });
+    
+//         return new Promise((resolve, reject) => {
+//             const file = fs.createWriteStream(dest);
+//             https.get(url, (response) => {
+//                 if (response.statusCode !== 200) {
+//                     reject(new Error(`Failed to get '${url}' (${response.statusCode})`));
+//                     return;
+//                 }
+//                 response.pipe(file);
+//                 file.on('finish', () => {
+//                     file.close(resolve);
+//                 });
+//             }).on('error', (err) => {
+//                 fs.unlink(dest, () => reject(err));
+//             });
+//         });
+//     }
+
+//     const firmwareUrl = `${sourceAddress}firmware/latest/oi-firmware.bin`;
+//     const firmwarePath = path.join(context.extensionPath, 'resources', 'bin', 'oi-firmware.bin');
+
+//     await downloadFirmware(firmwareUrl, firmwarePath);
+
+//     // Choose the version
+//     // Get path to resource on disk
+//     let onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'bin');
+//     let firmwareVersionList = fs.readdirSync(onDiskPath.fsPath);
+//     let binVersions: vscode.QuickPickItem[] = [];
+//     firmwareVersionList.forEach((element) => {
+//         if (fs.statSync(onDiskPath.fsPath + '/' + element).isDirectory()) {
+//             if (element.split('oi-firmware-')[1].length >= 5) { // 0.0.0 --> min length is 5
+//                 binVersions.unshift({label: element.split('oi-firmware-')[1]});
+//             }
+//         }
+//     });
+
+//     let version = vscode.window.showQuickPick(binVersions, {
+//         placeHolder: "Select the version (choose the same version used for the main firmware)",
+//         ignoreFocusOut: true,
+//     });
+
+//     onDiskPath = vscode.Uri.joinPath(onDiskPath, 'oi-firmware-' + version?.label);
+
+//     return firmware.fsPath;
+// }
