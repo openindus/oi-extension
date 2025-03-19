@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
 import * as cp from "child_process";
+import { SerialPort, PortInfo } from 'serialport';
+import { OISerial } from './OISerial';
 
 export const deviceTypeList: string[] = 
 [
@@ -10,7 +12,7 @@ export const deviceTypeList: string[] =
     'OIDiscreteVE',
     'OIStepper',
     'OIStepperVE',
-    'OIMixed',
+    'OIMixed',  
     'OIAnalog_LS',
     'OIRelay_LP',
     'OIRelay_HP',
@@ -18,63 +20,37 @@ export const deviceTypeList: string[] =
 ];
 
 export function typeToName(input: string): string {
-    
-    switch (input) {
-        case '3':
-            return 'OICore';
-        case '4':
-            return 'OICorelite';
-        case '6':
-            return 'OIDiscrete';
-        case '7':
-            return 'OIDiscreteVE';
-        case '11':
-            return 'OIStepper';
-        case '12':
-            return 'OIStepperVE';
-        case '8':
-            return 'OIMixed';
-        case '9':
-            return 'OIRelayLP';
-        case '10':
-            return 'OIRelayHP';
-        case '13':
-            return 'OIAnalogLS';
-        case '21':
-            return 'OIDc';
-        default:
-            return 'Unknown';
-    }
+    const typeMap: { [key: string]: string } = {
+        '3': 'OICore',
+        '4': 'OICorelite',
+        '6': 'OIDiscrete',
+        '7': 'OIDiscreteVE',
+        '8': 'OIMixed',
+        '9': 'OIRelayLP',
+        '10': 'OIRelayHP',
+        '11': 'OIStepper',
+        '12': 'OIStepperVE',
+        '13': 'OIAnalogLS',
+        '21': 'OIDc'
+    };
+    return typeMap[input] || 'Unknown';
 }
 
 export function nameToType(input: string): string {
-    
-    switch (input) {
-        case 'Core':
-            return '3';
-        case 'Corelite':
-            return '4';
-        case 'Discrete':
-            return '6';
-        case 'DiscreteVE':
-            return '7';
-        case 'Stepper':
-            return '11';
-        case 'StepperVE':
-            return '12';
-        case 'Mixed':
-            return '8';
-        case 'RelayLP':
-            return '9';
-        case 'RelayHP':
-            return '10';
-        case 'AnalogLS':
-            return '13';
-        case 'Dc':
-            return '21';
-        default:
-            return '0';
-    }
+    const nameMap: { [key: string]: string } = {
+        'OICore': '3',
+        'OICorelite': '4',
+        'OIDiscrete': '6',
+        'OIDiscreteVE': '7',
+        'OIMixed': '8',
+        'OIRelayLP': '9',
+        'OIRelayHP': '10',
+        'OIStepper': '11',
+        'OIStepperVE': '12',
+        'OIAnalogLS': '13',
+        'OIDc': '21'
+    };
+    return nameMap[input] || 'Unknown';
 }
 
 // Return a board without 'OI', '_' and '-' and withfist letter capitalize and 'hp', 'ls' capitalized
@@ -130,6 +106,7 @@ const pioNodeHelpers = require('platformio-node-helpers');
 var path = require('path');
 import * as https from 'https';
 import * as fs from 'fs';
+import { error } from 'console';
 
 export const execShell = (cmd: string, path: string) =>
     new Promise<string>((resolve, reject) => {
@@ -145,49 +122,38 @@ export const IS_WINDOWS = process.platform.startsWith('win');
 export function getPlatformIOPythonPath() : string { return path.join(pioNodeHelpers.core.getEnvBinDir(), IS_WINDOWS ? 'python.exe': 'python'); }
 export function getEsptoolPath() : string { return path.join(pioNodeHelpers.core.getEnvBinDir(), IS_WINDOWS ? 'esptool.exe': 'esptool.py'); }
 
-export async function getDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken): Promise<ModuleInfo[] | undefined> {
+export async function getDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken): Promise<ModuleInfo[]> {
 
 	// Retrieve available devices with getConnectedBoards.py
 	let moduleInfoList: ModuleInfo[] = [];
 
-	let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/getConnectedDevices.py';
-	let pyshell = new PythonShell(myPythonScriptPath, { mode: 'json', pythonPath: getPlatformIOPythonPath() });
+    let targetVid = '10C4';
+    let ports = await SerialPort.list();
+    
+    for await (const port of ports) {
+        if (port.vendorId === targetVid) {
+            var serial = new OISerial(port.path);
+            try {
+                await serial.connect().catch((error: any) => { throw error; });
+                await serial.getInfo().then((data: { type: string; serialNum: string; hardwareVar: string; versionFw: string }) => {
+                    moduleInfoList.push({
+                        port: port.path,
+                        type: typeToName(data.type),
+                        serialNum: data.serialNum,
+                        hardwareVar: data.hardwareVar,
+                        versionSw: data.versionFw,
+                        imgName: "",
+                        caseName: ""});
+                }).catch((error: any) => { throw error; });
+                serial.disconnect();
+            }
+            catch (error) {
+                moduleInfoList.push({port: port.path, type: "undefined", serialNum: "undefined", hardwareVar: "undefined", versionSw: "undefined", imgName: "", caseName: ""});
+            }
+        }
+    }
 
-	pyshell.on('message', function (message) {
-		console.log("List of devices found:");
-        console.log(message);
-		message.devices.forEach((element: { port: string; type: string; serialNum: string, hardwareVar: string, versionSw: string}) => {
-			moduleInfoList.push({
-				port: element.port,
-				type: typeToName(element.type),
-				serialNum: element.serialNum,
-				hardwareVar: element.hardwareVar,
-				versionSw: element.versionSw,
-				imgName: "",
-				caseName: ""
-			});
-		});
-	});
-
-	let success = await new Promise( resolve => {
-		token.onCancellationRequested(() => {
-			pyshell.kill();
-			resolve(false);
-		});
-		pyshell.end(function (err: any, code: any) {
-			if (code === 0) {
-				resolve(true);
-			} else {
-				resolve(false);
-			}
-		});
-	});
-
-	if (success === false) {
-		return undefined;
-	} else {
-		return moduleInfoList;
-	}
+    return moduleInfoList;
 }
 
 export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken, scanPort: string): Promise<ModuleInfo[] | undefined> {

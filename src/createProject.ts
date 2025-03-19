@@ -166,7 +166,6 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         // Install lib manually (by doing this, pio can find board and scripts before making initialization)
         await execShell(getPlatformIOPythonPath() + " -m platformio pkg install --library \"" + libVersion + "\"  --storage-dir ./lib/" + envName, state.path + '/' + state.name);
         
-
         if (formatStringOI(state.board.label) === formatStringOI("OICore")) {
             libVersion = "\r\n\t" + libVersion;
             libVersion += "\r\n\tpaulstoffregen/Ethernet@^2.0.0";
@@ -175,12 +174,16 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         
         // Copy CMakeLists.txt and replace %VAR% by the user selection
         await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/CMakeLists.txt')), vscode.Uri.file(state.path + '/' + state.name + '/CMakeLists.txt'));
-        await new Promise(f => setTimeout(f, 1000));
         let cmakelistsFile = fs.readFileSync(state.path + '/' + state.name + '/CMakeLists.txt', 'utf8');
-        console.log(cmakelistsFile);
         cmakelistsFile = cmakelistsFile.replaceAll("%ENV%", envName);
         cmakelistsFile = cmakelistsFile.replace("%PROJECT%", state.name!);
         fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
+
+        // Copy versionFile.txt and replace %LIB_VERSION% by the user selection
+        await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/version.txt')), vscode.Uri.file(state.path + '/' + state.name + '/version.txt'));
+        let versionFile = fs.readFileSync(state.path + '/' + state.name + '/version.txt', 'utf8');
+        versionFile = versionFile.replace("%LIB_VERSION%", state.name!);
+        fs.writeFileSync(state.path + '/' + state.name + '/version.txt', versionFile, 'utf8');
 
         // Copy platformio.ini and replace %VAR% by the user selection
         await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/platformio.ini')), vscode.Uri.file(state.path + '/' + state.name + '/platformio.ini'));

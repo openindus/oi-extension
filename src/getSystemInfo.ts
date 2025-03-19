@@ -109,8 +109,7 @@ function getWebviewContent(htmlResources: vscode.Uri, master: ModuleInfo, slaves
             });
         });
     }
-    
-    
+
     let htmlDoc = `<!DOCTYPE html>
     <html lang="en">
     <head>
