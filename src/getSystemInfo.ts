@@ -38,7 +38,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
      const onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'html');
 
     // And get the special URI to use with the webview
-     const htmlResources = panel.webview.asWebviewUri(onDiskPath);
+    const htmlResources = panel.webview.asWebviewUri(onDiskPath);
 
     panel.webview.html = getWebviewContent(htmlResources, moduleInfo, slaveInfoList);
 
@@ -203,7 +203,7 @@ canvas {
                     <h3>${master.type}</h3>
                     <div style="border:1px solid #1F1F1F;"></div>
                     <p>
-                        Connected on ${master.port.path}<br>
+                        Connected on ${master.port}<br>
                         <b>Serial Number:</b> ${master.serialNum}<br>
                         <b>Hardware Version:</b> ${master.hardwareVar}<br>
                         <b>Software version:</b> v${master.versionSw}

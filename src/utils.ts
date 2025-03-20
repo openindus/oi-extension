@@ -39,17 +39,17 @@ export function typeToName(input: string): string {
 
 export function nameToType(input: string): string {
     const nameMap: { [key: string]: string } = {
-        'OICore': '3',
-        'OICorelite': '4',
-        'OIDiscrete': '6',
-        'OIDiscreteVE': '7',
-        'OIMixed': '8',
-        'OIRelayLP': '9',
-        'OIRelayHP': '10',
-        'OIStepper': '11',
-        'OIStepperVE': '12',
-        'OIAnalogLS': '13',
-        'OIDc': '21'
+        'Core': '3',
+        'Corelite': '4',
+        'Discrete': '6',
+        'DiscreteVE': '7',
+        'Mixed': '8',
+        'RelayLP': '9',
+        'RelayHP': '10',
+        'Stepper': '11',
+        'StepperVE': '12',
+        'AnalogLS': '13',
+        'Dc': '21'
     };
     return nameMap[input] || 'Unknown';
 }
@@ -211,7 +211,7 @@ export async function pickDevice(context: vscode.ExtensionContext, portName?: st
     // Fill a quick pick item list with info of all connected module
     const deviceInfoQuickPickItem: vscode.QuickPickItem[] = [];
     moduleInfoList.forEach((element: ModuleInfo) => {
-        deviceInfoQuickPickItem.push({description: '$(debug-stackframe-dot) ' + element.port.path, label: element.type, detail: 'S/N: ' + element.serialNum + ' $(debug-stackframe-dot) HW version: ' + element.hardwareVar + ' $(debug-stackframe-dot) SW version: ' + element.versionSw});
+        deviceInfoQuickPickItem.push({description: '$(debug-stackframe-dot) ' + element.port, label: element.type, detail: 'S/N: ' + element.serialNum + ' $(debug-stackframe-dot) HW version: ' + element.hardwareVar + ' $(debug-stackframe-dot) SW version: ' + element.versionSw});
     }); 
 
     // Let the user choose his module (only if several modules are connected)

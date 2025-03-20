@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
 import { deviceTypeList, formatStringOI, getFormattedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath } from './utils';
 import * as fs from 'fs';
+import { logger } from './extension';
 
 export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string, inputModuleInfo?: ModuleInfo) {
 
@@ -59,10 +60,10 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     let otaDataInitial = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_ota_data_initial-' + version?.label + '.bin');
     let firmware = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_firmware-' + version?.label + '.bin');
     
-    console.log(bootloader);
-    console.log(partitions);
-    console.log(otaDataInitial);
-    console.log(firmware);
+    logger.info(bootloader.toString());
+    logger.info(partitions.toString());
+    logger.info(otaDataInitial.toString());
+    logger.info(firmware.toString());
 
     if (fs.existsSync(bootloader.fsPath) === false) { return; }
     if (fs.existsSync(partitions.fsPath) === false) { return; }
@@ -101,7 +102,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
             let lastIncrement = 0;
 
             pyshell.on('message', function (message) {
-                console.log(message);
+                logger.info(message);
                 if (message.includes('%') && (message.includes("100 %") === false)) { // do not increment for 100% on bootloader, ota and partition
                     progress.report({increment: Number(message.split('(')[1].substring(0, 2)) - lastIncrement});
                     lastIncrement = Number(message.split('(')[1].substring(0, 2));
@@ -115,7 +116,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
 
             pyshell.end(function (err: any, code: any) {
                 if (code === 0) {
-                    console.log(err);
+                    logger.error(err);
                     resolve(true);
                 } else {
                     resolve(false);

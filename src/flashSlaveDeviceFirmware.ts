@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { deviceTypeList, formatStringOI, getFormattedDeviceList as getFormattedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, nameToType } from './utils';
+import { formatStringOI, getFormattedDeviceList as getFormattedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, nameToType } from './utils';
 import * as fs from 'fs';
+import { logger } from './extension';
+import { OISerial } from './OISerial';
 
 export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext, masterPortName: string, slavesModuleInfo: ModuleInfo[], version?: string) {
 
@@ -58,25 +60,14 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
             let firmware = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace('lite', '') + '_firmware-' + version + '.bin');
             if (fs.existsSync(firmware.fsPath) === false) { return; }
 
-            // Set the slave in program mode
-            let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/program.py';
-            let pyshell = new PythonShell(myPythonScriptPath, { mode: 'text', args: [masterPortName, nameToType(deviceType), slaveModuleInfo.serialNum], pythonPath: getPlatformIOPythonPath() });
-
-            pyshell.on('message', function (message) {
-                console.log(message);
-            });
-
-            let success = await new Promise( resolve => {
-                pyshell.end(function (err: any, code: any) {
-                    if (code === 0) {
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
-                });
-            });
-
-            if (success === false) {
+            try {
+                var serial = new OISerial(masterPortName);
+                await serial.connect();
+                await serial.logLevel("NONE");
+                await serial.program(nameToType(deviceType), slaveModuleInfo.serialNum);
+                await serial.disconnect();
+            }
+            catch (error) {
                 vscode.window.showErrorMessage(`Unexpected error while flashing device OI${deviceType} (SN:${slaveModuleInfo.serialNum}) !`);
                 continue;
             }
@@ -99,7 +90,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
                 let lastIncrement = 0;
 
                 pyshell.on('message', function (message) {
-                    console.log(message);
+                    logger.info(message);
                     if (message.includes('%') && (message.includes("100 %") === false)) { // do not increment for 100% on bootloader, ota and partition
                         progress.report({
                             increment: (Number(message.split('(')[1].substring(0, 2)) - lastIncrement)/slavesModuleInfo.length,
@@ -116,7 +107,6 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
 
                 pyshell.end(function (err: any, code: any) {
                     if (code === 0) {
-                        console.log(err);
                         resolve(true);
                     } else {
                         resolve(false);

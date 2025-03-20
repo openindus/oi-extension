@@ -50,7 +50,8 @@
                 {
                     "id": "openindus-treeview",
                     "name": "OpenIndus",
-                    "contextualTitle": "OpenIndus"
+                    "contextualTitle": "OpenIndus",
+                    "icon": "resources/logoMenu.png"
                 }
             ]
         }

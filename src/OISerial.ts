@@ -3,7 +3,7 @@ import { setTimeout } from 'timers-promises';
 import { logger } from './extension';
 
 export class OISerial extends SerialPort {
-    
+
     private lineParser: ReadlineParser;
     private readyParser: ReadyParser;
     private lastResponse: string[] = [];
@@ -254,5 +254,13 @@ export class OISerial extends SerialPort {
             slaveInfo.push(deviceInfo);
         }
         return slaveInfo;
+    }
+
+    async logLevel(level) {
+        await this.sendMsg('log ' + level);
+    }
+
+    async program(type, num) {
+        await this.sendMsg('program ' + type + ' ' + num);
     }
 }
