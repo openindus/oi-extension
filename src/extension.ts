@@ -13,7 +13,12 @@ var commandReadyGetSystemInfo: Boolean = true;
 var commandReadyFlashDeviceFirmware: Boolean = true;
 var commandReadyFlashSlavesDevicesFirmware: Boolean = true;
 
+export var logger: vscode.LogOutputChannel;
+
 export async function activate(context: vscode.ExtensionContext) {
+
+    logger = vscode.window.createOutputChannel("OpenIndus Extension", {log: true});
+	logger.info("OpenIndus Extension Activated");
 
 	vscode.window.registerTreeDataProvider('openindus-treeview', new OIAccessTreeProvider());
 

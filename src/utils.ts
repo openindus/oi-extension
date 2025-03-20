@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
 import * as cp from "child_process";
-import { SerialPort, PortInfo } from 'serialport';
+import { SerialPort } from 'serialport';
 import { OISerial } from './OISerial';
+import { logger } from './extension';
 
 export const deviceTypeList: string[] = 
 [
@@ -104,9 +105,6 @@ export const binAddress = "http://openindus.com/oi-content/bin/";
 export const pioProjects = require('os').homedir() + '/Documents/PlatformIO/Projects';
 const pioNodeHelpers = require('platformio-node-helpers');
 var path = require('path');
-import * as https from 'https';
-import * as fs from 'fs';
-import { error } from 'console';
 
 export const execShell = (cmd: string, path: string) =>
     new Promise<string>((resolve, reject) => {
@@ -134,7 +132,7 @@ export async function getDeviceInfoList(context: vscode.ExtensionContext, token:
         if (port.vendorId === targetVid) {
             var serial = new OISerial(port.path);
             try {
-                await serial.connect().catch((error: any) => { throw error; });
+                await serial.connect();
                 await serial.getInfo().then((data: { type: string; serialNum: string; hardwareVar: string; versionFw: string }) => {
                     moduleInfoList.push({
                         port: port.path,
@@ -144,8 +142,8 @@ export async function getDeviceInfoList(context: vscode.ExtensionContext, token:
                         versionSw: data.versionFw,
                         imgName: "",
                         caseName: ""});
-                }).catch((error: any) => { throw error; });
-                serial.disconnect();
+                });
+                await serial.disconnect();
             }
             catch (error) {
                 moduleInfoList.push({port: port.path, type: "undefined", serialNum: "undefined", hardwareVar: "undefined", versionSw: "undefined", imgName: "", caseName: ""});
@@ -156,49 +154,36 @@ export async function getDeviceInfoList(context: vscode.ExtensionContext, token:
     return moduleInfoList;
 }
 
-export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken, scanPort: string): Promise<ModuleInfo[] | undefined> {
+export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken, port: string): Promise<ModuleInfo[] | undefined> {
 
 	// Retrieve available devices with getConnectedBoards.py
 	let moduleInfoList: ModuleInfo[] = [];
 
-	let myPythonScriptPath = context.asAbsolutePath('/resources/scripts') + '/getSlaveDevices.py';
-	let pyshell = new PythonShell(myPythonScriptPath, { mode: 'json', args: [scanPort, scanPort], pythonPath: getPlatformIOPythonPath() });
+    var serial = new OISerial(port);
 
-	pyshell.on('message', function (message) {
-        console.log("List of slaves devices found:");
-		console.log(message);
-		message.forEach((element: { port: string; type: string; serialNum: string, hardwareVar: string, versionSw: string}) => {
-			moduleInfoList.push({
-				port: element.port,
-				type: typeToName(element.type),
-				serialNum: element.serialNum,
-				hardwareVar: element.hardwareVar,
-				versionSw: element.versionSw,
-				imgName: "",
-				caseName: ""
-			});
-		});
-	});
+    try {
+        await serial.connect();
+        await serial.getSlaves().then((data: { port: string; type: string; serialNum: string; hardwareVar: string; versionSw: string }[]) => {
+            data.forEach((element: { port: string; type: string; serialNum: string, hardwareVar: string, versionSw: string}) => {
+                moduleInfoList.push({
+                    port: element.port,
+                    type: typeToName(element.type),
+                    serialNum: element.serialNum,
+                    hardwareVar: element.hardwareVar,
+                    versionSw: element.versionSw,
+                    imgName: "",
+                    caseName: ""
+                });
+            });
+        });
+        await serial.disconnect();
+    }
+    catch (error) {
+        logger.error(error);
+        return undefined;
+    }
 
-	let success = await new Promise( resolve => {
-		token.onCancellationRequested(() => {
-			pyshell.kill();
-			resolve(false);
-		});
-		pyshell.end(function (err: any, code: any) {
-			if (code === 0) {
-				resolve(true);
-			} else {
-				resolve(false);
-			}
-		});
-	});
-
-	if (success === false) {
-		return undefined;
-	} else {
-		return moduleInfoList;
-	}
+    return moduleInfoList;
 }
 
 export async function pickDevice(context: vscode.ExtensionContext, portName?: string): Promise<ModuleInfo | undefined> {
@@ -226,7 +211,7 @@ export async function pickDevice(context: vscode.ExtensionContext, portName?: st
     // Fill a quick pick item list with info of all connected module
     const deviceInfoQuickPickItem: vscode.QuickPickItem[] = [];
     moduleInfoList.forEach((element: ModuleInfo) => {
-        deviceInfoQuickPickItem.push({description: '$(debug-stackframe-dot) ' + element.port, label: element.type, detail: 'S/N: ' + element.serialNum + ' $(debug-stackframe-dot) HW version: ' + element.hardwareVar + ' $(debug-stackframe-dot) SW version: ' + element.versionSw});
+        deviceInfoQuickPickItem.push({description: '$(debug-stackframe-dot) ' + element.port.path, label: element.type, detail: 'S/N: ' + element.serialNum + ' $(debug-stackframe-dot) HW version: ' + element.hardwareVar + ' $(debug-stackframe-dot) SW version: ' + element.versionSw});
     }); 
 
     // Let the user choose his module (only if several modules are connected)

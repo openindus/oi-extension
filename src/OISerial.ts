@@ -1,7 +1,9 @@
 import { SerialPort, ReadlineParser, ReadyParser } from 'serialport';
 import { setTimeout } from 'timers-promises';
+import { logger } from './extension';
 
 export class OISerial extends SerialPort {
+    
     private lineParser: ReadlineParser;
     private readyParser: ReadyParser;
     private lastResponse: string[] = [];
@@ -9,34 +11,40 @@ export class OISerial extends SerialPort {
     constructor(portPath: string) {
         super({ path: portPath, baudRate: 115200, autoOpen: false });
 
-        super.on('open', (err: Error | null | undefined) => {
-            console.log("Connected !!");
+        super.on('open', () => {
+            logger.info("Connected !!");
             this.setDTR(true);
             this.setRTS(true);
         });
 
-        super.on('close', (err) => {
-            console.log("disconnected");
+        super.on('close', () => {
+            logger.info("disconnected");
         });
 
         this.readyParser = super.pipe(new ReadyParser({ delimiter: '>' }));
         this.readyParser.on('ready', async () => {
             this.setDTR(false); // Important
             this.setRTS(false); // Important
-            console.log('The ready byte sequence has been received');
+            logger.info('The ready byte sequence has been received');
         });
 
         this.lineParser = super.pipe(new ReadlineParser({ delimiter: '\n' }));
-        this.lineParser.on('data', (data) => {
-            console.log(data.toString());
-            this.lastResponse.push(data.toString());
+        this.lineParser.on('data', (data: string) => {
+            // Add data to the response list if it doesn't contain a color escape sequence
+            if (!data.includes('\x1b[0;')) {
+                this.lastResponse.push(
+                    data.toString()
+                    .replace("\r", "")
+                    .replace("\n", "")
+                    .replace(" ", ""));
+            }
         });
     }
 
     private setDTR(state: boolean): void {
         super.set({ dtr: state }, (err) => {
             if (err) {
-                console.log(err);
+                logger.error(err);
             }
         });
     }
@@ -44,7 +52,7 @@ export class OISerial extends SerialPort {
     private setRTS(state: boolean): void {
         super.set({ rts: state }, (err) => {
             if (err) {
-                console.log(err);
+                logger.error(err);
             }
         });
     }
@@ -91,16 +99,17 @@ export class OISerial extends SerialPort {
     }
 
     connect(): Promise<string> {
+        logger.info("Openning...");
         return new Promise((resolve, reject) => {
             super.open((error) => {
                 if (error) {
-                    console.log(error.toString());
+                    logger.error(error);
                     reject(error);
                 } else {
                     this.getPrompt().then((response) => {
                         resolve(response);
                     }).catch((error) => {
-                        console.log(error);
+                        logger.error(error);
                         reject(error);
                     });
                 }
@@ -108,8 +117,18 @@ export class OISerial extends SerialPort {
         });
     }
 
-    disconnect(): void {
-        super.close();
+    disconnect(): Promise<void> {
+        logger.info("Disconnecting...");
+        return new Promise((resolve, reject) => {
+            super.close((error) => {
+                if (error) {
+                    logger.error(error);
+                    reject(error);
+                } else {
+                    resolve();
+                }
+            });
+        });
     }
 
     private sendMsg(args: string, tryNumber = 0): Promise<string> {
@@ -117,21 +136,21 @@ export class OISerial extends SerialPort {
             if (tryNumber > 10 || !this.readyParser.ready) {
                 reject("Failed to send message");
             } else {
-                console.log("Sending message: " + args);
+                logger.info("Sending message: " + args);
                 this.lastResponse = []; // Emptying response table
                 super.write(args + '\n'); // Send command
                 super.drain();
-                await setTimeout(10); // Wait for echo to be read
+                await setTimeout(50); // Wait for echo to be read
                 let txt = this.lastResponse.shift();
-                while (txt != undefined) {
+                while (txt !== undefined) {
                     if (txt.includes(args)) {
-                        console.log("Message sent");
+                        logger.info("Message sent");
                         resolve("Message sent");
                         return;
                     }
                     txt = this.lastResponse.shift();
                 }
-                console.log("Failed to send message, retrying...");
+                logger.warn("Failed to send message (" + tryNumber + "), retrying...");
                 this.sendMsg(args, tryNumber + 1).catch(reject);
             }
         });
@@ -142,14 +161,15 @@ export class OISerial extends SerialPort {
             if (tryNumber > 10 || !this.readyParser.ready) {
                 reject("Failed to send message");
             } else {
-                console.log("Sending message: " + args);
+                logger.info("Sending message: " + args);
                 super.write(args + '\n');
                 super.drain();
-                await setTimeout(10); // Wait for echo to be read
+                await setTimeout(50); // Wait for echo to be read
                 let txt = this.lastResponse.shift();
+                logger.info("txt: " + txt);
                 while (txt !== undefined) {
                     if (txt.includes(args)) {
-                        console.log("Message sent, reading response...");
+                        logger.info("Message sent, reading response...");
                         // Trying to get response with a timeout of 2sec
                         txt = this.lastResponse.shift();
                         const startTime = Date.now();
@@ -160,23 +180,22 @@ export class OISerial extends SerialPort {
                         }
                         // If we've got a response, return it
                         if (txt !== undefined) {
-                            console.log("Response: " + txt);
-                            txt = txt.replace("\r", "");
-                            txt = txt.replace("\n", "");
-                            txt = txt.replace(" ", "");
+                            logger.info("Response: " + txt);
                             resolve(txt);
                             return;
                         }
                     }
                     txt = this.lastResponse.shift();
+                    logger.info("txt 2: " + txt);
                 }
-                console.log("Failed to send message, retrying...");
+                logger.warn("Failed to send message (" + tryNumber + "), retrying...");
                 this.sendMsgWithReturn(args, tryNumber + 1).catch(reject);
             }
         });
     }
 
     async getInfo(): Promise<{ [key: string]: string }> {
+        logger.info("Getting device info");
         const deviceInfo: { [key: string]: string } = {
             type: "undefined",
             serialNum: "undefined",
@@ -185,26 +204,30 @@ export class OISerial extends SerialPort {
         };
         await this.sendMsgWithReturn('get-board-info -t').then((response) => {
             deviceInfo["type"] = response;
-        }).catch(console.log);
-        await this.sendMsgWithReturn('get-board-info -n').then((response) => {
-            deviceInfo["serialNum"] = response;
-        }).catch(console.log);
-        await this.sendMsgWithReturn('get-board-info -h').then((response) => {
-            deviceInfo["hardwareVar"] = response;
-        }).catch(console.log);
-        await this.sendMsgWithReturn('get-board-info -s').then((response) => {
-            deviceInfo["versionFw"] = response;
-        }).catch(console.log);
+        }).then(async () => {
+            await this.sendMsgWithReturn('get-board-info -n').then((response) => {
+                deviceInfo["serialNum"] = response;
+            });
+        }).then(async () => {
+            await this.sendMsgWithReturn('get-board-info -h').then((response) => {
+                deviceInfo["hardwareVar"] = response;
+            });
+        }).then(async () => {
+            await this.sendMsgWithReturn('get-board-info -s').then((response) => {
+                deviceInfo["versionFw"] = response;
+            });
+        }).catch(logger.error);
         return deviceInfo;
     }
 
     async getSlaves(): Promise<{ [key: string]: string }[]> {
+        logger.info("Getting slaves info");
         const slaveInfo: { [key: string]: string }[] = [];
         let slaveSNList: any[] = [];
 
         await this.sendMsgWithReturn('discover-slaves').then((response) => {
             slaveSNList = JSON.parse(response);
-        }).catch(console.log);
+        }).catch(logger.error);
 
         for (const slaveSn of slaveSNList) {
             const deviceInfo: { [key: string]: string } = {
@@ -217,16 +240,16 @@ export class OISerial extends SerialPort {
 
             await this.sendMsgWithReturn(`get-slave-info ${slaveSn.type} ${slaveSn.sn} -t`).then((response) => {
                 deviceInfo.type = response;
-            }).catch(console.log);
+            }).catch(logger.error);
             await this.sendMsgWithReturn(`get-slave-info ${slaveSn.type} ${slaveSn.sn} -n`).then((response) => {
                 deviceInfo.serialNum = response;
-            }).catch(console.log);
+            }).catch(logger.error);
             await this.sendMsgWithReturn(`get-slave-info ${slaveSn.type} ${slaveSn.sn} -h`).then((response) => {
                 deviceInfo.hardwareVar = response;
-            }).catch(console.log);
+            }).catch(logger.error);
             await this.sendMsgWithReturn(`get-slave-info ${slaveSn.type} ${slaveSn.sn} -s`).then((response) => {
                 deviceInfo.versionSw = response;
-            }).catch(console.log);
+            }).catch(logger.error);
 
             slaveInfo.push(deviceInfo);
         }

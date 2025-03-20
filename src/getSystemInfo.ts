@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { ModuleInfo, caseImg, getSlaveDeviceInfoList, pickDevice } from './utils';
-import { createProject } from './createProject';
-import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
+import { logger } from "./extension";
 
 export async function getSystemInfo(context: vscode.ExtensionContext, portName?: string) {
 
@@ -48,28 +47,28 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
         message => {
             switch (message.command) {
                 case 'create-project':
-                    console.log("create project clicked !");
+                    logger.info("create project clicked !");
                     vscode.commands.executeCommand('openindus.createProject', moduleInfo, slaveInfoList);
                     return;
                 case 'flash-device':
-                    console.log("flash device clicked !");
+                    logger.info("flash device clicked !");
                     vscode.commands.executeCommand('openindus.flashDeviceFirmware', undefined, moduleInfo);
                     return;
                 case 'refresh':
-                    console.log("refresh clicked !");
+                    logger.info("refresh clicked !");
                     if (moduleInfo !== undefined) {
                         vscode.commands.executeCommand('openindus.getSystemInfo', moduleInfo.port);
                         panel.dispose();
                     }
                     return;
                 case 'flash-all-slaves':
-                    console.log("flash all slaves clicked !");
+                    logger.info("flash all slaves clicked !");
                     if (moduleInfo !== undefined && slaveInfoList !== undefined) {
                         vscode.commands.executeCommand('openindus.flashSlavesDevicesFirmware', moduleInfo.port, slaveInfoList);
                     }
                     return;
                 case 'flash-slave':
-                    console.log("flash slave: " + message.text + " clicked !");
+                    logger.info("flash slave: " + message.text + " clicked !");
                     if (moduleInfo !== undefined && slaveInfoList !== undefined) {
                         let selectedSlaveInfoList: ModuleInfo[] = []; // We need a list even if there is only one module
                         selectedSlaveInfoList.push(slaveInfoList[Number(message.text)]);
@@ -204,7 +203,7 @@ canvas {
                     <h3>${master.type}</h3>
                     <div style="border:1px solid #1F1F1F;"></div>
                     <p>
-                        Connected on ${master.port}<br>
+                        Connected on ${master.port.path}<br>
                         <b>Serial Number:</b> ${master.serialNum}<br>
                         <b>Hardware Version:</b> ${master.hardwareVar}<br>
                         <b>Software version:</b> v${master.versionSw}
