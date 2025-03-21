@@ -3,7 +3,7 @@ import { PythonShell } from 'python-shell';
 import { formatStringOI, getFormattedDeviceList as getFormattedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, nameToType } from './utils';
 import * as fs from 'fs';
 import { logger } from './extension';
-import { OISerial } from './OISerial';
+import { OISerial } from './com/OISerial';
 
 export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext, masterPortName: string, slavesModuleInfo: ModuleInfo[], version?: string) {
 

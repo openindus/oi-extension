@@ -26,7 +26,6 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
     }
 
     // Display a webview with all information about the module
-
     const panel = vscode.window.createWebviewPanel(
         'SystemInformation',
         'System Information',

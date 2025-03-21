@@ -1,8 +1,6 @@
 import * as vscode from 'vscode';
-import { PythonShell } from 'python-shell';
 import * as cp from "child_process";
-import { SerialPort } from 'serialport';
-import { OISerial } from './OISerial';
+import { OISerial } from './com/OISerial';
 import { logger } from './extension';
 
 export const deviceTypeList: string[] = 
@@ -126,8 +124,7 @@ export async function getDeviceInfoList(context: vscode.ExtensionContext, token:
 	let moduleInfoList: ModuleInfo[] = [];
 
     let targetVid = '10C4';
-    let ports = await SerialPort.list();
-    
+    let ports = await OISerial.list();
     for await (const port of ports) {
         if (port.vendorId === targetVid) {
             var serial = new OISerial(port.path);

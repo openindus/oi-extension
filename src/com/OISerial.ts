@@ -1,6 +1,6 @@
 import { SerialPort, ReadlineParser, ReadyParser } from 'serialport';
 import { setTimeout } from 'timers-promises';
-import { logger } from './extension';
+import { logger } from '../extension';
 
 export class OISerial extends SerialPort {
 
@@ -131,7 +131,7 @@ export class OISerial extends SerialPort {
         });
     }
 
-    private sendMsg(args: string, tryNumber = 0): Promise<string> {
+    protected sendMsg(args: string, tryNumber = 0): Promise<string> {
         return new Promise(async (resolve, reject) => {
             if (tryNumber > 10 || !this.readyParser.ready) {
                 reject("Failed to send message");
@@ -156,7 +156,7 @@ export class OISerial extends SerialPort {
         });
     }
 
-    private sendMsgWithReturn(args: string, tryNumber = 0): Promise<string> {
+    protected sendMsgWithReturn(args: string, tryNumber = 0): Promise<string> {
         return new Promise(async (resolve, reject) => {
             if (tryNumber > 10 || !this.readyParser.ready) {
                 reject("Failed to send message");
@@ -256,11 +256,11 @@ export class OISerial extends SerialPort {
         return slaveInfo;
     }
 
-    async logLevel(level) {
+    async logLevel(level: string) {
         await this.sendMsg('log ' + level);
     }
 
-    async program(type, num) {
+    async program(type: string, num: string) {
         await this.sendMsg('program ' + type + ' ' + num);
     }
 }
