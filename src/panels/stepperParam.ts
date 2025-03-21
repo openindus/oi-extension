@@ -6,7 +6,7 @@ import { logger } from "../extension";
 import { ModuleInfo } from '../utils';
 
 var currentPanel:vscode.WebviewPanel = undefined;
-var stepper:OIStepper = undefined
+var stepper:OIStepper = undefined;
 
 export async function startStepperPanelConfig(context: vscode.ExtensionContext, portName?: string, stepperModuleInfo?: ModuleInfo) {
     
@@ -27,36 +27,29 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 			let rawHTML = data.toString();
 			panel.webview.html = rawHTML;
 		}
-	});
-
-	// If stepper info where given, create the stepper object
-	if (portName && stepperModuleInfo) {
-		stepper = new OIStepper(portName, stepperModuleInfo.serialNum);
-	}
-			
-			
+	});		
 
 	panel.onDidDispose(async () => {
 		currentPanel = undefined;
 		await stepper?.disconnect();
 		stepper = undefined;
 	});
-				
 
 	panel.webview.onDidReceiveMessage(
-		async message => {
+		async message => {	
 			switch (message.command) {
 				case 'connect':
 					if (stepper?.isOpen) {
 						panel.webview.postMessage({command: message.command, response: "error: already connected"});
 						return;
 					}
-					stepper = new OIStepper(message.portName, message.serialNum);
+					stepper = new OIStepper(message.portName, message?.serialNum);
 					await stepper.connect().then((response) => {
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
 						panel.webview.postMessage({command: message.command, response: error});
 					});
+					break;
 				case 'disconnect':
 					await stepper.disconnect().then((response) => {
 						stepper = undefined;
@@ -64,12 +57,14 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 					}).catch((error) => {
 						panel.webview.postMessage({command: message.command, response: error});
 					});
+					break;
 				case 'list':
-					await stepper.list().then((response) => {
+					await stepper.listStepper().then((response) => {
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
 						panel.webview.postMessage({command: message.command, response: error});
 					});
+					break;
 				case 'cmd':
 					await stepper.cmd(message.args).then((response) => {
 						panel.webview.postMessage({command: message.command, response: response});
@@ -83,4 +78,14 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
         undefined,
         context.subscriptions
 	);
+
+	// If stepper info where given, create the stepper object
+	if (portName && stepperModuleInfo) {
+		stepper = new OIStepper(portName, stepperModuleInfo.serialNum);
+		await stepper.connect().then((response) => {
+			panel.webview.postMessage({command: 'connect', response: response});
+		}).catch((error) => {
+			panel.webview.postMessage({command: 'connect', response: error});
+		});
+	}
 }

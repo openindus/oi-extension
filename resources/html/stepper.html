@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>System configuration</title>
+        <link href="style.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+
+        <h1 id="test">Stepper configuration</h1>
+
+        <h2>Connexion</h2>
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+
+        <h2>Constant speed command</h2>
+        <label for="runDirection">Direction</label>
+        <input id="runDirection" name="runDirection" list="direction">
+        <label for="runSpeed">Speed</label>
+        <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000">
+        <button onclick="cmdRun()">RUN</button>
+
+        <h2>Relative move command</h2>
+        <label for="moveRelativeDirection">Direction</label>
+        <input name="moveRelativeDirection" list="direction">
+        <button onclick="cmdMoveRelative()">MOVE RELATIVE</button>
+
+        <h2>Absolute speed command</h2>
+        <label for="moveAbsoluteDirection">Direction</label>
+        <input name="moveAbsoluteDirection" list="direction">
+        <button onclick="cmdMoveAbsolute()">MOVE ABSOLUTE</button>
+
+        <h2>Homing command</h2>
+        <button onclick="cmdHoming()">HOMING</button>
+
+        <h2>Stop command</h2>
+        <button onclick="cmdStop()">STOP</button>
+        
+        <datalist id="direction">
+            <option value="FORWARD"></option>
+            <option value="BACKWARD"></option>
+        </datalist>
+
+    </body>
+
+    <script type="text/javascript">
+        
+        const vscode = acquireVsCodeApi();
+        
+        function connect() {
+            vscode.postMessage({
+                command: 'connect',
+                portName: 'COM9'
+            });
+        }
+
+        function disconnect() {
+            vscode.postMessage({
+                command: 'disconnect'
+            });
+        }
+
+        function list() {
+            vscode.postMessage({
+                command: 'list'
+            });
+        }
+
+        function cmdRun(args) {
+            let speed = document.getElementById('runSpeed').value;
+            let direction = document.getElementById('runDirection').value;
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['run', '2', direction==="FORWARD"?"1":"0", speed]
+            });
+        }
+
+        function cmdStop(args) {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['stop', '2']
+            });
+        }
+
+
+    </script>
+</html>

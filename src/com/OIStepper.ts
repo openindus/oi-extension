@@ -1,6 +1,5 @@
 import { OISerial } from "./OISerial";
 import { logger } from "../extension";
-import { error } from "console";
 
 export class OIStepper extends OISerial {
     
@@ -59,7 +58,7 @@ export class OIStepper extends OISerial {
         'stall-th'
     ];
 
-    constructor(portPath: string, serialNum: string) {
+    constructor(portPath: string, serialNum?: string) {
         super(portPath);
         serialNum = serialNum;
     }
@@ -99,29 +98,29 @@ export class OIStepper extends OISerial {
         });
     }
 
-    cmd(args: {name:string, value:string[]}): Promise<string> {
+    cmd(args: string[]): Promise<string> {
         return new Promise(async (resolve, reject) => {
             // Commands without return
-            if ((args.name === 'resart') ||
-                (args.name === 'homing') ||
-                (args.name === 'attach-limit-switch') ||
-                (args.name === 'set-speed') ||
-                (args.name === 'move-absolute') ||
-                (args.name === 'move-relative') ||
-                (args.name === 'run') ||
-                (args.name === 'stop') ||
-                (args.name === 'advandec-param' && args.value[1] === 'set') ||
-                (args.name === 'advandec-param' && args.value[1] === 'reset')) {
-                await super.sendMsg(args.name + ' ' + args.value.join(' ')).then((response) => {
+            if ((args[0] === 'restart') ||
+                (args[0] === 'homing') ||
+                (args[0] === 'attach-limit-switch') ||
+                (args[0] === 'set-speed') ||
+                (args[0] === 'move-absolute') ||
+                (args[0] === 'move-relative') ||
+                (args[0] === 'run') ||
+                (args[0] === 'stop') ||
+                (args[0] === 'advanced-param' && args[1] === 'set') ||
+                (args[0] === 'advanced-param' && args[1] === 'reset')) {
+                await super.sendMsg(args.join(' ')).then((response) => {
                     resolve(response);
                 }).catch(reject);
             }
-            else if ((args.name === 'get-position') ||
-                     (args.name === 'get-speed') ||
-                     (args.name === 'get-status') ||
-                     (args.name === 'read-status') ||
-                     (args.name === 'advandec-param' && args.value[1] === 'get')) {
-                await super.sendMsgWithReturn(args.name + ' ' + args.value.join(' ')).then((response) => {
+            else if ((args[0] === 'get-position') ||
+                     (args[0] === 'get-speed') ||
+                     (args[0] === 'get-status') ||
+                     (args[0] === 'read-status') ||
+                     (args[0] === 'advanced-param' && args[1] === 'get')) {
+                await super.sendMsgWithReturn(args.join(' ')).then((response) => {
                     resolve(response);
                 }).catch(reject);
             }
@@ -135,11 +134,26 @@ export class OIStepper extends OISerial {
         return new Promise(async (resolve, reject) => {
             var advancedParamList: {[key: string]: string}[] = [];
             for await (let param of this.paramList) {
-                await this.cmd({name: 'advanced-param', value: [motor, 'get', param]}).then((response) => {
-                    advancedParamList.push({param: response});
+                await this.cmd(['advanced-param', motor, 'get', param]).then((response) => {
+                    advancedParamList.push({param: response.toString()});
                 }).catch(reject);
             }
             resolve(advancedParamList);
+        });
+    }
+
+    setParam(motor: string, advancedParamList: {[key: string]: string}[]): Promise<boolean> {
+        return new Promise(async (resolve, reject) => {
+            for await (let param of advancedParamList) {
+                await this.cmd(['advanced-param', motor, 'set', param.key, param.value]).catch(reject);
+            }
+            resolve(true);
+        });
+    }
+
+    resetParam(motor: string): Promise<boolean> {
+        return new Promise(async (resolve, reject) => {
+            await this.cmd(['advanced-param', motor, 'reset']).then(() => { resolve(true); }).catch(reject);
         });
     }
 }

@@ -128,7 +128,7 @@ export class OISerial extends SerialPort {
                     resolve();
                 }
             });
-        });
+        }); 
     }
 
     protected sendMsg(args: string, tryNumber = 0): Promise<string> {

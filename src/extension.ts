@@ -5,6 +5,7 @@ import { flashDeviceFirmware } from './flashDeviceFirmware';
 import { getSystemInfo } from './getSystemInfo';
 import { ModuleInfo, execShell, getPlatformIOPythonPath } from './utils';
 import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
+import { startStepperPanelConfig } from './panels/stepperParam';
 
 const pioNodeHelpers = require('platformio-node-helpers');
 
@@ -56,6 +57,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(vscode.commands.registerCommand('openindus.openinduswebsite', () => {
 		vscode.env.openExternal(vscode.Uri.parse('https://openindus.com'));
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('openindus.startStepperPanelConfig', async ( portName?: string, moduleInfo?: ModuleInfo) => {
+		await startStepperPanelConfig(context, portName, moduleInfo);
 	}));
 
 	// Check if .platformio path contains a space
