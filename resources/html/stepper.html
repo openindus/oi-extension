@@ -13,24 +13,27 @@
         <h1 id="test">Stepper configuration</h1>
 
         <h2>Connexion</h2>
-        <button onclick="connect()">Connect</button>
-        <button onclick="disconnect()">Disconnect</button>
+        <label for="port">Port :</label>
+        <input id="port" name="port">
+        <button id="connect" onclick="connect()">Connect</button>
+        <button id="disconnect" onclick="disconnect()">Disconnect</button>
+        <button id="refresh" onclick="refresh()">Refresh</button>
 
         <h2>Constant speed command</h2>
         <label for="runDirection">Direction</label>
-        <input id="runDirection" name="runDirection" list="direction">
+        <input id="runDirection" name="runDirection" list="direction" value="FORWARD">
         <label for="runSpeed">Speed</label>
-        <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000">
+        <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000" value="200">
         <button onclick="cmdRun()">RUN</button>
 
         <h2>Relative move command</h2>
         <label for="moveRelativeDirection">Direction</label>
-        <input name="moveRelativeDirection" list="direction">
+        <input name="moveRelativeDirection" list="direction" value="FORWARD">
         <button onclick="cmdMoveRelative()">MOVE RELATIVE</button>
 
         <h2>Absolute speed command</h2>
         <label for="moveAbsoluteDirection">Direction</label>
-        <input name="moveAbsoluteDirection" list="direction">
+        <input name="moveAbsoluteDirection" list="direction" value="FORWARD">
         <button onclick="cmdMoveAbsolute()">MOVE ABSOLUTE</button>
 
         <h2>Homing command</h2>
@@ -49,11 +52,36 @@
     <script type="text/javascript">
         
         const vscode = acquireVsCodeApi();
+
+        // By default disconnect is hidden
+        document.getElementById("disconnect").style.display = "none";
+
+        window.addEventListener('message', event => {
+            switch(event.data.command) {
+                case 'connect':
+                    if (event.data.response === true) {
+                        document.getElementById("connect").style.display = "none";
+                        document.getElementById("disconnect").style.display = "inline";
+                    }
+                    break;
+                case 'disconnect':
+                    if (event.data.response === true) {
+                        document.getElementById("connect").style.display = "inline";
+                        document.getElementById("disconnect").style.display = "none";
+                    }
+                    break;
+                case 'list':
+                    break;
+                case 'cmd':
+                    break;
+            }
+        });
         
         function connect() {
+            let port = document.getElementById("port").value;
             vscode.postMessage({
                 command: 'connect',
-                portName: 'COM9'
+                portName: port
             });
         }
 
@@ -63,7 +91,7 @@
             });
         }
 
-        function list() {
+        function refresh() {
             vscode.postMessage({
                 command: 'list'
             });

@@ -63,7 +63,7 @@ export class OIStepper extends OISerial {
         serialNum = serialNum;
     }
 
-    listStepper(): Promise<{port: string, serialNum: string}[]> {
+    static listStepper(): Promise<{port: string, serialNum: string}[]> {
         return new Promise(async (resolve) => {
             let stepperPorts: {port: string, serialNum: string}[] = [];
             let ports = await OISerial.list();
@@ -75,21 +75,23 @@ export class OIStepper extends OISerial {
                     // Try to connect module info
                     await serial.getInfo().then(async (moduleInfo) => {    
                         // Check if port is a stepper
-                        if (moduleInfo.type?.toLowerCase().includes('stepper')) {
+                        if (moduleInfo.type === "11") {
                             stepperPorts.push({ port: port.path, serialNum: moduleInfo.serialNum });
                         }
                         // Try to get slaves and check if they are steppers modules
                         await serial.getSlaves().then((slaves) => {
                             for (let slave of slaves) {
-                                if (slave.type?.toLowerCase().includes('stepper')) {
+                                if (slave.type === "11") {
                                     stepperPorts.push({ port: port.path, serialNum: slave.serialNum });
                                 }
                             }
-                        }).catch(logger.error); // If it is not a master module, it will be catched here and ignored
-                    }).catch((error) => {
+                        }).catch(() => { logger.info("Module is not a master module"); }); // If it is not a master module, it will be catched here and ignored
+                    }).catch(async (error) => {
                         logger.error(error);
+                        await serial.disconnect();
                         throw error;
                     });
+                    await serial.disconnect();
                 }).catch((error) => {
                     logger.error(error);
                 });
@@ -111,8 +113,8 @@ export class OIStepper extends OISerial {
                 (args[0] === 'stop') ||
                 (args[0] === 'advanced-param' && args[1] === 'set') ||
                 (args[0] === 'advanced-param' && args[1] === 'reset')) {
-                await super.sendMsg(args.join(' ')).then((response) => {
-                    resolve(response);
+                await super.sendMsg(args.join(' ')).then(() => {
+                    resolve("");
                 }).catch(reject);
             }
             else if ((args[0] === 'get-position') ||
@@ -142,18 +144,18 @@ export class OIStepper extends OISerial {
         });
     }
 
-    setParam(motor: string, advancedParamList: {[key: string]: string}[]): Promise<boolean> {
+    setParam(motor: string, advancedParamList: {[key: string]: string}[]): Promise<void> {
         return new Promise(async (resolve, reject) => {
             for await (let param of advancedParamList) {
                 await this.cmd(['advanced-param', motor, 'set', param.key, param.value]).catch(reject);
             }
-            resolve(true);
+            resolve();
         });
     }
 
-    resetParam(motor: string): Promise<boolean> {
+    resetParam(motor: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            await this.cmd(['advanced-param', motor, 'reset']).then(() => { resolve(true); }).catch(reject);
+            await this.cmd(['advanced-param', motor, 'reset']).then(() => { resolve(); }).catch(reject);
         });
     }
 }

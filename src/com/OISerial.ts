@@ -98,7 +98,7 @@ export class OISerial extends SerialPort {
         });
     }
 
-    connect(): Promise<string> {
+    connect(): Promise<boolean> {
         logger.info("Openning...");
         return new Promise((resolve, reject) => {
             super.open((error) => {
@@ -106,8 +106,8 @@ export class OISerial extends SerialPort {
                     logger.error(error);
                     reject(error);
                 } else {
-                    this.getPrompt().then((response) => {
-                        resolve(response);
+                    this.getPrompt().then(() => {
+                        resolve(true);
                     }).catch((error) => {
                         logger.error(error);
                         reject(error);
@@ -117,7 +117,7 @@ export class OISerial extends SerialPort {
         });
     }
 
-    disconnect(): Promise<void> {
+    disconnect(): Promise<boolean> {
         logger.info("Disconnecting...");
         return new Promise((resolve, reject) => {
             super.close((error) => {
@@ -125,13 +125,13 @@ export class OISerial extends SerialPort {
                     logger.error(error);
                     reject(error);
                 } else {
-                    resolve();
+                    resolve(true);
                 }
             });
         }); 
     }
 
-    protected sendMsg(args: string, tryNumber = 0): Promise<string> {
+    protected sendMsg(args: string, tryNumber = 0): Promise<void> {
         return new Promise(async (resolve, reject) => {
             if (tryNumber > 10 || !this.readyParser.ready) {
                 reject("Failed to send message");
@@ -145,7 +145,7 @@ export class OISerial extends SerialPort {
                 while (txt !== undefined) {
                     if (txt.includes(args)) {
                         logger.info("Message sent");
-                        resolve("Message sent");
+                        resolve();
                         return;
                     }
                     txt = this.lastResponse.shift();
@@ -166,7 +166,6 @@ export class OISerial extends SerialPort {
                 super.drain();
                 await setTimeout(50); // Wait for echo to be read
                 let txt = this.lastResponse.shift();
-                logger.info("txt: " + txt);
                 while (txt !== undefined) {
                     if (txt.includes(args)) {
                         logger.info("Message sent, reading response...");
@@ -186,7 +185,6 @@ export class OISerial extends SerialPort {
                         }
                     }
                     txt = this.lastResponse.shift();
-                    logger.info("txt 2: " + txt);
                 }
                 logger.warn("Failed to send message (" + tryNumber + "), retrying...");
                 this.sendMsgWithReturn(args, tryNumber + 1).catch(reject);
@@ -227,7 +225,7 @@ export class OISerial extends SerialPort {
 
         await this.sendMsgWithReturn('discover-slaves').then((response) => {
             slaveSNList = JSON.parse(response);
-        }).catch(logger.error);
+        }).catch((error) => { throw(error); });
 
         for (const slaveSn of slaveSNList) {
             const deviceInfo: { [key: string]: string } = {
@@ -256,11 +254,11 @@ export class OISerial extends SerialPort {
         return slaveInfo;
     }
 
-    async logLevel(level: string) {
-        await this.sendMsg('log ' + level);
+    async logLevel(level: string): Promise<void> {
+        return this.sendMsg('log ' + level);
     }
 
-    async program(type: string, num: string) {
-        await this.sendMsg('program ' + type + ' ' + num);
+    async program(type: string, num: string): Promise<void> {
+        return this.sendMsg('program ' + type + ' ' + num);
     }
 }

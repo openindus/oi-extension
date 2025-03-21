@@ -47,7 +47,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 					await stepper.connect().then((response) => {
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
-						panel.webview.postMessage({command: message.command, response: error});
+						vscode.window.showErrorMessage("Error while connecting to OIStepper (" + message.portName + "): " + error);
 					});
 					break;
 				case 'disconnect':
@@ -55,22 +55,44 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 						stepper = undefined;
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
-						panel.webview.postMessage({command: message.command, response: error});
+						vscode.window.showErrorMessage("Error while disconnecting  from OIStepper: " + error);
 					});
 					break;
 				case 'list':
-					await stepper.listStepper().then((response) => {
+					await OIStepper.listStepper().then((response) => {
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
-						panel.webview.postMessage({command: message.command, response: error});
+						vscode.window.showErrorMessage("Cannot get list of connected device: " + error);
 					});
 					break;
 				case 'cmd':
 					await stepper.cmd(message.args).then((response) => {
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
-						panel.webview.postMessage({command: message.command, response: error});
+						vscode.window.showErrorMessage("Cannot send command (" + message.args.join(' ') + "): " + error);
 					});
+					break;
+				case 'get-parameters':
+					await stepper.getParam(message.args[0]).then((response) => {
+						panel.webview.postMessage({ command: message.command, response: response });
+					}).catch((error) => {
+						vscode.window.showErrorMessage("Error while getting parameters on OIStepper: " + error);
+					});
+					break;
+				case 'set-parameters':
+					await stepper.setParam(message.args[0], message.args[1]).then(() => {
+						panel.webview.postMessage({ command: message.command, response: true });
+					}).catch((error) => {
+						vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);
+					});
+					break;
+				case 'reset-parameters':
+					await stepper.resetParam(message.args[0]).then(() => {
+						panel.webview.postMessage({ command: message.command, response: true });
+					}).catch((error) => {
+						vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);
+					});
+					break;
 				default:
 					break;
 			}
@@ -85,7 +107,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 		await stepper.connect().then((response) => {
 			panel.webview.postMessage({command: 'connect', response: response});
 		}).catch((error) => {
-			panel.webview.postMessage({command: 'connect', response: error});
+			vscode.window.showErrorMessage("Error while connecting to OIStepper (" + portName + "): " + error);
 		});
 	}
 }
