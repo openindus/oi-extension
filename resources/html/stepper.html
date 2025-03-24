@@ -14,26 +14,35 @@
 
         <h2>Connexion</h2>
         <label for="port">Port :</label>
-        <input id="port" name="port">
+        <select id="port" name="port"></select>
         <button id="connect" onclick="connect()">Connect</button>
         <button id="disconnect" onclick="disconnect()">Disconnect</button>
         <button id="refresh" onclick="refresh()">Refresh</button>
 
+        <h2>Select a motor</h2>
+        <input type="radio" id="motor1" name="motor" value="1" checked>
+        <label for="motor1">Motor 1</label>
+        <input type="radio" id="motor2" name="motor" value="2">
+        <label for="motor2">Motor 2</label>
+
         <h2>Constant speed command</h2>
         <label for="runDirection">Direction</label>
-        <input id="runDirection" name="runDirection" list="direction" value="FORWARD">
+        <select id="runDirection" name="runDirection" list="direction" value="FORWARD">
+            <option value="FORWARD">FORWARD</option>
+            <option value="BACKWARD">BACKWARD</option>
+        </select>
         <label for="runSpeed">Speed</label>
         <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000" value="200">
         <button onclick="cmdRun()">RUN</button>
 
         <h2>Relative move command</h2>
-        <label for="moveRelativeDirection">Direction</label>
-        <input name="moveRelativeDirection" list="direction" value="FORWARD">
+        <label for="moveRelativeStep">Steps</label>
+        <input id="moveRelativeStep" name="moveRelativeStep" type="number" min="-100000" max="100000" value="0">
         <button onclick="cmdMoveRelative()">MOVE RELATIVE</button>
 
         <h2>Absolute speed command</h2>
-        <label for="moveAbsoluteDirection">Direction</label>
-        <input name="moveAbsoluteDirection" list="direction" value="FORWARD">
+        <label for="moveAbsoluteStep">Steps</label>
+        <input id="moveAbsoluteStep" name="moveAbsoluteStep" type="number" min="0" max="100000" value="0">
         <button onclick="cmdMoveAbsolute()">MOVE ABSOLUTE</button>
 
         <h2>Homing command</h2>
@@ -41,11 +50,6 @@
 
         <h2>Stop command</h2>
         <button onclick="cmdStop()">STOP</button>
-        
-        <datalist id="direction">
-            <option value="FORWARD"></option>
-            <option value="BACKWARD"></option>
-        </datalist>
 
     </body>
 
@@ -65,12 +69,21 @@
                     }
                     break;
                 case 'disconnect':
-                    if (event.data.response === true) {
-                        document.getElementById("connect").style.display = "inline";
-                        document.getElementById("disconnect").style.display = "none";
-                    }
+                    // If data.response is true OR false, display connect button anyway
+                    document.getElementById("connect").style.display = "inline";
+                    document.getElementById("disconnect").style.display = "none";
                     break;
                 case 'list':
+                    let select_port = document.getElementById("port");
+                    select_port.replaceChildren(); // delete existing options
+                    console.log(event.data.response);
+                    for (port of event.data.response) {
+                        console.log(port);
+                        let opt = document.createElement('option');
+                        opt.value = port.port;
+                        opt.innerHTML = port.port + " - OIStepper n°" + port.serialNum;
+                        select_port.appendChild(opt);
+                    }
                     break;
                 case 'cmd':
                     break;
@@ -98,18 +111,38 @@
         }
 
         function cmdRun(args) {
-            let speed = document.getElementById('runSpeed').value;
+            let motor = document.querySelector('input[name="motor"]:checked').value;
             let direction = document.getElementById('runDirection').value;
+            let speed = document.getElementById('runSpeed').value;
             vscode.postMessage({
                 command: 'cmd',
-                args: ['run', '2', direction==="FORWARD"?"1":"0", speed]
+                args: ['run', motor, direction==="FORWARD"?"1":"0", speed]
+            });
+        }
+
+        function cmdMoveRelative(args) {
+            let motor = document.querySelector('input[name="motor"]:checked').value;
+            let steps = document.getElementById('moveRelativeStep').value;
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['move-relative', motor, steps]
+            });
+        }
+
+        function cmdMoveAbsolute(args) {
+            let motor = document.querySelector('input[name="motor"]:checked').value;
+            let steps = document.getElementById('moveAbsoluteStep').value;
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['move-absolute', motor, steps]
             });
         }
 
         function cmdStop(args) {
+            let motor = document.querySelector('input[name="motor"]:checked').value;
             vscode.postMessage({
                 command: 'cmd',
-                args: ['stop', '2']
+                args: ['stop', motor]
             });
         }
 

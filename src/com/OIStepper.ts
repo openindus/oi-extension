@@ -96,6 +96,7 @@ export class OIStepper extends OISerial {
                     logger.error(error);
                 });
             }
+            logger.info(JSON.stringify(stepperPorts));
             resolve(stepperPorts);
         });
     }

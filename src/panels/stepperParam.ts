@@ -56,6 +56,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
 						vscode.window.showErrorMessage("Error while disconnecting  from OIStepper: " + error);
+						panel.webview.postMessage({command: message.command, response: false}); // Send a message to display "connect button again"	
 					});
 					break;
 				case 'list':
