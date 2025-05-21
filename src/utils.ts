@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import * as cp from "child_process";
 import { OISerial } from './com/OISerial';
 import { logger } from './extension';
+import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
+
 
 export const deviceTypeList: string[] = 
 [
@@ -98,11 +100,12 @@ export type ModuleInfo = {
     caseName: string;
 };
 
-export const sourceAddress = "http://openindus.com/oi-content/src/";
-export const binAddress = "http://openindus.com/oi-content/bin/";
+export const webSiteAddress = "https://openindus.com/";
 export const pioProjects = require('os').homedir() + '/Documents/PlatformIO/Projects';
 const pioNodeHelpers = require('platformio-node-helpers');
 var path = require('path');
+const https = require('https');
+const fs = require('fs');
 
 export const execShell = (cmd: string, path: string) =>
     new Promise<string>((resolve, reject) => {
@@ -239,8 +242,71 @@ export async function pickDevice(context: vscode.ExtensionContext, portName?: st
     return moduleInfo;
 }
 
-// export async function updateAndSelectFirmwarePath(context: vscode.ExtensionContext) : Promise<string> {
+export async function updateAndSelectFirmwarePath(context: vscode.ExtensionContext) : Promise<string> {
 
+    const fileDownloader: FileDownloader = await getApi();
+
+    const destinationDirectory = vscode.Uri.joinPath(context.extensionUri, 'resources');
+
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(destinationDirectory.fsPath)) {
+        fs.mkdirSync(destinationDirectory.fsPath, { recursive: true });
+    }
+
+    // Get list of files from server
+    try {
+        const response = await new Promise((resolve, reject) => {
+            https.get(`${webSiteAddress}binaries/`, res => {
+                let data = '';
+                res.on('data', chunk => { data += chunk; });
+                res.on('end', () => resolve(data));
+                res.on('error', reject);
+            });
+        });
+        
+        const sourceDirectories = (response as string).match(/binaries\/oi-firmware-\d+\.\d+\.\d+\//g) || [];
+        logger.info("Firmware files found: " + sourceDirectories);
+
+        for (const dir of sourceDirectories) {
+            if (fs.existsSync(vscode.Uri.joinPath(destinationDirectory, dir).fsPath)) {
+                logger.info("Directory already exists: " + dir);
+                continue; // Skip if the directory already exists
+            } else {
+                logger.info("Downloading firmware files from: " + dir);
+                for (const deviceType of getFormattedDeviceList()) {
+                    for (const file of ['bootloader', 'partitions', 'ota_data_initial', 'firmware']) {
+                        const name = `${deviceType.toLowerCase()}_${file}-${dir.split('-')[2].split('/')[0]}.bin`;
+                        const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), dir, name);
+                        const destinationPath = vscode.Uri.joinPath(destinationDirectory, dir, name);
+                        // download source file to destination path via https
+                        try {
+                            const downloadedFileUri: vscode.Uri = await fileDownloader.downloadFile(
+                                sourceFileUrl,
+                                name,
+                                context
+                            );
+                           
+                            // Copy the downloaded file to the destination path
+                            vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
+                            logger.info(`Downloaded ${sourceFileUrl} to ${destinationPath}`);
+
+                        } catch (error) {
+                            logger.error(`Failed to download ${sourceFileUrl}: ${error}`);
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+        // Clear all files in fildeDownloader
+        fileDownloader.deleteAllItems(context);
+
+    } catch (error) {
+        vscode.window.showErrorMessage('Failed to fetch firmware files');
+        throw error;
+    }
+}
+    
 //     return new Promise<string>(async (resolve, reject) => {
 //         // Download firmware online
 //         async function listDirectoryNames(uri: vscode.Uri): Promise<string[]> {

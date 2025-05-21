@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { deviceTypeList, formatStringOI, getFormattedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath } from './utils';
+import { deviceTypeList, formatStringOI, getFormattedDeviceList, webSiteAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, updateAndSelectFirmwarePath } from './utils';
 import * as fs from 'fs';
 import { logger } from './extension';
 
@@ -34,9 +34,11 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
         }
     }
 
+    await updateAndSelectFirmwarePath(context);
+    
     // Choose the version
     // Get path to resource on disk
-    let onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'bin');
+    let onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'binaries');
     let firmwareVersionList = await vscode.workspace.fs.readDirectory(onDiskPath);
     let binVersions: vscode.QuickPickItem[] = [];
     firmwareVersionList.forEach((element) => {

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { formatStringOI, getFormattedDeviceList as getFormattedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, nameToType } from './utils';
+import { formatStringOI, getFormattedDeviceList as getFormattedDeviceList, webSiteAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, nameToType } from './utils';
 import * as fs from 'fs';
 import { logger } from './extension';
 import { OISerial } from './com/OISerial';
