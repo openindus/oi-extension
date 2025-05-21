@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { formatStringOI, getFormattedDeviceList as getFormattedDeviceList, webSiteAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, nameToType } from './utils';
+import { ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, nameToType, deviceTypeList } from './utils';
 import * as fs from 'fs';
 import { logger } from './extension';
 import { OISerial } from './com/OISerial';
@@ -9,7 +9,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
 
     // Choose the version
     // Get path to resource on disk
-    let onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'bin');
+    let onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'binaries');
     let firmwareVersionList = await vscode.workspace.fs.readDirectory(onDiskPath);
     let binVersions: vscode.QuickPickItem[] = [];
     firmwareVersionList.forEach((element) => {
@@ -46,29 +46,26 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
         for await (const slaveModuleInfo of slavesModuleInfo) { 
             
             // Check if device type is known
-            let deviceType: string = "";
-            if (getFormattedDeviceList().includes(formatStringOI(slaveModuleInfo.type))) {
-                deviceType = formatStringOI(slaveModuleInfo.type);
-            } else {
+            if (!deviceTypeList.includes(slaveModuleInfo.type)) {
                 continue;
             }  
 
             // Show a message with current module info
-            progress.report({message: `OI${deviceType} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`});
+            progress.report({message: `OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`});
 
             // Set the bin path and check it
-            let firmware = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace('lite', '') + '_firmware-' + version + '.bin');
+            let firmware = vscode.Uri.joinPath(onDiskPath, slaveModuleInfo.type.replace('lite', '') + '_firmware-' + version + '.bin');
             if (fs.existsSync(firmware.fsPath) === false) { return; }
 
             try {
                 var serial = new OISerial(masterPortName);
                 await serial.connect();
                 await serial.logLevel("NONE");
-                await serial.program(nameToType(deviceType), slaveModuleInfo.serialNum);
+                await serial.program(nameToType(slaveModuleInfo.type), slaveModuleInfo.serialNum);
                 await serial.disconnect();
             }
             catch (error) {
-                vscode.window.showErrorMessage(`Unexpected error while flashing device OI${deviceType} (SN:${slaveModuleInfo.serialNum}) !`);
+                vscode.window.showErrorMessage(`Unexpected error while flashing device OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) !`);
                 continue;
             }
             
@@ -94,7 +91,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
                     if (message.includes('%') && (message.includes("100 %") === false)) { // do not increment for 100% on bootloader, ota and partition
                         progress.report({
                             increment: (Number(message.split('(')[1].substring(0, 2)) - lastIncrement)/slavesModuleInfo.length,
-                            message: `OI${deviceType} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`
+                            message: `OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`
                         });
                         lastIncrement = Number(message.split('(')[1].substring(0, 2));
                     }
@@ -119,8 +116,8 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
             }
 
             if (successFlash === false) {
-                vscode.window.showErrorMessage(`Unexpected error while flashing device OI${deviceType} (SN:${slaveModuleInfo.serialNum}) !`);
-                flashErrorList.push(`OI${deviceType} (SN:${slaveModuleInfo.serialNum})`);
+                vscode.window.showErrorMessage(`Unexpected error while flashing device OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) !`);
+                flashErrorList.push(`OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum})`);
                 continue;
             } else {
                 numberFlashedSuccessfully++;

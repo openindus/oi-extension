@@ -3,90 +3,90 @@ import * as cp from "child_process";
 import { OISerial } from './com/OISerial';
 import { logger } from './extension';
 import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
-
+const pioNodeHelpers = require('platformio-node-helpers');
+var path = require('path');
+const https = require('https');
+const fs = require('fs');
+export const pioProjects = require('os').homedir() + '/Documents/PlatformIO/Projects';
+export const webSiteAddress = "https://openindus.com/";
 
 export const deviceTypeList: string[] = 
 [
-    'OICore',
-    'OICorelite',
-    'OIDiscrete',
-    'OIDiscreteVE',
-    'OIStepper',
-    'OIStepperVE',
-    'OIMixed',  
-    'OIAnalog_LS',
-    'OIRelay_LP',
-    'OIRelay_HP',
-    'OIDc'
+    'core',
+    'corelite',
+    'discrete',
+    'discreteve',
+    'stepper',
+    'stepperve',
+    'mixed',  
+    'analogls',
+    'relaylp',
+    'relayhp',
+    'dc'
 ];
 
 export function typeToName(input: string): string {
     const typeMap: { [key: string]: string } = {
-        '3': 'OICore',
-        '4': 'OICorelite',
-        '6': 'OIDiscrete',
-        '7': 'OIDiscreteVE',
-        '8': 'OIMixed',
-        '9': 'OIRelayLP',
-        '10': 'OIRelayHP',
-        '11': 'OIStepper',
-        '12': 'OIStepperVE',
-        '13': 'OIAnalogLS',
-        '21': 'OIDc'
+        '3': 'core',
+        '4': 'corelite',
+        '6': 'discrete',
+        '7': 'discreteve',
+        '8': 'mixed',
+        '9': 'relaylp',
+        '10': 'relayhp',
+        '11': 'stepper',
+        '12': 'stepperve',
+        '13': 'analogls',
+        '21': 'dc'
     };
     return typeMap[input] || 'Unknown';
 }
 
 export function nameToType(input: string): string {
     const nameMap: { [key: string]: string } = {
-        'Core': '3',
-        'Corelite': '4',
-        'Discrete': '6',
-        'DiscreteVE': '7',
-        'Mixed': '8',
-        'RelayLP': '9',
-        'RelayHP': '10',
-        'Stepper': '11',
-        'StepperVE': '12',
-        'AnalogLS': '13',
-        'Dc': '21'
+        'core': '3',
+        'corelite': '4',
+        'discrete': '6',
+        'discreteve': '7',
+        'mixed': '8',
+        'relaylp': '9',
+        'relayhp': '10',
+        'stepper': '11',
+        'stepperve': '12',
+        'analogls': '13',
+        'dc': '21'
     };
     return nameMap[input] || 'Unknown';
 }
 
-// Return a board without 'OI', '_' and '-' and withfist letter capitalize and 'hp', 'ls' capitalized
-export function formatStringOI(input: string): string {
-    return capitalizeFirstLetter(input.toLowerCase().replaceAll('oi', '')
-                                                    .replaceAll('_', '')
-                                                    .replaceAll('-', '')
-                                                    .replaceAll('ls', 'LS')
-                                                    .replaceAll('hp', 'HP')
-                                                    .replaceAll('ve', 'VE')
-                                                    .replaceAll('lp', 'LP'));
+// Return a board without 'OI', '_' and '-'
+export function formatStringOItoEnvName(input: string): string {
+    return input.toLowerCase().replaceAll('oi', '').replaceAll('_', '').replaceAll('-', '');
 }
 
-export function getFormattedDeviceList(): string[] {
-    let formatedDeviceList: string[] = [];
-    deviceTypeList.forEach((element)=>{formatedDeviceList.push(formatStringOI(element));});
-    return formatedDeviceList;
-}
-
-export function capitalizeFirstLetter(str: string): string {
-    return str.charAt(0).toUpperCase() + str.slice(1);
+// Return the oi-firmware env name from a given non formatted board name
+export function getClassNameFromEnv(str: string): string {
+    var envName = formatStringOItoEnvName(str);
+    return ("OI" + envName.charAt(0).toUpperCase() + envName.slice(1).toLowerCase())
+            .replaceAll('ls', 'LS')
+            .replaceAll('ve', 'VE')
+            .replaceAll('hp', 'HP')
+            .replaceAll('lp', 'LP')
+            .replaceAll('lite', '');
 }
 
 export const caseImg = [
-    {moduleName: "OICore", imgName: "core.png", caseName: "BOI23"},
-    {moduleName: "OICoreLite", imgName: "corelite.png", caseName: "BOI13"},
-    {moduleName: "OIDiscrete", imgName: "discrete.png", caseName: "BOI12"},
-    {moduleName: "OIDiscreteVE", imgName: "discrete.png", caseName: "BOI12"},
-    {moduleName: "OIStepper", imgName: "stepper.png", caseName: "BOI13"},
-    {moduleName: "OIStepperVE", imgName: "stepper.png", caseName: "BOI13"},
-    {moduleName: "OIMixed", imgName: "discrete.png", caseName: "BOI12"},
-    {moduleName: "OIAnalogLS", imgName: "discrete.png", caseName: "BOI12"},
-    {moduleName: "OIRelayLP", imgName: "stepper.png", caseName: "BOI13"},
-    {moduleName: "OIRelayLP", imgName: "stepper.png", caseName: "BOI13"},
-    {moduleName: "OIDc", imgName: "stepper.png", caseName: "BOI13"}
+    {moduleName: "core", imgName: "core.png", caseName: "BOI23"},
+    {moduleName: "coreLite", imgName: "corelite.png", caseName: "BOI13"},
+    {moduleName: "discrete", imgName: "discrete.png", caseName: "BOI12"},
+    {moduleName: "discreteve", imgName: "discrete.png", caseName: "BOI12"},
+    {moduleName: "stepper", imgName: "stepper.png", caseName: "BOI13"},
+    {moduleName: "stepperve", imgName: "stepper.png", caseName: "BOI13"},
+    {moduleName: "mixed", imgName: "discrete.png", caseName: "BOI12"},
+    {moduleName: "analogls", imgName: "discrete.png", caseName: "BOI12"},
+    {moduleName: "relaylp", imgName: "stepper.png", caseName: "BOI13"},
+    {moduleName: "relayhp", imgName: "stepper.png", caseName: "BOI13"},
+    {moduleName: "dc", imgName: "stepper.png", caseName: "BOI13"}
 ];
 
 
@@ -99,13 +99,6 @@ export type ModuleInfo = {
     imgName: string;
     caseName: string;
 };
-
-export const webSiteAddress = "https://openindus.com/";
-export const pioProjects = require('os').homedir() + '/Documents/PlatformIO/Projects';
-const pioNodeHelpers = require('platformio-node-helpers');
-var path = require('path');
-const https = require('https');
-const fs = require('fs');
 
 export const execShell = (cmd: string, path: string) =>
     new Promise<string>((resolve, reject) => {
@@ -242,13 +235,12 @@ export async function pickDevice(context: vscode.ExtensionContext, portName?: st
     return moduleInfo;
 }
 
-export async function updateAndSelectFirmwarePath(context: vscode.ExtensionContext) : Promise<string> {
+export async function downloadNewFirmwareOnline(context: vscode.ExtensionContext) : Promise<void> {
 
     const fileDownloader: FileDownloader = await getApi();
-
     const destinationDirectory = vscode.Uri.joinPath(context.extensionUri, 'resources');
 
-    // Create directory if it doesn't exist
+    // Create directory "resources" if it doesn't exist
     if (!fs.existsSync(destinationDirectory.fsPath)) {
         fs.mkdirSync(destinationDirectory.fsPath, { recursive: true });
     }
@@ -264,25 +256,27 @@ export async function updateAndSelectFirmwarePath(context: vscode.ExtensionConte
             });
         });
         
+        // Parse the html file to detect all firmware version available
         const sourceDirectories = (response as string).match(/binaries\/oi-firmware-\d+\.\d+\.\d+\//g) || [];
         logger.info("Firmware files found: " + sourceDirectories);
 
-        for (const dir of sourceDirectories) {
-            if (fs.existsSync(vscode.Uri.joinPath(destinationDirectory, dir).fsPath)) {
-                logger.info("Directory already exists: " + dir);
+        // For all versions found, if the directory does not exist, download the files
+        for (const sourceVersion of sourceDirectories) {
+            if (fs.existsSync(vscode.Uri.joinPath(destinationDirectory, sourceVersion).fsPath)) {
+                logger.info("Directory already exists: " + sourceVersion);
                 continue; // Skip if the directory already exists
             } else {
-                logger.info("Downloading firmware files from: " + dir);
-                for (const deviceType of getFormattedDeviceList()) {
+                logger.info("Downloading firmware files from: " + sourceVersion);
+                for (const deviceType of deviceTypeList) {
                     for (const file of ['bootloader', 'partitions', 'ota_data_initial', 'firmware']) {
-                        const name = `${deviceType.toLowerCase()}_${file}-${dir.split('-')[2].split('/')[0]}.bin`;
-                        const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), dir, name);
-                        const destinationPath = vscode.Uri.joinPath(destinationDirectory, dir, name);
+                        const binaryName = `${deviceType.toLowerCase()}_${file}-${sourceVersion.split('-')[2].split('/')[0]}.bin`;
+                        const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), sourceVersion, binaryName);
+                        const destinationPath = vscode.Uri.joinPath(destinationDirectory, sourceVersion, binaryName);
                         // download source file to destination path via https
                         try {
                             const downloadedFileUri: vscode.Uri = await fileDownloader.downloadFile(
                                 sourceFileUrl,
-                                name,
+                                binaryName,
                                 context
                             );
                            
@@ -306,61 +300,3 @@ export async function updateAndSelectFirmwarePath(context: vscode.ExtensionConte
         throw error;
     }
 }
-    
-//     return new Promise<string>(async (resolve, reject) => {
-//         // Download firmware online
-//         async function listDirectoryNames(uri: vscode.Uri): Promise<string[]> {
-//             const directoryEntries = await vscode.workspace.fs.readDirectory(uri);
-//             return directoryEntries
-//                 .filter(([name, type]) => type === vscode.FileType.Directory)
-//                 .map(([name]) => name);
-//         }
-
-//         const firmwareDirectoryUri = vscode.Uri.joinPath(context.extensionUri, 'resources', 'bin');
-//         const firmwareDirectories = await listDirectoryNames(firmwareDirectoryUri);
-//     });
-    
-//         return new Promise((resolve, reject) => {
-//             const file = fs.createWriteStream(dest);
-//             https.get(url, (response) => {
-//                 if (response.statusCode !== 200) {
-//                     reject(new Error(`Failed to get '${url}' (${response.statusCode})`));
-//                     return;
-//                 }
-//                 response.pipe(file);
-//                 file.on('finish', () => {
-//                     file.close(resolve);
-//                 });
-//             }).on('error', (err) => {
-//                 fs.unlink(dest, () => reject(err));
-//             });
-//         });
-//     }
-
-//     const firmwareUrl = `${sourceAddress}firmware/latest/oi-firmware.bin`;
-//     const firmwarePath = path.join(context.extensionPath, 'resources', 'bin', 'oi-firmware.bin');
-
-//     await downloadFirmware(firmwareUrl, firmwarePath);
-
-//     // Choose the version
-//     // Get path to resource on disk
-//     let onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'bin');
-//     let firmwareVersionList = fs.readdirSync(onDiskPath.fsPath);
-//     let binVersions: vscode.QuickPickItem[] = [];
-//     firmwareVersionList.forEach((element) => {
-//         if (fs.statSync(onDiskPath.fsPath + '/' + element).isDirectory()) {
-//             if (element.split('oi-firmware-')[1].length >= 5) { // 0.0.0 --> min length is 5
-//                 binVersions.unshift({label: element.split('oi-firmware-')[1]});
-//             }
-//         }
-//     });
-
-//     let version = vscode.window.showQuickPick(binVersions, {
-//         placeHolder: "Select the version (choose the same version used for the main firmware)",
-//         ignoreFocusOut: true,
-//     });
-
-//     onDiskPath = vscode.Uri.joinPath(onDiskPath, 'oi-firmware-' + version?.label);
-
-//     return firmware.fsPath;
-// }

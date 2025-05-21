@@ -3,7 +3,7 @@ import { OIAccessTreeProvider } from './customTreeView';
 import { createProject } from './createProject';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
 import { getSystemInfo } from './getSystemInfo';
-import { ModuleInfo, execShell, getPlatformIOPythonPath } from './utils';
+import { ModuleInfo, execShell, getPlatformIOPythonPath, downloadNewFirmwareOnline } from './utils';
 import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
 import { startStepperPanelConfig } from './panels/stepperParam';
 
@@ -70,7 +70,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	// Install esptool if not already installed
-	console.log(await execShell(getPlatformIOPythonPath() + ' -m pip install esptool', './'));
+	logger.info(await execShell(getPlatformIOPythonPath() + ' -m pip install esptool', './'));
+
+	// Download the latets firmware from openindus server at each launch of application
+	await downloadNewFirmwareOnline(context);
 }
 
 // this method is called when your extension is deactivated

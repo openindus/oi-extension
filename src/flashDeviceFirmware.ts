@@ -1,13 +1,12 @@
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell';
-import { deviceTypeList, formatStringOI, getFormattedDeviceList, webSiteAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, updateAndSelectFirmwarePath } from './utils';
+import { deviceTypeList, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath } from './utils';
 import * as fs from 'fs';
 import { logger } from './extension';
 
 export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string, inputModuleInfo?: ModuleInfo) {
 
     let moduleInfo: ModuleInfo | undefined;
-    let deviceType: string = "";
 
     // if device type and port are given; do not check again
     if (inputModuleInfo === undefined) {
@@ -21,21 +20,17 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     if (moduleInfo.port === undefined) { return; }
 
     // Check if device type is known
-    if (getFormattedDeviceList().includes(formatStringOI(moduleInfo.type))) {
-        deviceType = formatStringOI(moduleInfo.type);
-    } else {
+    if (!deviceTypeList.includes(moduleInfo.type)) {
         // TODO: if device type could be read by console, check with espefuse.py --> if firmware is wrong, it could still detect the right device name
         // else ask the user
         let deviceSelected = await vscode.window.showQuickPick(deviceTypeList, { placeHolder: 'Choose the device type', ignoreFocusOut: true});
         if (deviceSelected !== undefined) {
-            deviceType = formatStringOI(deviceSelected);
+            moduleInfo.type = deviceSelected;
         } else {
             return;
         }
     }
 
-    await updateAndSelectFirmwarePath(context);
-    
     // Choose the version
     // Get path to resource on disk
     let onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'binaries');
@@ -57,10 +52,10 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     // Set the bin path and check it
     // Remove 'lite' in OICoreLite because there is no special firmware for this board
     onDiskPath = vscode.Uri.joinPath(onDiskPath, 'oi-firmware-' + version?.label);
-    let bootloader = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_bootloader-' + version?.label + '.bin');
-    let partitions = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_partitions-' + version?.label + '.bin');
-    let otaDataInitial = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_ota_data_initial-' + version?.label + '.bin');
-    let firmware = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_firmware-' + version?.label + '.bin');
+    let bootloader = vscode.Uri.joinPath(onDiskPath, moduleInfo.type.replace("lite", "") + '_bootloader-' + version?.label + '.bin');
+    let partitions = vscode.Uri.joinPath(onDiskPath, moduleInfo.type.replace("lite", "") + '_partitions-' + version?.label + '.bin');
+    let otaDataInitial = vscode.Uri.joinPath(onDiskPath, moduleInfo.type.replace("lite", "") + '_ota_data_initial-' + version?.label + '.bin');
+    let firmware = vscode.Uri.joinPath(onDiskPath, moduleInfo.type.replace("lite", "") + '_firmware-' + version?.label + '.bin');
     
     logger.info(bootloader.toString());
     logger.info(partitions.toString());
@@ -75,7 +70,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     // Flash the Firmware
     let successFlash = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: "Flashing " + `OI${deviceType}` + " on " + `${moduleInfo.port}`,
+        title: "Flashing " + `OI${moduleInfo.type}` + " on " + `${moduleInfo.port}`,
         cancellable: true
     }, async (progress, cancellationToken) => {
         let successFlash = await new Promise( async (resolve) => {
@@ -84,7 +79,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
 
             let chip = 'esp32s3';
             // Hack for old modules
-            if (deviceType === "Stepperve") { chip = 'esp32s2'; }
+            if (moduleInfo.type === "stepperve") { chip = 'esp32s2'; }
 
             let options = {
                 mode: "text" as "text",
@@ -116,9 +111,8 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                 resolve(false);
             });
 
-            pyshell.end(function (err: any, code: any) {
+            pyshell.end((code: any) => {
                 if (code === 0) {
-                    logger.error(err);
                     resolve(true);
                 } else {
                     resolve(false);

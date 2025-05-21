@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { ModuleInfo, deviceTypeList, execShell, formatStringOI, pioProjects, getPlatformIOPythonPath, IS_WINDOWS } from './utils';
+import { ModuleInfo, deviceTypeList, execShell, formatStringOItoEnvName, pioProjects, getPlatformIOPythonPath, IS_WINDOWS, getClassNameFromEnv } from './utils';
 
 export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
     
@@ -33,7 +33,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     // First STEP: select board
     if (master !== undefined) {
         boardsNames.forEach((boardsName: vscode.QuickPickItem) => {
-            if (formatStringOI(boardsName.label) === formatStringOI(master.type)) {
+            if (boardsName.label === master.type) { // TODO check if master type need formatting
                 state.board = boardsName;
             }
         });
@@ -46,9 +46,6 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     }
 
     if (state.board === undefined) { return; }
-
-    // OICoreLite should be initialized as an OICore :
-    state.board.label = state.board.label.replace("lite", "");
 
     // Second STEP: select folder
     const customPath = await vscode.window.showQuickPick(yesNoQuickPick, {
@@ -125,7 +122,8 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             libVersion = "@^" + libVersionResults[0];
         }
         libVersion = "openindus/OpenIndus" + libVersion;
-        let envName = formatStringOI(state.board.label).toLowerCase();
+        let envName = formatStringOItoEnvName(state.board.label);
+        let className = getClassNameFromEnv(state.board.label);
 
         // Sixth STEP: create the project directory and copy item
         // Create src directory and copy main.cpp
@@ -137,13 +135,13 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         var mainInitText: string = "";
         
         mainInitText += '\r\n// First, init the master device\r\n'; // empty line + master comment
-        mainInitText += "OI" + formatStringOI(state.board.label) + " " + formatStringOI(state.board.label).toLowerCase() + ";\r\n";  // master instance line
+        mainInitText += className + " " + envName + ";\r\n";  // master instance line
         mainInitText += "\r\// Then add slaves devices here :\r\n";
         if (slaves !== undefined) {
             let i = 1;
             slaves.forEach((slave: ModuleInfo) => {
-                // /!\ OIStepperVE = OIStepper
-                mainInitText += "OI" + formatStringOI(slave.type).replace("ve","") + " " + formatStringOI(slave.type).toLowerCase() + String(i) + ";\r\n"; // slave instance line
+                // /!\ OIStepperVE = OIStepper ? Really ??
+                mainInitText += getClassNameFromEnv(slave.type) + " " + formatStringOItoEnvName(slave.type) + String(i) + ";\r\n"; // slave instance line
                 i++;
             });
         } else {
@@ -166,7 +164,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         // Install lib manually (by doing this, pio can find board and scripts before making initialization)
         await execShell(getPlatformIOPythonPath() + " -m platformio pkg install --library \"" + libVersion + "\"  --storage-dir ./lib/" + envName, state.path + '/' + state.name);
         
-        if (formatStringOI(state.board.label) === formatStringOI("OICore")) {
+        if (envName === "core") {
             libVersion = "\r\n\t" + libVersion;
             libVersion += "\r\n\tpaulstoffregen/Ethernet@^2.0.0";
             libVersion += "\r\n\tfelis/USB-Host-Shield-20@^1.6.0";

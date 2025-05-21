@@ -59,6 +59,10 @@ export class OISerial extends SerialPort {
 
     private getPrompt(): Promise<string> {
         return new Promise(async (resolve, reject) => {
+
+            // Wait for the board to be ready 50ms
+            await setTimeout(50);
+            
             // Send EOL to check if we have the prompt
             super.write("\n");
             super.drain();
@@ -110,7 +114,8 @@ export class OISerial extends SerialPort {
                         resolve(true);
                     }).catch((error) => {
                         logger.error(error);
-                        reject(error);
+                        this.disconnect();
+                        reject(error);   
                     });
                 }
             });
