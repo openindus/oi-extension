@@ -1,151 +1,311 @@
 <!DOCTYPE html>
 <html lang="en">
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>System configuration</title>
-        <link href="style.css" rel="stylesheet" type="text/css" />
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System configuration</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+</head>
 
-    <body>
+<body>
+    
+    <h1 id="test">Stepper configuration tool</h1>
+    
+    <h2>1. Connexion</h2>
+    <label for="port">Port :</label>
+    <select id="port" name="port"></select>
+    <button id="connect" onclick="connect()">Connect</button>
+    <button id="disconnect" onclick="disconnect()">Disconnect</button>
+    <button id="refresh" onclick="refresh()">Refresh</button>
+    
+    <h2>2. Select a motor</h2>
+    <input type="radio" id="motor1" name="motor" value="1" checked>
+    <label for="motor1">Motor 1</label>
+    <input type="radio" id="motor2" name="motor" value="2">
+    <label for="motor2">Motor 2</label>
+    <input type="radio" id="motor12" name="motor" value="3">
+    <label for="motor12">Motor 1+2</label>
+    
+    <h2>3. Configure motor parameters</h2>
+    <p><i>Configure your motor with the parameters below. <br>
+    Your motor have to be in HiZ (see flags) to be configured. <br>
+    The first time, you configure a motor, we recommend to click the "Reset parameters" button to set all parameters to their default values.<br>
+    If you want to change a parameter, you can change it and click the "Set parameters" button.<br>
+    Before modifiyng a paramter, click the "Get parameters" button to get the current values.</i></p>
+    <button onclick="getParameters()">Get parameters</button>
+    <button onclick="resetParameters()">Reset parameters</button>
+    <button onclick="setParameters()">Set parameters</button>
+    
+    <label for="maxSpeed">Maximum Speed (step/s)</label>
+    <input id="maxSpeed" name="maxSpeed" type="number" min="0" max="10000" value="400" step="1">
 
-        <h1 id="test">Stepper configuration</h1>
+    <label for="accelerationSpeed">Acceleration Speed (step/s²)</label>
+    <input id="accelerationSpeed" name="accelerationSpeed" type="number" min="0" max="10000" value="1000" step="1">
 
-        <h2>Connexion</h2>
-        <label for="port">Port :</label>
-        <select id="port" name="port"></select>
-        <button id="connect" onclick="connect()">Connect</button>
-        <button id="disconnect" onclick="disconnect()">Disconnect</button>
-        <button id="refresh" onclick="refresh()">Refresh</button>
+    <label for="decelerationSpeed">Deceleration Speed (step/s²)</label>
+    <input id="decelerationSpeed" name="decelerationSpeed" type="number" min="0" max="10000" value="1000" step="1">
+    
+    <label for="stepMode">Step mode</label>
+    <select id="stepMode" name="stepMode">
+        <option value="0">STEP_FULL</option>
+        <option value="1">STEP_1/2</option>
+        <option value="2">STEP_1/4</option>
+        <option value="3">STEP_1/8</option>
+        <option value="4" selected>STEP_1/16</option>
+        <option value="5">STEP_1/32</option>
+        <option value="6">STEP_1/64</option>
+        <option value="7">STEP_1/128</option>
+    </select>
 
-        <h2>Select a motor</h2>
-        <input type="radio" id="motor1" name="motor" value="1" checked>
-        <label for="motor1">Motor 1</label>
-        <input type="radio" id="motor2" name="motor" value="2">
-        <label for="motor2">Motor 2</label>
+    <label for="kval_hold">Kval hold</label>
+    <input id="kval_hold" name="kval_hold" type="number" min="1" max="99" value="16" step="1">
 
-        <h2>Constant speed command</h2>
-        <label for="runDirection">Direction</label>
-        <select id="runDirection" name="runDirection" list="direction" value="FORWARD">
-            <option value="FORWARD">FORWARD</option>
-            <option value="BACKWARD">BACKWARD</option>
-        </select>
-        <label for="runSpeed">Speed</label>
-        <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000" value="200">
-        <button onclick="cmdRun()">RUN</button>
+    <label for="kval_run">Kval run</label>
+    <input id="kval_run" name="kval_run" type="number" min="1" max="99" value="16" step="1">
 
-        <h2>Relative move command</h2>
-        <label for="moveRelativeStep">Steps</label>
-        <input id="moveRelativeStep" name="moveRelativeStep" type="number" min="-100000" max="100000" value="0">
-        <button onclick="cmdMoveRelative()">MOVE RELATIVE</button>
+    <label for="kval_acc">Kval acceleration</label>
+    <input id="kval_acc" name="kval_acc" type="number" min="1" max="99" value="16" step="1">
 
-        <h2>Absolute speed command</h2>
-        <label for="moveAbsoluteStep">Steps</label>
-        <input id="moveAbsoluteStep" name="moveAbsoluteStep" type="number" min="0" max="100000" value="0">
-        <button onclick="cmdMoveAbsolute()">MOVE ABSOLUTE</button>
+    <label for="kval_dec">Kval deceleration</label>
+    <input id="kval_dec" name="kval_dec" type="number" min="1" max="99" value="16" step="1">
 
-        <h2>Homing command</h2>
-        <button onclick="cmdHoming()">HOMING</button>
+    <label for="fn_slp_a">Back-EMF compensation</label>
+    <input id="fn_slp_a" name="fn_slp_a" type="number" min="0" max="0.4" value="0.06256" step="0.0015">
 
-        <h2>Stop command</h2>
-        <button onclick="cmdStop()">STOP</button>
+    <!-- OCD_TH from 31.25mV to 1000mV but only 5 first value are usable ==> 2A; 4A; 6A; 8A; 10A -->
+    <!-- Temperature dependent (at 25°C Rds = 16mV) -->
+    <label for="ocd_threshold">Over-current threshold (A)</label>
+    <select id="ocd_threshold" name="ocd_threshold">
+        <option value="0">2</option>
+        <option value="1">4</option>
+        <option value="2">6</option>
+        <option value="3">8</option>
+        <option value="4" selected>10</option>
+    </select>
 
-    </body>
+    <!-- 0.7A; 1.3A; 2A; 2.7A; 3.4A; 4A; 4.7A; 5.4A; 6.1A; 6.8A; 7.4A; 8.1A; 8.8A; 9.5A; 10A) -->
+    <label for="stall_threshold">Stall threshold (A)</label>
+    <select id="stall_threshold" name="stall_threshold">
+        <option value="0">0.7</option>
+        <option value="1">1.3</option>
+        <option value="2">2</option>
+        <option value="3">2.7</option>
+        <option value="4">3.4</option>
+        <option value="5">4</option>
+        <option value="6">4.7</option>
+        <option value="7">5.4</option>
+        <option value="8">6.1</option>
+        <option value="9">6.8</option>
+        <option value="10">7.4</option>
+        <option value="11">8.1</option>
+        <option value="12">8.8</option>
+        <option value="13">9.5</option>
+        <option value="14" selected>10</option>
+    </select>
 
-    <script type="text/javascript">
-        
-        const vscode = acquireVsCodeApi();
+    
+    <h2>4. Configure limit switches</h2>
+    <p><i>You can configure up to two limit switch per motor. <br>
+    Limit switches have to be configured in the init sequence of our main program.</i></p>
 
-        // By default disconnect is hidden
-        document.getElementById("disconnect").style.display = "none";
+    <h2>5. Test motor</h2>
+    <h3>Constant speed</h3>
+    <label for="runDirection">Direction</label>
+    <select id="runDirection" name="runDirection" list="direction" value="FORWARD">
+        <option value="FORWARD">FORWARD</option>
+        <option value="BACKWARD">BACKWARD</option>
+    </select>
+    <label for="runSpeed">Speed</label>
+    <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000" value="200">
+    <button onclick="cmdRun()">RUN</button>
+    
+    <h3>Relative move</h3>
+    <label for="moveRelativeStep">Steps</label>
+    <input id="moveRelativeStep" name="moveRelativeStep" type="number" min="-100000" max="100000" value="0">
+    <button onclick="cmdMoveRelative()">MOVE RELATIVE</button>
+    
+    <h3>Absolute speed</h3>
+    <label for="moveAbsoluteStep">Steps</label>
+    <input id="moveAbsoluteStep" name="moveAbsoluteStep" type="number" min="0" max="100000" value="0">
+    <button onclick="cmdMoveAbsolute()">MOVE ABSOLUTE</button>
+    
+    <h3>Homing</h3>
+    <button onclick="cmdHoming()">HOMING</button>
+    
+    <h3>Stop</h3>
+    <button onclick="cmdStop()">STOP</button>
 
-        window.addEventListener('message', event => {
-            switch(event.data.command) {
-                case 'connect':
-                    if (event.data.response === true) {
-                        document.getElementById("connect").style.display = "none";
-                        document.getElementById("disconnect").style.display = "inline";
-                    }
-                    break;
-                case 'disconnect':
-                    // If data.response is true OR false, display connect button anyway
-                    document.getElementById("connect").style.display = "inline";
-                    document.getElementById("disconnect").style.display = "none";
-                    break;
-                case 'list':
-                    let select_port = document.getElementById("port");
-                    select_port.replaceChildren(); // delete existing options
-                    console.log(event.data.response);
-                    for (port of event.data.response) {
-                        console.log(port);
-                        let opt = document.createElement('option');
-                        opt.value = port.port;
-                        opt.innerHTML = port.port + " - OIStepper n°" + port.serialNum;
-                        select_port.appendChild(opt);
-                    }
-                    break;
-                case 'cmd':
-                    break;
-            }
+    <h2>6. Check status</h2>
+    <p><i>Below you can check the status of your motor driver with several flags<br>
+    By default, flags are automatically polled every second but you can chose to pool them manually.<br>
+    To clear a flag, click the "Clear flags" button.<br>
+    Some flags need to clear if you want to move motor (for example OCD (over-current detected)) need to be clear after a fault.</i></p>
+    <input type="checkbox" id="autoPoolStatus" name="autoPoolStatus" checked>
+    <label for="autoPoolStatus">Auto pool status</label>
+    <button id="getFlags" onclick="getFlags()">Get flags</button>
+    <button onclick="clearFlags()">Clear flags</button>
+    
+</body>
+
+<script type="text/javascript">
+    
+    const vscode = acquireVsCodeApi();
+    
+    // By default disconnect is hidden
+    document.getElementById("disconnect").style.display = "none";
+    // By default getFlags button is hidden
+    document.getElementById("getFlags").style.display = "none";
+    // When autoPoolStatus is unchecked, show "getStatus" button
+    document.getElementById("autoPoolStatus").addEventListener('change', function() {
+        if (this.checked) {
+            document.getElementById("getFlags").style.display = "none";
+        } else {
+            document.getElementById("getFlags").style.display = "inline";
+        }
+    });
+    
+    window.addEventListener('message', event => {
+        switch(event.data.command) {
+            case 'connect':
+                if (event.data.response === true) {
+                    document.getElementById("connect").style.display = "none";
+                    document.getElementById("disconnect").style.display = "inline";
+                }
+                break;
+            case 'disconnect':
+                // If data.response is true OR false, display connect button anyway
+                document.getElementById("connect").style.display = "inline";
+                document.getElementById("disconnect").style.display = "none";
+                break;
+            case 'list':
+                let select_port = document.getElementById("port");
+                select_port.replaceChildren(); // delete existing options
+                console.log(event.data.response);
+                for (port of event.data.response) {
+                    console.log(port);
+                    let opt = document.createElement('option');
+                    opt.value = port.port;
+                    opt.innerHTML = port.port + " - OIStepper n°" + port.serialNum;
+                    select_port.appendChild(opt);
+                }
+                break;
+            case 'cmd':
+                break;
+        }
+    });
+    
+    function connect() {
+        let port = document.getElementById("port").value;
+        vscode.postMessage({
+            command: 'connect',
+            portName: port
         });
-        
-        function connect() {
-            let port = document.getElementById("port").value;
-            vscode.postMessage({
-                command: 'connect',
-                portName: port
-            });
-        }
-
-        function disconnect() {
-            vscode.postMessage({
-                command: 'disconnect'
-            });
-        }
-
-        function refresh() {
-            vscode.postMessage({
-                command: 'list'
-            });
-        }
-
-        function cmdRun(args) {
-            let motor = document.querySelector('input[name="motor"]:checked').value;
-            let direction = document.getElementById('runDirection').value;
-            let speed = document.getElementById('runSpeed').value;
+    }
+    
+    function disconnect() {
+        vscode.postMessage({
+            command: 'disconnect'
+        });
+    }
+    
+    function refresh() {
+        vscode.postMessage({
+            command: 'list'
+        });
+    }
+    
+    function cmdRun() {
+        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let direction = document.getElementById('runDirection').value;
+        let speed = document.getElementById('runSpeed').value;
+        if (motor === "1" || motor === "3") {
             vscode.postMessage({
                 command: 'cmd',
-                args: ['run', motor, direction==="FORWARD"?"1":"0", speed]
+                args: ['run', '1', direction==="FORWARD"?"1":"0", speed]
             });
         }
-
-        function cmdMoveRelative(args) {
-            let motor = document.querySelector('input[name="motor"]:checked').value;
-            let steps = document.getElementById('moveRelativeStep').value;
+        if (motor === "2" || motor === "3") {
             vscode.postMessage({
                 command: 'cmd',
-                args: ['move-relative', motor, steps]
+                args: ['run', '2', direction==="FORWARD"?"1":"0", speed]
             });
         }
-
-        function cmdMoveAbsolute(args) {
-            let motor = document.querySelector('input[name="motor"]:checked').value;
-            let steps = document.getElementById('moveAbsoluteStep').value;
+    }
+    
+    function cmdMoveRelative() {
+        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let steps = document.getElementById('moveRelativeStep').value;
+        if (motor === "1" || motor === "3") {
             vscode.postMessage({
                 command: 'cmd',
-                args: ['move-absolute', motor, steps]
+                args: ['move-relative', '1', steps]
             });
         }
-
-        function cmdStop(args) {
-            let motor = document.querySelector('input[name="motor"]:checked').value;
+        if (motor === "2" || motor === "3") {
             vscode.postMessage({
                 command: 'cmd',
-                args: ['stop', motor]
+                args: ['move-relative', '2', steps]
             });
         }
+    }
+    
+    function cmdMoveAbsolute() {
+        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let steps = document.getElementById('moveAbsoluteStep').value;
+        if (motor === "1" || motor === "3") {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['move-absolute', '1', steps]
+            });
+        }
+        if (motor === "2" || motor === "3") {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['move-absolute', '2', steps]
+            });
+        }
+    }
 
+    function cmdHoming() {
+        let motor = document.querySelector('input[name="motor"]:checked').value;
+        if (motor === "1" || motor === "3") {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['homing', '1']
+            });
+        }
+        if (motor === "2" || motor === "3") {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['homing', '2']
+            });
+        }
+    }
+    
+    function cmdStop() {
+        let motor = document.querySelector('input[name="motor"]:checked').value;
+        if (motor === "1" || motor === "3") {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['stop', '1']
+            });
+        }
+        if (motor === "2" || motor === "3") {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['stop', '2']
+            });
+        }
+    }
 
-    </script>
+    function getFlags() {
+
+    }
+
+    function clearFlags() {
+
+    }
+    
+</script>
 </html>

@@ -112,8 +112,8 @@ export class OIStepper extends OISerial {
                 (args[0] === 'move-relative') ||
                 (args[0] === 'run') ||
                 (args[0] === 'stop') ||
-                (args[0] === 'advanced-param' && args[1] === 'set') ||
-                (args[0] === 'advanced-param' && args[1] === 'reset')) {
+                (args[0] === 'advanced-param' && args[2] === 'set') ||
+                (args[0] === 'advanced-param' && args[2] === 'reset')) {
                 await super.sendMsg(args.join(' ')).then(() => {
                     resolve("");
                 }).catch(reject);
@@ -122,7 +122,7 @@ export class OIStepper extends OISerial {
                      (args[0] === 'get-speed') ||
                      (args[0] === 'get-status') ||
                      (args[0] === 'read-status') ||
-                     (args[0] === 'advanced-param' && args[1] === 'get')) {
+                     (args[0] === 'advanced-param' && args[2] === 'get')) {
                 await super.sendMsgWithReturn(args.join(' ')).then((response) => {
                     resolve(response);
                 }).catch(reject);

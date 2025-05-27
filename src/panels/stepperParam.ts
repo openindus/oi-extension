@@ -51,7 +51,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 					});
 					break;
 				case 'disconnect':
-					await stepper.disconnect().then((response) => {
+					await stepper?.disconnect().then((response) => {
 						stepper = undefined;
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
@@ -67,28 +67,28 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 					});
 					break;
 				case 'cmd':
-					await stepper.cmd(message.args).then((response) => {
+					await stepper?.cmd(message.args).then((response) => {
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
 						vscode.window.showErrorMessage("Cannot send command (" + message.args.join(' ') + "): " + error);
 					});
 					break;
 				case 'get-parameters':
-					await stepper.getParam(message.args[0]).then((response) => {
+					await stepper?.getParam(message.args[0]).then((response) => {
 						panel.webview.postMessage({ command: message.command, response: response });
 					}).catch((error) => {
 						vscode.window.showErrorMessage("Error while getting parameters on OIStepper: " + error);
 					});
 					break;
 				case 'set-parameters':
-					await stepper.setParam(message.args[0], message.args[1]).then(() => {
+					await stepper?.setParam(message.args[0], message.args[1]).then(() => {
 						panel.webview.postMessage({ command: message.command, response: true });
 					}).catch((error) => {
 						vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);
 					});
 					break;
 				case 'reset-parameters':
-					await stepper.resetParam(message.args[0]).then(() => {
+					await stepper?.resetParam(message.args[0]).then(() => {
 						panel.webview.postMessage({ command: message.command, response: true });
 					}).catch((error) => {
 						vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);
