@@ -173,6 +173,7 @@ export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, t
     }
     catch (error) {
         logger.error(error);
+        await serial.disconnect();
         return undefined;
     }
 

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { PythonShell } from 'python-shell';
+import { PythonShell, PythonShellError } from 'python-shell';
 import { deviceTypeList, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath } from './utils';
 import * as fs from 'fs';
 import { logger } from './extension';
@@ -111,8 +111,8 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                 resolve(false);
             });
 
-            pyshell.end((code: any) => {
-                if (code === 0) {
+            pyshell.end((err: PythonShellError, exitCode: number, exitSignal: string) => {
+                if (exitCode === 0) {
                     resolve(true);
                 } else {
                     resolve(false);

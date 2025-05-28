@@ -105,6 +105,9 @@ export class OISerial extends SerialPort {
     connect(): Promise<boolean> {
         logger.info("Openning...");
         return new Promise((resolve, reject) => {
+            if (super.isOpen) {
+                resolve(true);
+            }
             super.open((error) => {
                 if (error) {
                     logger.error(error);
@@ -156,7 +159,7 @@ export class OISerial extends SerialPort {
                     txt = this.lastResponse.shift();
                 }
                 logger.warn("Failed to send message (" + tryNumber + "), retrying...");
-                this.sendMsg(args, tryNumber + 1).catch(reject);
+                this.sendMsg(args, tryNumber + 1).then(resolve).catch(reject);
             }
         });
     }
@@ -192,7 +195,7 @@ export class OISerial extends SerialPort {
                     txt = this.lastResponse.shift();
                 }
                 logger.warn("Failed to send message (" + tryNumber + "), retrying...");
-                this.sendMsgWithReturn(args, tryNumber + 1).catch(reject);
+                this.sendMsgWithReturn(args, tryNumber + 1).then(resolve).catch(reject);
             }
         });
     }

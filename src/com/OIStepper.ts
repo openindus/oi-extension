@@ -5,56 +5,17 @@ export class OIStepper extends OISerial {
     
     serialNum: string;
     paramList: string[] = [
-        'abs-pos',
-        'el-pos-microstep',
-        'el-pos-step',
-        'mark',
-        'speed',
         'acc',
         'dec',
         'max-speed',
-        'min-speed',
-        'min-speed-lspd-opt',
-        'adc-out',
         'ocd-th',
-        'fs-spd',
-        'fs-spd-boost-mode',
         'step-mode-step-sel',
-        'step-mode-cm-vm',
-        'step-mode-sync-sel',
-        'step-mode-sync-en',
-        'alarm-en-overcurrent',
-        'alarm-en-thermal-shutdown',
-        'alarm-en-thermal-warning',
-        'alarm-en-uvlo',
-        'alarm-en-adc-uvlo',
-        'alarm-en-stall-detect',
-        'alarm-en-sw-turn-on',
-        'alarm-en-command-error',
-        'gatecfg1-tcc',
-        'gatecfg1-igate',
-        'gatecfg1-tboost',
-        'gatecfg1-wd-en',
-        'gatecfg2-tdt',
-        'gatecfg2-tblank',
-        'config-osc-sel',
-        'config-ext-clk',
-        'config-sw-mode',
-        'config-oc-sd',
-        'config-uvloval',
-        // voltage mode config
-        'config-en-vscomp',
-        'config-f-pwm-dec',
-        'config-f-pwm-int',
         'kval-hold',
         'kval-run',
         'kval-acc',
         'kval-dec',
         'int-speed',
-        'st-slp',
         'fn-slp-acc',
-        'fn-slp-dec',
-        'k-therm',
         'stall-th'
     ];
 
@@ -114,18 +75,24 @@ export class OIStepper extends OISerial {
                 (args[0] === 'stop') ||
                 (args[0] === 'advanced-param' && args[2] === 'set') ||
                 (args[0] === 'advanced-param' && args[2] === 'reset')) {
-                await super.sendMsg(args.join(' ')).then(() => {
+                try {
+                    await super.sendMsg(args.join(' '));
                     resolve("");
-                }).catch(reject);
+                } catch (error) {
+                    reject(error);
+                }
             }
             else if ((args[0] === 'get-position') ||
                      (args[0] === 'get-speed') ||
                      (args[0] === 'get-status') ||
                      (args[0] === 'read-status') ||
                      (args[0] === 'advanced-param' && args[2] === 'get')) {
-                await super.sendMsgWithReturn(args.join(' ')).then((response) => {
+                try {
+                    const response = await super.sendMsgWithReturn(args.join(' '));
                     resolve(response);
-                }).catch(reject);
+                } catch (error) {
+                    reject(error);
+                }
             }
             else {
                 reject('Command not found');
@@ -133,22 +100,31 @@ export class OIStepper extends OISerial {
         });
     }
 
-    getParam(motor: string): Promise<{[key: string]: string}[]> {
+    getParam(motor: string): Promise<{[key: string]: string}> {
         return new Promise(async (resolve, reject) => {
-            var advancedParamList: {[key: string]: string}[] = [];
-            for await (let param of this.paramList) {
-                await this.cmd(['advanced-param', motor, 'get', param]).then((response) => {
-                    advancedParamList.push({param: response.toString()});
-                }).catch(reject);
+            let advancedParamList: {[key: string]: string} = {};
+            for (let param of this.paramList) {
+                try {
+                    const response = await this.cmd(['advanced-param', motor, 'get', param]);
+                    advancedParamList[param] = response;
+                } catch (err) {
+                    reject(err);
+                    return;
+                }
             }
             resolve(advancedParamList);
         });
     }
 
-    setParam(motor: string, advancedParamList: {[key: string]: string}[]): Promise<void> {
+    setParam(motor: string, advancedParamList: {[key: string]: string}): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            for await (let param of advancedParamList) {
-                await this.cmd(['advanced-param', motor, 'set', param.key, param.value]).catch(reject);
+            for (let param of this.paramList) {
+                try {
+                    await this.cmd(['advanced-param', motor, 'set', param, advancedParamList[param]]);
+                } catch (err) {
+                    reject(err);
+                    return;
+                }
             }
             resolve();
         });
