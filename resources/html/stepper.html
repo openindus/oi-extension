@@ -34,6 +34,38 @@
                 <h2>4. Configure limit switches</h2>
                 <p><i>You can configure up to two limit switch per motor. <br>
                 Limit switches have to be configured in the init sequence of our main program.</i></p>
+                <div>
+                    <label for="limit-switch-1">Limit switch 1 input</label>
+                    <select id="limit-switch-1" name="limit-switch-1">
+                        <option value="0">NONE</option>
+                        <option value="1">DIN 1</option>
+                        <option value="2">DIN 2</option>
+                        <option value="3">DIN 3</option>
+                        <option value="4">DIN 4</option>
+                    </select>
+                    <label for="logic-switch-1">Logic</label>
+                    <select id="logic-switch-1" name="logic-switch-1">
+                        <option value="0">Active HIGH</option>
+                        <option value="1">Active LOW</option>
+                    </select>
+                    <button if="add-limit-switch-1" onclick="addLimitSwitch()">Set</button>
+                </div>
+                <div>
+                    <label for="limit-switch-2">Limit switch 2 input</label>
+                    <select id="limit-switch-2" name="limit-switch-2">
+                        <option value="0">NONE</option>
+                        <option value="1">DIN 1</option>
+                        <option value="2">DIN 2</option>
+                        <option value="3">DIN 3</option>
+                        <option value="4">DIN 4</option>
+                    </select>
+                    <label for="logic-switch-2">Logic</label>
+                    <select id="logic-switch-2" name="logic-switch-2">
+                        <option value="0">Active HIGH</option>
+                        <option value="1">Active LOW</option>
+                    </select>
+                    <button if="add-limit-switch-1" onclick="addLimitSwitch()">Set</button>
+                </div>
             </div>
         </div>
         <div class="flex-col">
@@ -172,14 +204,19 @@
                 document.getElementById("disconnect").style.display = "none";
                 break;
             case 'list':
-                let select_port = document.getElementById("port");
-                select_port.replaceChildren(); // delete existing options
+                let select_port = document.getElementById('port');
                 console.log(event.data.response);
                 for (port of event.data.response) {
                     console.log(port);
                     let opt = document.createElement('option');
                     opt.value = port.port;
                     opt.innerHTML = port.port + " - OIStepper n°" + port.serialNum;
+                    select_port.appendChild(opt);
+                }
+                if (event.data.response.length === 0) {
+                    let opt = document.createElement('option');
+                    opt.value = "";
+                    opt.innerHTML = "No OIStepper found";
                     select_port.appendChild(opt);
                 }
                 break;
@@ -234,6 +271,8 @@
     }
     
     function refresh() {
+        let select_port = document.getElementById('port');
+        select_port.replaceChildren(); // delete existing options
         vscode.postMessage({
             command: 'list'
         });
