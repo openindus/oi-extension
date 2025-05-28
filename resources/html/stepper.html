@@ -37,7 +37,7 @@
                 <div>
                     <label for="limit-switch-1">Limit switch 1 input</label>
                     <select id="limit-switch-1" name="limit-switch-1">
-                        <option value="0">NONE</option>
+                        <option value="0" selected>NONE</option>
                         <option value="1">DIN 1</option>
                         <option value="2">DIN 2</option>
                         <option value="3">DIN 3</option>
@@ -45,15 +45,15 @@
                     </select>
                     <label for="logic-switch-1">Logic</label>
                     <select id="logic-switch-1" name="logic-switch-1">
-                        <option value="0">Active HIGH</option>
-                        <option value="1">Active LOW</option>
+                        <option value="1" selected>Active HIGH</option>
+                        <option value="0">Active LOW</option>
                     </select>
-                    <button if="add-limit-switch-1" onclick="addLimitSwitch()">Set</button>
+                    <button if="add-limit-switch-1" onclick="setLimitSwitch(1)">Set</button>
                 </div>
                 <div>
                     <label for="limit-switch-2">Limit switch 2 input</label>
                     <select id="limit-switch-2" name="limit-switch-2">
-                        <option value="0">NONE</option>
+                        <option value="0" selected>NONE</option>
                         <option value="1">DIN 1</option>
                         <option value="2">DIN 2</option>
                         <option value="3">DIN 3</option>
@@ -61,10 +61,10 @@
                     </select>
                     <label for="logic-switch-2">Logic</label>
                     <select id="logic-switch-2" name="logic-switch-2">
-                        <option value="0">Active HIGH</option>
-                        <option value="1">Active LOW</option>
+                        <option value="1" selected>Active HIGH</option>
+                        <option value="0">Active LOW</option>
                     </select>
-                    <button if="add-limit-switch-1" onclick="addLimitSwitch()">Set</button>
+                    <button if="add-limit-switch-1" onclick="setLimitSwitch(2)">Set</button>
                 </div>
             </div>
         </div>
@@ -275,6 +275,16 @@
         select_port.replaceChildren(); // delete existing options
         vscode.postMessage({
             command: 'list'
+        });
+    }
+
+    function setLimitSwitch(id) {
+        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let input = document.getElementById('limit-switch-' + id).value;
+        let logic = document.getElementById('logic-switch-'+id).value;
+        vscode.postMessage({
+            command: 'cmd',
+            args: ['attach-limit-switch', motor, input, logic]
         });
     }
 
