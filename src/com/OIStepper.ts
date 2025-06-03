@@ -8,6 +8,7 @@ export class OIStepper extends OISerial {
         'acc',
         'dec',
         'max-speed',
+        'fs-spd',
         'ocd-th',
         'step-mode-step-sel',
         'kval-hold',
@@ -16,6 +17,8 @@ export class OIStepper extends OISerial {
         'kval-dec',
         'int-speed',
         'fn-slp-acc',
+        'fn-slp-dec',
+        'st-slp',
         'stall-th'
     ];
 

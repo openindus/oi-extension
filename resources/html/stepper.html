@@ -67,8 +67,6 @@
                     <button if="add-limit-switch-1" onclick="setLimitSwitch(2)">Set</button>
                 </div>
             </div>
-        </div>
-        <div class="flex-col">
             <div id="motor-configuration">
                 <h2>3. Configure motor parameters</h2>
                 <p><i>Configure your motor with the parameters below. <br>
@@ -81,21 +79,21 @@
                 <button onclick="setParameters()">Set parameters</button>
                 <button onclick="saveParamters()">Save parameters to file</button>
                 <label for="max-speed">Maximum Speed (step/s)</label>
-                <input id="max-speed" name="max-speed" type="number" min="0" max="10000" value="400" step="1">
+                <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="992" step="15">
                 <label for="acc">Acceleration Speed (step/s²)</label>
-                <input id="acc" name="acc" type="number" min="0" max="10000" value="1000" step="1">
+                <input id="acc" name="acc" type="number" min="0" max="59575" value="2008" step="15">
                 <label for="dec">Deceleration Speed (step/s²)</label>
-                <input id="dec" name="dec" type="number" min="0" max="10000" value="1000" step="1">
+                <input id="dec" name="dec" type="number" min="0" max="59590" value="2008" step="15">
                 <label for="step-mode-step-sel">Step mode</label>
                 <select id="step-mode-step-sel" name="step-mode-step-sel">
-                    <option value="0">STEP_FULL</option>
-                    <option value="1">STEP_1/2</option>
-                    <option value="2">STEP_1/4</option>
-                    <option value="3">STEP_1/8</option>
-                    <option value="4" selected>STEP_1/16</option>
-                    <option value="5">STEP_1/32</option>
-                    <option value="6">STEP_1/64</option>
-                    <option value="7">STEP_1/128</option>
+                    <option value="0">FULL</option>
+                    <option value="1">1/2</option>
+                    <option value="2">1/4</option>
+                    <option value="3">1/8</option>
+                    <option value="4" selected>1/16</option>
+                    <option value="5">1/32</option>
+                    <option value="6">1/64</option>
+                    <option value="7">1/128</option>
                 </select>
                 <label for="kval-hold">Kval hold</label>
                 <input id="kval-hold" name="kval-hold" type="number" min="1" max="99" value="16" step="1">
@@ -131,9 +129,11 @@
                     <option value="11">8.1</option>
                     <option value="12">8.8</option>
                     <option value="13">9.5</option>
-                    <option value="14" selected>10</option>
+                    <option value="14" selected>10.2</option>
                 </select>
             </div>
+        </div>
+        <div class="flex-col">
             <div id="motor-move">
                 <h2>5. Test motor</h2>
                 <h3>Constant speed</h3>
@@ -223,17 +223,17 @@
             case 'get-parameters':
                 if (event.data.response) {
                     console.log(event.data.response);
-                    document.getElementById("max-speed").value = event.data.response['max-speed'];
-                    document.getElementById("acc").value = event.data.response['acc'];
-                    document.getElementById("dec").value = event.data.response['dec'];
+                    document.getElementById("max-speed").value = event.data.response['max-speed'].split('.')[0];
+                    document.getElementById("acc").value = event.data.response['acc'].split('.')[0];
+                    document.getElementById("dec").value = event.data.response['dec'].split('.')[0];
                     document.getElementById("step-mode-step-sel").value = event.data.response['step-mode-step-sel'];
                     document.getElementById("kval-hold").value = event.data.response['kval-hold'];
                     document.getElementById("kval-run").value = event.data.response['kval-run'];
                     document.getElementById("kval-acc").value = event.data.response['kval-acc'];
                     document.getElementById("kval-dec").value = event.data.response['kval-dec'];
                     document.getElementById("fn-slp-acc").value = event.data.response["fn-slp-acc"];
-                    document.getElementById("ocd-th").value = event.data.response['ocd-th'];
-                    document.getElementById("stall-th").value = event.data.response['stall-th'];
+                    document.getElementById("ocd-th").value = event.data.response['ocd-th']/31.25; // Convert from mV
+                    document.getElementById("stall-th").value = event.data.response['stall-th']/31.25; // Convert from mV
                 }
                 break;
             case 'set-parameters':
@@ -300,6 +300,7 @@
         let motor = document.querySelector('input[name="motor"]:checked').value;
         let params = {
             'max-speed': document.getElementById("max-speed").value,
+            'fs-spd': document.getElementById("max-speed").value, // This a hidden parameter which depends on max-speed
             'acc': document.getElementById("acc").value,
             'dec': document.getElementById("dec").value,
             'step-mode-step-sel': document.getElementById("step-mode-step-sel").value,
@@ -308,8 +309,11 @@
             'kval-acc': document.getElementById("kval-acc").value,
             'kval-dec': document.getElementById("kval-dec").value,
             'fn-slp-acc': document.getElementById("f-slp-acc").value,
-            'ocd-th': document.getElementById("ocd-th").value,
-            'stall-th': document.getElementById("stall-th").value
+            'fn-slp-dec': document.getElementById("f-slp-acc").value, // This a hidden parameter which depends on fn-slp-acc
+            'st-slp': document.getElementById("f-slp-acc").value/2, // This a hidden parameter which depends on fn-slp-acc
+            'ocd-th': document.getElementById("ocd-th").value*31.25, // Convert to mV
+            'stall-th': document.getElementById("stall-th").value*31.25 // Convert to mV
+            // To do set hidden parameters
         };
         vscode.postMessage({
             command: 'set-parameters',
@@ -340,7 +344,7 @@
         let steps = document.getElementById('moveRelativeStep').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['move-relative', '1', steps]
+            args: ['move-relative', motor, steps]
         });
     }
     
@@ -349,15 +353,16 @@
         let steps = document.getElementById('moveAbsoluteStep').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['move-absolute', '1', steps]
+            args: ['move-absolute', motor, steps]
         });
     }
 
     function cmdHoming() {
         let motor = document.querySelector('input[name="motor"]:checked').value;
+        let speed = document.getElementById('runSpeed').value; // Todo set a specific speed for homing
         vscode.postMessage({
             command: 'cmd',
-            args: ['homing', '1']
+            args: ['homing', motor, speed]
         });
     }
     
@@ -365,12 +370,12 @@
         let motor = document.querySelector('input[name="motor"]:checked').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['stop', '1']
+            args: ['stop', motor]
         });
     }
 
     function getFlags() {
-
+        vscode.postMessage({})
     }
 
     function clearFlags() {
