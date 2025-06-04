@@ -166,6 +166,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         
         if (envName === "core") {
             libVersion = "\r\n\t" + libVersion;
+            libVersion += "\r\n\tlib/core/OpenIndus/external_components/Arduino";
             libVersion += "\r\n\tpaulstoffregen/Ethernet@^2.0.0";
             libVersion += "\r\n\tfelis/USB-Host-Shield-20@^1.6.0";
         }
@@ -188,7 +189,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         let pioFile = fs.readFileSync(state.path + '/' + state.name + '/platformio.ini', 'utf8');
         pioFile = pioFile.replaceAll("%ENV%", envName);
         pioFile = pioFile.replace("%LIB_VERSION%", libVersion);
-        pioFile = pioFile.replace("%MODULE%", state.board.label.toUpperCase().substring(2));
+        pioFile = pioFile.replace("%MODULE%", envName.toUpperCase());
         pioFile = pioFile.replace("%MODE%", state.mode.label.toUpperCase());
         if (IS_WINDOWS === false) {
             pioFile = pioFile.replace("monitor_rts = 1", "monitor_rts = 0");

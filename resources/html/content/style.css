@@ -4,8 +4,8 @@
 
 body {
     font-family: 'Roboto', Arial, sans-serif;
-    background: linear-gradient(135deg, #f5fafd 0%, #e3f0fa 100%);
-    color: #1a2a36;
+    background-color: #181818;
+    color: #ccc;
     margin: 0;
     padding: 0 0 40px 0;
     min-height: 100vh;
@@ -13,39 +13,47 @@ body {
 
 .main-flex {
     display: flex;
-    flex-wrap: wrap;
+    flex-flow: row;
     justify-content: center;
     align-items: flex-start;
-    gap: 24px;
     max-width: 1800px;
     margin: 0 auto;
+    gap: 24px;
 }
 
 .flex-col {
     display: flex;
-    flex-direction: column;
+    flex-flow: column wrap;
+    justify-content: center;
+    align-items: center;
     gap: 24px;
-    flex: 1 1 350px;
-    min-width: 340px;
-    max-width: 500px;
 }
 
-.flex-row {
+.flex-block {
+    border-top: 1px solid #37373D;
+    padding: 24px 24px 24px 24px;
+    width: 620px;
     display: flex;
-    flex-direction: row;
-    gap: 24px;
-    flex-wrap: wrap;
+    flex: 1 1 0;
+}
+
+#motor-status {
+    width : 320px;
+}
+
+#motor-parameters {
+    flex: 1 1 0;
 }
 
 h1, h2, h3 {
-    color: #0b3a5e;
+    color: #ccc;
     font-weight: 700;
     margin-top: 0;
 }
 
 h1 {
     font-size: 2.2rem;
-    margin-bottom: 0.5em;
+    margin: 24px;
     text-align: center;
 }
 
@@ -53,7 +61,7 @@ h2 {
     font-size: 1.3rem;
     margin-top: 1em;
     margin-bottom: 0.7em;
-    border-left: 4px solid #0b3a5e;
+    border-left: 4px solid #0078D4;
     padding-left: 12px;
 }
 
@@ -70,7 +78,7 @@ label {
 }
 
 input[type="number"], select {
-    width: 220px;
+    width: 250px;
     padding: 8px 10px;
     border: 1px solid #b3c6d6;
     border-radius: 6px;
@@ -87,7 +95,7 @@ input[type="number"]:focus, select:focus {
 
 /* Flat button design */
 button {
-    background: #0b3a5e;
+    background: #0078D4;
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -116,58 +124,29 @@ input[type="radio"] + label {
     font-weight: 400;
 }
 
+input[type="checkbox"] + label {
+    display: inline-block;
+    margin-left: 6px;
+    margin-right: 18px;
+    vertical-align: middle;
+    font-weight: 400;
+}
+
+input[type="checkbox"] {
+    vertical-align: middle;
+    margin: 0 0 0 2px;
+}
+
 p, i {
-    color: #3a4a5e;
+    color: #aaa;
     font-size: 1rem;
     margin-bottom: 1em;
-}
-
-#test {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    margin-bottom: 0.5em;
-}
-
-/* Step container layout */
-#connexion, #motor-selection, #motor-configuration, #motor-switches, #motor-move, #motor-status {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 4px 32px rgba(11,58,94,0.07);
-    padding: 24px 24px 24px 24px;
-    margin: 0;
-    flex: 1 1 100px;
-    min-width: 320px;
-    max-width: 500px;
 }
 
 hr {
     border: none;
     border-top: 1.5px solid #e3f0fa;
     margin: 2em 0;
-}
-
-@media (max-width: 1200px) {
-    .main-flex {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-    }
-    .flex-col {
-        flex-direction: column;
-        min-width: 0;
-        max-width: 100vw;
-    }
-}
-
-::-webkit-scrollbar {
-    width: 8px;
-    background: #e3f0fa;
-}
-::-webkit-scrollbar-thumb {
-    background: #b3c6d6;
-    border-radius: 8px;
 }
 
 .logo {

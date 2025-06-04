@@ -26,7 +26,7 @@ export class OIAccessTreeProvider implements vscode.TreeDataProvider<OIItem> {
 			new OIItem('Start a new project', 'openindus.createProject', 'notebook-mimetype'),
 			new OIItem('Get system information', 'openindus.getSystemInfo', 'key'),
 			new OIItem('Update device firmware', 'openindus.flashDeviceFirmware', 'flame'),
-			new OIItem('Start OIStepper configuration', 'openindus.startStepperPanelConfig', 'tools'),
+			new OIItem('OIStepper configuration tool', 'openindus.startStepperPanelConfig', 'tools'),
 			new OIItem('Get started', 'openindus.openinduswebsite', 'remote-explorer-documentation'),
 		];
 	}

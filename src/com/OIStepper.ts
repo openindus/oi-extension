@@ -8,17 +8,40 @@ export class OIStepper extends OISerial {
         'acc',
         'dec',
         'max-speed',
-        'fs-spd',
+        'min-speed',
+        'min-speed-lspd-opt',
         'ocd-th',
+        'fs-spd',
+        'fs-spd-boost-mode',
         'step-mode-step-sel',
+        'step-mode-cm-vm',
+        'step-mode-sync-sel',
+        'step-mode-sync-en',
+        'alarm-en-overcurrent',
+        'alarm-en-thermal-shutdown',
+        'alarm-en-thermal-warning',
+        'alarm-en-uvlo',
+        'alarm-en-adc-uvlo',
+        'alarm-en-stall-detect',
+        'alarm-en-sw-turn-on',
+        'alarm-en-command-error',
+        'config-osc-sel',
+        'config-ext-clk',
+        'config-sw-mode',
+        'config-oc-sd',
+        'config-uvloval',
+        'config-en-vscomp',
+        'config-f-pwm-dec',
+        'config-f-pwm-int',
         'kval-hold',
         'kval-run',
         'kval-acc',
         'kval-dec',
         'int-speed',
+        'st-slp',
         'fn-slp-acc',
         'fn-slp-dec',
-        'st-slp',
+        'k-therm',
         'stall-th'
     ];
 
@@ -123,7 +146,9 @@ export class OIStepper extends OISerial {
         return new Promise(async (resolve, reject) => {
             for (let param of this.paramList) {
                 try {
-                    await this.cmd(['advanced-param', motor, 'set', param, advancedParamList[param]]);
+                    if (advancedParamList[param] !== undefined) {
+                        await this.cmd(['advanced-param', motor, 'set', param, advancedParamList[param]]);
+                    }
                 } catch (err) {
                     reject(err);
                     return;

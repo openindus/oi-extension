@@ -10,173 +10,200 @@
 
 <body>
     <!-- <img src="${content}/openindus_logo.png" alt="OpenIndus Logo" class="logo"> -->
-    <h1 id="test">Stepper configuration tool</h1>
+    <h1>[BETA] Stepper configuration tool</h1>
     <div class="main-flex">
+
         <div class="flex-col">
-            <div id="connexion">
-                <h2>1. Connexion</h2>
-                <label for="port">Port :</label>
-                <button id="refresh" onclick="refresh()" title="Refresh">
-                    <img src="${content}/refresh_logo.png" alt="Refresh">
-                </button>
-                <select id="port" name="port"></select>
-                <button id="connect" onclick="connect()">Connect</button>
-                <button id="disconnect" onclick="disconnect()">Disconnect</button>
-            </div>
-            <div id="motor-selection">
-                <h2>2. Select a motor</h2>
-                <input type="radio" id="motor1" name="motor" value="1" checked>
-                <label for="motor1">Motor 1</label>
-                <input type="radio" id="motor2" name="motor" value="2">
-                <label for="motor2">Motor 2</label>
-            </div>
-            <div id="motor-switches">
-                <h2>4. Configure limit switches</h2>
-                <p><i>You can configure up to two limit switch per motor. <br>
-                Limit switches have to be configured in the init sequence of our main program.</i></p>
-                <div>
-                    <label for="limit-switch-1">Limit switch 1 input</label>
-                    <select id="limit-switch-1" name="limit-switch-1">
-                        <option value="0" selected>NONE</option>
-                        <option value="1">DIN 1</option>
-                        <option value="2">DIN 2</option>
-                        <option value="3">DIN 3</option>
-                        <option value="4">DIN 4</option>
-                    </select>
-                    <label for="logic-switch-1">Logic</label>
-                    <select id="logic-switch-1" name="logic-switch-1">
-                        <option value="1" selected>Active HIGH</option>
-                        <option value="0">Active LOW</option>
-                    </select>
-                    <button if="add-limit-switch-1" onclick="setLimitSwitch(1)">Set</button>
-                </div>
-                <div>
-                    <label for="limit-switch-2">Limit switch 2 input</label>
-                    <select id="limit-switch-2" name="limit-switch-2">
-                        <option value="0" selected>NONE</option>
-                        <option value="1">DIN 1</option>
-                        <option value="2">DIN 2</option>
-                        <option value="3">DIN 3</option>
-                        <option value="4">DIN 4</option>
-                    </select>
-                    <label for="logic-switch-2">Logic</label>
-                    <select id="logic-switch-2" name="logic-switch-2">
-                        <option value="1" selected>Active HIGH</option>
-                        <option value="0">Active LOW</option>
-                    </select>
-                    <button if="add-limit-switch-1" onclick="setLimitSwitch(2)">Set</button>
+
+            <div class="flex-block">
+                <div id="connexion">
+                    <h2>Connexion</h2>
+                    <label for="port">Port :</label>
+                    <button id="refresh" onclick="refresh()" title="Refresh">
+                        <img src="${content}/refresh_logo.png" alt="Refresh">
+                    </button>
+                    <select id="port" name="port"></select>
+                    <button id="connect" onclick="connect()">Connect</button>
+                    <button id="disconnect" onclick="disconnect()">Disconnect</button>
                 </div>
             </div>
-            <div id="motor-configuration">
-                <h2>3. Configure motor parameters</h2>
-                <p><i>Configure your motor with the parameters below. <br>
-                Your motor have to be in HiZ (see flags) to be configured. <br>
-                The first time, you configure a motor, we recommend to click the "Reset parameters" button to set all parameters to their default values.<br>
-                If you want to change a parameter, you can change it and click the "Set parameters" button.<br>
-                Before modifiyng a paramter, click the "Get parameters" button to get the current values.</i></p>
-                <button onclick="getParameters()">Get parameters</button>
-                <button onclick="resetParameters()">Reset parameters</button>
-                <button onclick="setParameters()">Set parameters</button>
-                <button onclick="saveParamters()">Save parameters to file</button>
-                <label for="max-speed">Maximum Speed (step/s)</label>
-                <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="992" step="15">
-                <label for="acc">Acceleration Speed (step/s²)</label>
-                <input id="acc" name="acc" type="number" min="0" max="59575" value="2008" step="15">
-                <label for="dec">Deceleration Speed (step/s²)</label>
-                <input id="dec" name="dec" type="number" min="0" max="59590" value="2008" step="15">
-                <label for="step-mode-step-sel">Step mode</label>
-                <select id="step-mode-step-sel" name="step-mode-step-sel">
-                    <option value="0">FULL</option>
-                    <option value="1">1/2</option>
-                    <option value="2">1/4</option>
-                    <option value="3">1/8</option>
-                    <option value="4" selected>1/16</option>
-                    <option value="5">1/32</option>
-                    <option value="6">1/64</option>
-                    <option value="7">1/128</option>
-                </select>
-                <label for="kval-hold">Kval hold</label>
-                <input id="kval-hold" name="kval-hold" type="number" min="1" max="99" value="16" step="1">
-                <label for="kval-run">Kval run</label>
-                <input id="kval-run" name="kval-run" type="number" min="1" max="99" value="16" step="1">
-                <label for="kval-acc">Kval acceleration</label>
-                <input id="kval-acc" name="kval-acc" type="number" min="1" max="99" value="16" step="1">
-                <label for="kval-dec">Kval deceleration</label>
-                <input id="kval-dec" name="kval-dec" type="number" min="1" max="99" value="16" step="1">
-                <label for="f-slp-acc">Back-EMF compensation</label>
-                <input id="f-slp-acc" name="f-slp-acc" type="number" min="0" max="0.4" value="0.06256" step="0.0015">
-                <label for="ocd-th">Over-current threshold (A)</label>
-                <select id="ocd-th" name="ocd-th">
-                    <option value="0">2</option>
-                    <option value="1">4</option>
-                    <option value="2">6</option>
-                    <option value="3">8</option>
-                    <option value="4" selected>10</option>
-                </select>
-                <label for="stall-th">Stall threshold (A)</label>
-                <select id="stall-th" name="stall-th">
-                    <option value="0">0.7</option>
-                    <option value="1">1.3</option>
-                    <option value="2">2</option>
-                    <option value="3">2.7</option>
-                    <option value="4">3.4</option>
-                    <option value="5">4</option>
-                    <option value="6">4.7</option>
-                    <option value="7">5.4</option>
-                    <option value="8">6.1</option>
-                    <option value="9">6.8</option>
-                    <option value="10">7.4</option>
-                    <option value="11">8.1</option>
-                    <option value="12">8.8</option>
-                    <option value="13">9.5</option>
-                    <option value="14" selected>10.2</option>
-                </select>
+
+            <div class="flex-block">
+                <div id="motor-selection">
+                    <h2>Select a motor</h2>
+                    <input type="radio" id="motor1" name="motor" value="1" checked>
+                    <label for="motor1">Motor 1</label>
+                    <input type="radio" id="motor2" name="motor" value="2">
+                    <label for="motor2">Motor 2</label>
+                </div>
             </div>
+
+            <div class="flex-block">
+                <div id="motor-configuration">
+                    <h2>Configure motor parameters</h2>
+                    <p><i>Configure your motor with the parameters below. <br>
+                    Your motor have to be in HiZ (see flags) to be configured. <br>
+                    The first time, you configure a motor, we recommend to click the "Reset parameters" button to set all parameters to their default values.<br>
+                    If you want to change a parameter, you can change it and click the "Set parameters" button.<br>
+                    Before modifiyng a paramter, click the "Get parameters" button to get the current values.</i></p>
+                    <button onclick="getParameters()">Get parameters</button>
+                    <button onclick="resetParameters()">Reset parameters</button>
+                    <button onclick="setParameters()">Set parameters</button>
+                    <button onclick="saveParameters()">Save parameters to file</button>
+                    <button onclick="loadParameters()">Load parameters from file</button>
+                    <label for="max-speed">Maximum Speed (step/s)</label>
+                    <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="992" step="15">
+                    <label for="acc">Acceleration Speed (step/s²)</label>
+                    <input id="acc" name="acc" type="number" min="0" max="59575" value="2008" step="15">
+                    <label for="dec">Deceleration Speed (step/s²)</label>
+                    <input id="dec" name="dec" type="number" min="0" max="59590" value="2008" step="15">
+                    <label for="step-mode-step-sel">Step mode</label>
+                    <select id="step-mode-step-sel" name="step-mode-step-sel">
+                        <option value="0">FULL</option>
+                        <option value="1">1/2</option>
+                        <option value="2">1/4</option>
+                        <option value="3">1/8</option>
+                        <option value="4" selected>1/16</option>
+                        <option value="5">1/32</option>
+                        <option value="6">1/64</option>
+                        <option value="7">1/128</option>
+                    </select>
+                    <label for="kval-hold">Kval hold</label>
+                    <input id="kval-hold" name="kval-hold" type="number" min="1" max="99" value="16" step="1">
+                    <label for="kval-run">Kval run</label>
+                    <input id="kval-run" name="kval-run" type="number" min="1" max="99" value="16" step="1">
+                    <label for="kval-acc">Kval acceleration</label>
+                    <input id="kval-acc" name="kval-acc" type="number" min="1" max="99" value="16" step="1">
+                    <label for="kval-dec">Kval deceleration</label>
+                    <input id="kval-dec" name="kval-dec" type="number" min="1" max="99" value="16" step="1">
+                    <label for="f-slp-acc">Back-EMF compensation</label>
+                    <input id="f-slp-acc" name="f-slp-acc" type="number" min="0" max="0.4" value="0.06256" step="0.0015">
+                    <label for="ocd-th">Over-current threshold (A)</label>
+                    <select id="ocd-th" name="ocd-th">
+                        <option value="0">2</option>
+                        <option value="1">4</option>
+                        <option value="2">6</option>
+                        <option value="3">8</option>
+                        <option value="4" selected>10</option>
+                    </select>
+                    <label for="stall-th">Stall threshold (A)</label>
+                    <select id="stall-th" name="stall-th">
+                        <option value="0">0.7</option>
+                        <option value="1">1.3</option>
+                        <option value="2">2</option>
+                        <option value="3">2.7</option>
+                        <option value="4">3.4</option>
+                        <option value="5">4</option>
+                        <option value="6">4.7</option>
+                        <option value="7">5.4</option>
+                        <option value="8">6.1</option>
+                        <option value="9">6.8</option>
+                        <option value="10">7.4</option>
+                        <option value="11">8.1</option>
+                        <option value="12">8.8</option>
+                        <option value="13">9.5</option>
+                        <option value="14" selected>10.2</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex-block">
+                <div id="motor-switches">
+                    <h2>Configure limit switches</h2>
+                    <p><i>You can configure up to two limit switch per motor. <br>
+                    Limit switches have to be configured in the init sequence of our main program.</i></p>
+                    <div>
+                        <label for="limit-switch-1">Limit switch 1 input</label>
+                        <select id="limit-switch-1" name="limit-switch-1">
+                            <option value="0" selected>NONE</option>
+                            <option value="1">DIN 1</option>
+                            <option value="2">DIN 2</option>
+                            <option value="3">DIN 3</option>
+                            <option value="4">DIN 4</option>
+                        </select>
+                        <label for="logic-switch-1">Logic</label>
+                        <select id="logic-switch-1" name="logic-switch-1">
+                            <option value="1" selected>Active HIGH</option>
+                            <option value="0">Active LOW</option>
+                        </select>
+                        <button if="add-limit-switch-1" onclick="setLimitSwitch(1)">Set</button>
+                    </div>
+                    <div>
+                        <label for="limit-switch-2">Limit switch 2 input</label>
+                        <select id="limit-switch-2" name="limit-switch-2">
+                            <option value="0" selected>NONE</option>
+                            <option value="1">DIN 1</option>
+                            <option value="2">DIN 2</option>
+                            <option value="3">DIN 3</option>
+                            <option value="4">DIN 4</option>
+                        </select>
+                        <label for="logic-switch-2">Logic</label>
+                        <select id="logic-switch-2" name="logic-switch-2">
+                            <option value="1" selected>Active HIGH</option>
+                            <option value="0">Active LOW</option>
+                        </select>
+                        <button if="add-limit-switch-1" onclick="setLimitSwitch(2)">Set</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-block">
+                <div id="motor-move">
+                    <h2>Test motor</h2>
+                     <input type="checkbox" id="moveTwin" name="moveTwin">
+                    <label for="moveTwin">Also move twin motor</label>
+                    <h3>Constant speed</h3>
+                    <label for="runDirection">Direction</label>
+                    <select id="runDirection" name="runDirection" list="direction" value="FORWARD">
+                        <option value="FORWARD">FORWARD</option>
+                        <option value="BACKWARD">BACKWARD</option>
+                    </select>
+                    <label for="runSpeed">Speed</label>
+                    <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000" value="200">
+                    <button onclick="cmdRun()">RUN</button>
+                    <h3>Relative move</h3>
+                    <label for="moveRelativeStep">Steps</label>
+                    <input id="moveRelativeStep" name="moveRelativeStep" type="number" min="-100000" max="100000" value="0">
+                    <button onclick="cmdMoveRelative()">MOVE RELATIVE</button>
+                    <h3>Absolute speed</h3>
+                    <label for="moveAbsoluteStep">Steps</label>
+                    <input id="moveAbsoluteStep" name="moveAbsoluteStep" type="number" min="0" max="100000" value="0">
+                    <button onclick="cmdMoveAbsolute()">MOVE ABSOLUTE</button>
+                    <h3>Homing</h3>
+                    <button onclick="cmdHoming()">HOMING</button>
+                    <h3>Stop</h3>
+                    <button onclick="cmdStop()">STOP</button>
+                </div>
+            </div>
+
         </div>
+        
         <div class="flex-col">
-            <div id="motor-move">
-                <h2>5. Test motor</h2>
-                <h3>Constant speed</h3>
-                <label for="runDirection">Direction</label>
-                <select id="runDirection" name="runDirection" list="direction" value="FORWARD">
-                    <option value="FORWARD">FORWARD</option>
-                    <option value="BACKWARD">BACKWARD</option>
-                </select>
-                <label for="runSpeed">Speed</label>
-                <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000" value="200">
-                <button onclick="cmdRun()">RUN</button>
-                <h3>Relative move</h3>
-                <label for="moveRelativeStep">Steps</label>
-                <input id="moveRelativeStep" name="moveRelativeStep" type="number" min="-100000" max="100000" value="0">
-                <button onclick="cmdMoveRelative()">MOVE RELATIVE</button>
-                <h3>Absolute speed</h3>
-                <label for="moveAbsoluteStep">Steps</label>
-                <input id="moveAbsoluteStep" name="moveAbsoluteStep" type="number" min="0" max="100000" value="0">
-                <button onclick="cmdMoveAbsolute()">MOVE ABSOLUTE</button>
-                <h3>Homing</h3>
-                <button onclick="cmdHoming()">HOMING</button>
-                <h3>Stop</h3>
-                <button onclick="cmdStop()">STOP</button>
-            </div>
-            <div id="motor-status">
-                <h2>6. Check status</h2>
-                <p><i>Below you can check the status of your motor driver with several flags<br>
-                By default, flags are automatically polled every second but you can chose to pool them manually.<br>
-                To clear a flag, click the "Clear flags" button.<br>
-                Some flags need to clear if you want to move motor (for example OCD (over-current detected)) need to be clear after a fault.</i></p>
-                <input type="checkbox" id="autoPoolStatus" name="autoPoolStatus" checked>
-                <label for="autoPoolStatus">Auto pool status</label>
-                <button id="getFlags" onclick="getFlags()">Get flags</button>
-                <button onclick="clearFlags()">Clear flags</button>
-            </div>
+
+                <div id="motor-status" class="flex-block">
+                    <div>
+                        <h2>Motors status</h2>
+                        <p><i>Below you can check the status of your motor driver with several flags<br>
+                        By default, flags are automatically polled every second but you can chose to pool them manually.<br>
+                        To clear a flag, click the "Clear flags" button.<br>
+                        Some flags need to clear if you want to move motor (for example OCD (over-current detected)) need to be clear after a fault.</i></p>
+                        <input type="checkbox" id="autoPoolStatus" name="autoPoolStatus" checked>
+                        <label for="autoPoolStatus">Auto pool status</label>
+                        <button id="getFlags" onclick="getFlags()">Get flags</button>
+                        <button onclick="clearFlags()">Clear flags</button>
+                    </div>
+                </div>
+
         </div>
+
     </div>
 </body>
 
 <script type="text/javascript">
     
     const vscode = acquireVsCodeApi();
-    
+    var paramList = {};
+
     // By default disconnect is hidden
     document.getElementById("disconnect").style.display = "none";
     // By default getFlags button is hidden
@@ -221,16 +248,18 @@
                 }
                 break;
             case 'get-parameters':
+            case 'load-parameters':
                 if (event.data.response) {
                     console.log(event.data.response);
+                    paramList = event.data.response;
                     document.getElementById("max-speed").value = event.data.response['max-speed'].split('.')[0];
                     document.getElementById("acc").value = event.data.response['acc'].split('.')[0];
                     document.getElementById("dec").value = event.data.response['dec'].split('.')[0];
                     document.getElementById("step-mode-step-sel").value = event.data.response['step-mode-step-sel'];
-                    document.getElementById("kval-hold").value = event.data.response['kval-hold'];
-                    document.getElementById("kval-run").value = event.data.response['kval-run'];
-                    document.getElementById("kval-acc").value = event.data.response['kval-acc'];
-                    document.getElementById("kval-dec").value = event.data.response['kval-dec'];
+                    document.getElementById("kval-hold").value = event.data.response['kval-hold'].split('.')[0];
+                    document.getElementById("kval-run").value = event.data.response['kval-run'].split('.')[0];
+                    document.getElementById("kval-acc").value = event.data.response['kval-acc'].split('.')[0];
+                    document.getElementById("kval-dec").value = event.data.response['kval-dec'].split('.')[0];
                     document.getElementById("fn-slp-acc").value = event.data.response["fn-slp-acc"];
                     document.getElementById("ocd-th").value = event.data.response['ocd-th']/31.25; // Convert from mV
                     document.getElementById("stall-th").value = event.data.response['stall-th']/31.25; // Convert from mV
@@ -326,6 +355,20 @@
         vscode.postMessage({
             command: 'reset-parameters',
             args: [motor]
+        });
+    }
+
+    function saveParameters() {
+        vscode.postMessage({
+            command: 'save-parameters',
+            args: [paramList]
+        });
+    }
+
+    function loadParameters() {
+        vscode.postMessage({
+            command: 'load-parameters',
+            args: []
         });
     }
     
