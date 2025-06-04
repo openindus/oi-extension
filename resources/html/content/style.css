@@ -79,6 +79,7 @@ label {
 
 input[type="number"], select {
     width: 250px;
+    box-sizing:border-box;
     padding: 8px 10px;
     border: 1px solid #b3c6d6;
     border-radius: 6px;
@@ -114,7 +115,7 @@ button:hover, button:focus {
     box-shadow: 0 2px 8px rgba(30,136,229,0.10);
 }
 
-select, input[type="radio"] {
+input[type="radio"] {
     margin-right: 8px;
 }
 
