@@ -380,6 +380,13 @@
             command: 'cmd',
             args: ['run', motor, direction==="FORWARD"?"1":"0", speed]
         });
+        if (document.getElementById('moveTwin').checked) {
+            let twinMotor = motor === '1' ? '2' : '1';
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['run', twinMotor, direction==="FORWARD"?"1":"0", speed]
+            });
+        }
     }
     
     function cmdMoveRelative() {
@@ -389,6 +396,13 @@
             command: 'cmd',
             args: ['move-relative', motor, steps]
         });
+        if (document.getElementById('moveTwin').checked) {
+            let twinMotor = motor === '1' ? '2' : '1';
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['move-relative', twinMotor, steps]
+            });
+        }
     }
     
     function cmdMoveAbsolute() {
@@ -398,6 +412,13 @@
             command: 'cmd',
             args: ['move-absolute', motor, steps]
         });
+        if (document.getElementById('moveTwin').checked) {
+            let twinMotor = motor === '1' ? '2' : '1';
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['move-absolute', twinMotor, steps]
+            });
+        }
     }
 
     function cmdHoming() {
@@ -407,6 +428,13 @@
             command: 'cmd',
             args: ['homing', motor, speed]
         });
+        if (document.getElementById('moveTwin').checked) {
+            let twinMotor = motor === '1' ? '2' : '1';
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['homing', twinMotor, speed]
+            });
+        }
     }
     
     function cmdStop() {
@@ -415,6 +443,13 @@
             command: 'cmd',
             args: ['stop', motor]
         });
+        if (document.getElementById('moveTwin').checked) {
+            let twinMotor = motor === '1' ? '2' : '1';
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['stop', twinMotor]
+            });
+        }
     }
 
     function getFlags() {

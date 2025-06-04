@@ -130,6 +130,7 @@ input[type="checkbox"] + label {
     margin-right: 18px;
     vertical-align: middle;
     font-weight: 400;
+    margin: 24px 10px;
 }
 
 input[type="checkbox"] {
