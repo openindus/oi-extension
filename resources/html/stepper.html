@@ -350,26 +350,25 @@
 
     function setParameters() {
         let motor = document.querySelector('input[name="motor"]:checked').value;
-        let params = {
-            'max-speed': document.getElementById("max-speed").value,
-            'fs-spd': document.getElementById("max-speed").value, // This a hidden parameter which depends on max-speed
-            'acc': document.getElementById("acc").value,
-            'dec': document.getElementById("dec").value,
-            'step-mode-step-sel': document.getElementById("step-mode-step-sel").value,
-            'kval-hold': document.getElementById("kval-hold").value,
-            'kval-run': document.getElementById("kval-run").value,
-            'kval-acc': document.getElementById("kval-acc").value,
-            'kval-dec': document.getElementById("kval-dec").value,
-            'fn-slp-acc': document.getElementById("f-slp-acc").value,
-            'fn-slp-dec': document.getElementById("f-slp-acc").value, // This a hidden parameter which depends on fn-slp-acc
-            'st-slp': document.getElementById("f-slp-acc").value/2, // This a hidden parameter which depends on fn-slp-acc
-            'ocd-th': document.getElementById("ocd-th").value*31.25, // Convert to mV
-            'stall-th': document.getElementById("stall-th").value*31.25 // Convert to mV
-            // To do set hidden parameters
-        };
+
+        paramList['max-speed'] = document.getElementById("max-speed").value,
+        paramList['fs-spd'] = document.getElementById("max-speed").value, // This a hidden parameter which depends on max-speed
+        paramList['acc'] = document.getElementById("acc").value,
+        paramList['dec'] = document.getElementById("dec").value,
+        paramList['step-mode-step-sel'] = document.getElementById("step-mode-step-sel").value,
+        paramList['kval-hold'] = document.getElementById("kval-hold").value,
+        paramList['kval-run'] = document.getElementById("kval-run").value,
+        paramList['kval-acc'] = document.getElementById("kval-acc").value,
+        paramList['kval-dec'] = document.getElementById("kval-dec").value,
+        paramList['fn-slp-acc'] = document.getElementById("f-slp-acc").value,
+        paramList['fn-slp-dec'] = document.getElementById("f-slp-acc").value, // This a hidden parameter which depends on fn-slp-acc
+        paramList['st-slp'] = (document.getElementById("f-slp-acc").value/2).toString(), // This a hidden parameter which depends on fn-slp-acc
+        paramList['ocd-th'] = (document.getElementById("ocd-th").value*31.25).toString(), // Convert to mV
+        paramList['stall-th'] = (document.getElementById("stall-th").value*31.25).toString() // Convert to mV
+
         vscode.postMessage({
             command: 'set-parameters',
-            args: [motor, params]
+            args: [motor, paramList]
         });
     }
 

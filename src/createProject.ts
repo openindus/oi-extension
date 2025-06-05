@@ -122,7 +122,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             libVersion = "@^" + libVersionResults[0];
         }
         libVersion = "openindus/OpenIndus" + libVersion;
-        let envName = formatStringOItoEnvName(state.board.label);
+        let envName = formatStringOItoEnvName(state.board.label).replaceAll('lite', ''); // Todo find a better way to remove 'lite
         let className = getClassNameFromEnv(state.board.label);
 
         // Sixth STEP: create the project directory and copy item
