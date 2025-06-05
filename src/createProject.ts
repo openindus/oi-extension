@@ -178,10 +178,14 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         cmakelistsFile = cmakelistsFile.replace("%PROJECT%", state.name!);
         fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
 
-        // Copy versionFile.txt and replace %LIB_VERSION% by the user selection
+        // Copy versionFile.txt and replace %LIB_VERSION%
         await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/version.txt')), vscode.Uri.file(state.path + '/' + state.name + '/version.txt'));
         let versionFile = fs.readFileSync(state.path + '/' + state.name + '/version.txt', 'utf8');
-        versionFile = versionFile.replace("%LIB_VERSION%", state.name!);
+        if (libVersionResults !== null) {
+            versionFile = versionFile.replace("%LIB_VERSION%", libVersionResults[0]);
+        } else {
+            versionFile = versionFile.replace("%LIB_VERSION%", "1.0.0");
+        }
         fs.writeFileSync(state.path + '/' + state.name + '/version.txt', versionFile, 'utf8');
 
         // Copy platformio.ini and replace %VAR% by the user selection

@@ -16,33 +16,23 @@ body {
     flex-flow: row;
     justify-content: center;
     align-items: flex-start;
-    max-width: 1800px;
+    /* max-width: 1800px; */
     margin: 0 auto;
     gap: 24px;
+    padding: 24px;;
 }
 
-.flex-col {
-    display: flex;
-    flex-flow: column wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 24px;
+.flex-col-big {
+   max-width: 840px;
+}
+
+.flex-col-small {
+   max-width: 420px;
 }
 
 .flex-block {
     border-top: 1px solid #37373D;
     padding: 24px 24px 24px 24px;
-    width: 620px;
-    display: flex;
-    flex: 1 1 0;
-}
-
-#motor-status {
-    width : 320px;
-}
-
-#motor-parameters {
-    flex: 1 1 0;
 }
 
 h1, h2, h3 {
@@ -170,4 +160,12 @@ hr {
     vertical-align: middle;
     height: 32px;
     width: 32px;
+}
+
+td {
+    text-align: center;
+}
+
+th {
+    padding: 12px;
 }
