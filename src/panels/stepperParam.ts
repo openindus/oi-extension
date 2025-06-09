@@ -149,6 +149,13 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 						}
 					});
 					break;
+				case 'get-status':
+					await stepper?.getStatus().then((response) => {
+						panel.webview.postMessage({command: message.command, response: response});
+					}).catch((error) => {
+						vscode.window.showErrorMessage("Cannot get status from OIStepper: " + error);
+					});
+					break;
 				default:
 					break;
 			}

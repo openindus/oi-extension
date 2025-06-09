@@ -174,7 +174,7 @@
                 <h2>Motors status</h2>
                 <input type="checkbox" id="autoPoolStatus" name="autoPoolStatus" checked>
                 <label for="autoPoolStatus">Auto pool status</label>
-                <button id="getFlags" onclick="getFlags()">Get flags</button>
+                <button id="getFlags" onclick="getStatus()">Get flags</button>
                 <button onclick="clearFlags()">Clear flags</button>
                 <div id="flagList">
                     <table>
@@ -184,44 +184,44 @@
                             <th>Motor 2</th>
                         </tr>
                         <tr>
-                            <td id="alamr-ocd">Command error</td>
-                            <td><img src="${content}/empty.png"></td>
-                            <td><img src="${content}/empty.png"></td>
+                            <td class="right-align">Command error</td>
+                            <td><img id="alarm-cmd-error-1" src="${content}/circle_empty.png"></td>
+                            <td><img id="alarm-cmd-error-2" src="${content}/circle_empty.png"></td>
                         </tr>
                         <tr>
-                            <td id="alarm-uvlo">Undervoltage</td>
-                            <td><img src="${content}/empty.png"></td>
-                            <td><img src="${content}/empty.png"></td>
+                            <td class="right-align">Undervoltage</td>
+                            <td><img id="alarm-uvlo-1" src="${content}/circle_empty.png"></td>
+                            <td><img id="alarm-uvlo-2" src="${content}/circle_empty.png"></td>
                         </tr>
                         <tr>
-                            <td id="alarm-thermal-shutdown">Thermal Shutdown</td>
-                            <td><img src="${content}/empty.png"></td>
-                            <td><img src="${content}/empty.png"></td>
+                            <td class="right-align">Thermal Shutdown</td>
+                            <td><img id="alarm-thermal-shutdown-1" src="${content}/circle_empty.png"></td>
+                            <td><img id="alarm-thermal-shutdown-2" src="${content}/circle_empty.png"></td>
                         </tr>
                         <tr>
-                            <td id="alarm-thermal-warning">Thermal warning</td>
-                            <td><img src="${content}/empty.png"></td>
-                            <td><img src="${content}/empty.png"></td>
+                            <td class="right-align">Thermal warning</td>
+                            <td><img id="alarm-thermal-warning-1" src="${content}/circle_empty.png"></td>
+                            <td><img id="alarm-thermal-warning-2" src="${content}/circle_empty.png"></td>
                         </tr>
                         <tr>
-                            <td id="alamr-ocd">Overcurrent</td>
-                            <td><img src="${content}/empty.png"></td>
-                            <td><img src="${content}/empty.png"></td>
+                            <td class="right-align">Overcurrent</td>
+                            <td><img id="alarm-ocd-1" src="${content}/circle_empty.png"></td>
+                            <td><img id="alarm-ocd-2" src="${content}/circle_empty.png"></td>
                         </tr>
                         <tr>
-                            <td id="alamr-stall">Stall</td>
-                            <td><img src="${content}/empty.png"></td>
-                            <td><img src="${content}/empty.png"></td>
+                            <td class="right-align">Stall</td>
+                            <td><img id="alarm-stall-1" src="${content}/circle_empty.png"></td>
+                            <td><img id="alarm-stall-2" src="${content}/circle_empty.png"></td>
                         </tr>
                         <tr>
-                            <td id="alarm-busy">Busy</td>
-                            <td><img src="${content}/empty.png"></td>
-                            <td><img src="${content}/empty.png"></td>
+                            <td class="right-align">Busy</td>
+                            <td><img id="alarm-busy-1" src="${content}/circle_empty.png"></td>
+                            <td><img id="alarm-busy-2" src="${content}/circle_empty.png"></td>
                         </tr>
                         <tr>
-                            <td id="alarm-hiz">HiZ</td>
-                            <td><img src="${content}/circle.png"></td>
-                            <td><img src="${content}/circle.png"></td>
+                            <td class="right-align">HiZ</td>
+                            <td><img id="alarm-hiz-1" src="${content}/circle_empty.png"></td>
+                            <td><img id="alarm-hiz-2" src="${content}/circle_empty.png"></td>
                         </tr>
                 </div>
 
@@ -238,6 +238,10 @@
     
     const vscode = acquireVsCodeApi();
     var paramList = {};
+    var circle_empty_png = "${content}/circle_empty.png";
+    var circle_green_png = "${content}/circle_green.png";
+    var circle_red_png = "${content}/circle_red.png";
+    var circle_orange_png = "${content}/circle_orange.png";
 
     // By default disconnect is hidden
     document.getElementById("disconnect").style.display = "none";
@@ -315,6 +319,23 @@
                     console.error("Failed to reset parameters");
                 }
                 break;
+            case 'get-status':
+                if (event.data.response) {
+                    console.log(event.data.response);
+                    // Update flags
+                    for (let i = 0; i < 2; i++) {
+                        if (event.data.response[i] !== undefined) {
+                            document.getElementById("alarm-cmd-error-" + (i+1).toString()).src = event.data.response[i]['cmd-error'] ? circle_red_png : circle_empty_png;
+                            document.getElementById("alarm-uvlo-" + (i+1).toString()).src = event.data.response[i]['uvlo'] ? circle_red_png : circle_empty_png;
+                            document.getElementById("alarm-thermal-shutdown-" + (i+1).toString()).src = event.data.response[i]['thermal_shutdown'] ? circle_red_png : circle_empty_png;
+                            document.getElementById("alarm-thermal-warning-" + (i+1).toString()).src = event.data.response[i]['thermal_warning'] ? circle_red_png : circle_empty_png;
+                            document.getElementById("alarm-ocd-" + (i+1).toString()).src = event.data.response[i]['ocd'] ? circle_red_png : circle_empty_png;
+                            document.getElementById("alarm-stall-" + (i+1).toString()).src = (event.data.response[i]['stall-a'] | event.data.response[i]['stall-b'])    ? circle_red_png : circle_empty_png;
+                            document.getElementById("alarm-busy-" + (i+1).toString()).src = event.data.response[i]['busy'] ? circle_orange_png : circle_empty_png;
+                            document.getElementById("alarm-hiz-" + (i+1).toString()).src = event.data.response[i]['hiz'] ? circle_green_png : circle_empty_png;
+                        }
+                    }
+                }
             case 'cmd':
                 break;
         }
@@ -486,8 +507,11 @@
         }
     }
 
-    function getFlags() {
-        vscode.postMessage({})
+    function getStatus() {
+        vscode.postMessage({
+            command: 'get-status',
+            args: []
+        })
     }
 
     function clearFlags() {

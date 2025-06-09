@@ -166,6 +166,10 @@ td {
     text-align: center;
 }
 
+td.right-align {
+    text-align: right;
+}
+
 th {
     padding: 12px;
 }

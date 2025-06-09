@@ -1,5 +1,6 @@
 import { OISerial } from "./OISerial";
 import { logger } from "../extension";
+import { parse } from "path";
 
 export class OIStepper extends OISerial {
     
@@ -43,6 +44,25 @@ export class OIStepper extends OISerial {
         'fn-slp-dec',
         'k-therm',
         'stall-th'
+    ];
+
+    statusList: string[] = [
+        'hiz',
+        'busy',
+        'sw-level',
+        'sw-turn-on',
+        'direction',
+        'motor-running',
+        'motor-stopped',
+        'cmd-error',
+        'stck-mod',
+        'uvlo',
+        'uvlo-adc',
+        'thermal-warning',
+        'thermal-shutdown',
+        'ocd',
+        'stall-b',
+        'stall-a',
     ];
 
     constructor(portPath: string, serialNum?: string) {
@@ -161,6 +181,26 @@ export class OIStepper extends OISerial {
     resetParam(motor: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             await this.cmd(['advanced-param', motor, 'reset']).then(() => { resolve(); }).catch(reject);
+        });
+    }
+
+    getStatus(): Promise<{[key: string]: string}[]> {
+        return new Promise(async (resolve, reject) => {
+            let status: {[key: string]: string}[] = [{}, {}];
+            try {
+                let rawStatus1 = await this.cmd(['get-status', '1', '--raw']);
+                let rawStatus2 = await this.cmd(['get-status', '2', '--raw']);
+                let status1 = parseInt(rawStatus1, 16);
+                let status2 = parseInt(rawStatus2, 16);
+                for (let statusName of this.statusList) {
+                    status[0][statusName] = (status1 & (1 << this.statusList.indexOf(statusName))) ? '1' : '0';
+                    status[1][statusName] = (status2 & (1 << this.statusList.indexOf(statusName))) ? '1' : '0';
+                }
+                resolve(status);
+            } catch (error) {
+                logger.error("Error while getting status: " + error);
+                reject(error);
+            }
         });
     }
 }
