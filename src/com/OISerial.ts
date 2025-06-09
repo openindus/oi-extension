@@ -1,12 +1,13 @@
 import { SerialPort, ReadlineParser, ReadyParser } from 'serialport';
 import { setTimeout } from 'timers-promises';
 import { logger } from '../extension';
-
+import {Mutex} from 'async-mutex';
 export class OISerial extends SerialPort {
 
     private lineParser: ReadlineParser;
     private readyParser: ReadyParser;
     private lastResponse: string[] = [];
+    private serialMutex: Mutex;
 
     constructor(portPath: string) {
         super({ path: portPath, baudRate: 115200, autoOpen: false });
@@ -20,6 +21,8 @@ export class OISerial extends SerialPort {
         super.on('close', () => {
             logger.info("disconnected");
         });
+
+        this.serialMutex = new Mutex();
 
         this.readyParser = super.pipe(new ReadyParser({ delimiter: '>' }));
         this.readyParser.on('ready', async () => {
@@ -141,62 +144,71 @@ export class OISerial extends SerialPort {
 
     protected sendMsg(args: string, tryNumber = 0): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            if (tryNumber > 10 || !this.readyParser.ready) {
-                reject("Failed to send message");
-            } else {
-                logger.info("Sending message: " + args);
-                this.lastResponse = []; // Emptying response table
-                super.write(args + '\n'); // Send command
-                super.drain();
-                await setTimeout(50); // Wait for echo to be read
-                let txt = this.lastResponse.shift();
-                while (txt !== undefined) {
-                    if (txt.includes(args)) {
-                        logger.info("Message sent");
-                        resolve();
-                        return;
+            await this.serialMutex.runExclusive(async () => {
+                if (tryNumber > 10 || !this.readyParser.ready) {
+                    reject("Failed to send message");
+                } else {
+                    logger.info("Sending message: " + args);
+                    this.lastResponse = []; // Emptying response table
+                    super.write('\n');
+                    super.drain();
+                    super.write(args + '\n'); // Send command
+                    super.drain();
+                    await setTimeout(100); // Wait for echo to be read
+                    let txt = this.lastResponse.shift();
+                    while (txt !== undefined) {
+                        if (txt.includes(args)) {
+                            logger.info("Message sent");
+                            resolve();
+                            return;
+                        }
+                        txt = this.lastResponse.shift();
                     }
-                    txt = this.lastResponse.shift();
+                    logger.warn("Failed to send message (" + tryNumber + "), retrying...");
+                    this.sendMsg(args, tryNumber + 1).then(resolve).catch(reject);
                 }
-                logger.warn("Failed to send message (" + tryNumber + "), retrying...");
-                this.sendMsg(args, tryNumber + 1).then(resolve).catch(reject);
-            }
+            });
         });
     }
 
     protected sendMsgWithReturn(args: string, tryNumber = 0): Promise<string> {
         return new Promise(async (resolve, reject) => {
-            if (tryNumber > 10 || !this.readyParser.ready) {
-                reject("Failed to send message");
-            } else {
-                logger.info("Sending message: " + args);
-                super.write(args + '\n');
-                super.drain();
-                await setTimeout(50); // Wait for echo to be read
-                let txt = this.lastResponse.shift();
-                while (txt !== undefined) {
-                    if (txt.includes(args)) {
-                        logger.info("Message sent, reading response...");
-                        // Trying to get response with a timeout of 2sec
-                        txt = this.lastResponse.shift();
-                        const startTime = Date.now();
-                        while (txt === undefined) {
-                            if (Date.now() - startTime > 2000) { break; }
-                            await setTimeout(10);
+            await this.serialMutex.runExclusive(async () => {
+                if (tryNumber > 10 || !this.readyParser.ready) {
+                    reject("Failed to send message");
+                } else {
+                    logger.info("Sending message: " + args);
+                    this.lastResponse = []; // Emptying response table
+                    super.write('\n');
+                    super.drain();
+                    super.write(args + '\n');
+                    super.drain();
+                    await setTimeout(100); // Wait for echo to be read
+                    let txt = this.lastResponse.shift();
+                    while (txt !== undefined) {
+                        if (txt.includes(args)) {
+                            logger.info("Message sent, reading response...");
+                            // Trying to get response with a timeout of 2sec
                             txt = this.lastResponse.shift();
+                            const startTime = Date.now();
+                            while (txt === undefined) {
+                                if (Date.now() - startTime > 2000) { break; }
+                                await setTimeout(10);
+                                txt = this.lastResponse.shift();
+                            }
+                            // If we've got a response, return it
+                            if (txt !== undefined) {
+                                logger.info("Response: " + txt);
+                                resolve(txt);
+                                return;
+                            }
                         }
-                        // If we've got a response, return it
-                        if (txt !== undefined) {
-                            logger.info("Response: " + txt);
-                            resolve(txt);
-                            return;
-                        }
+                        txt = this.lastResponse.shift();
                     }
-                    txt = this.lastResponse.shift();
+                    logger.warn("Failed to send message (" + tryNumber + "), retrying...");
+                    this.sendMsgWithReturn(args, tryNumber + 1).then(resolve).catch(reject);
                 }
-                logger.warn("Failed to send message (" + tryNumber + "), retrying...");
-                this.sendMsgWithReturn(args, tryNumber + 1).then(resolve).catch(reject);
-            }
+            });
         });
     }
 

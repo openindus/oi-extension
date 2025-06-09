@@ -174,9 +174,9 @@
                 <h2>Motors status</h2>
                 <input type="checkbox" id="autoPoolStatus" name="autoPoolStatus" checked>
                 <label for="autoPoolStatus">Auto pool status</label>
-                <button id="getFlags" onclick="getStatus()">Get flags</button>
-                <button onclick="clearFlags()">Clear flags</button>
-                <div id="flagList">
+                <button id="getStatus" onclick="getStatus()">Get status</button>
+                <button onclick="clearStatus()">Clear status</button>
+                <div id="statusList">
                     <table>
                         <tr>
                             <th></th>
@@ -214,6 +214,11 @@
                             <td><img id="alarm-stall-2" src="${content}/circle_empty.png"></td>
                         </tr>
                         <tr>
+                            <td class="right-align">Motor runnning</td>
+                            <td><img id="alarm-motor-running-1" src="${content}/circle_empty.png"></td>
+                            <td><img id="alarm-motor-running-2" src="${content}/circle_empty.png"></td>
+                        </tr>
+                        <tr>
                             <td class="right-align">Busy</td>
                             <td><img id="alarm-busy-1" src="${content}/circle_empty.png"></td>
                             <td><img id="alarm-busy-2" src="${content}/circle_empty.png"></td>
@@ -242,17 +247,20 @@
     var circle_green_png = "${content}/circle_green.png";
     var circle_red_png = "${content}/circle_red.png";
     var circle_orange_png = "${content}/circle_orange.png";
+    var refreshStatusInterval = null;
 
     // By default disconnect is hidden
     document.getElementById("disconnect").style.display = "none";
     // By default getFlags button is hidden
-    document.getElementById("getFlags").style.display = "none";
+    document.getElementById("getStatus").style.display = "none";
     // When autoPoolStatus is unchecked, show "getStatus" button
     document.getElementById("autoPoolStatus").addEventListener('change', function() {
         if (this.checked) {
-            document.getElementById("getFlags").style.display = "none";
+            document.getElementById("getStatus").style.display = "none";
+            refreshStatusInterval = setInterval(getStatus, 500);
         } else {
-            document.getElementById("getFlags").style.display = "inline";
+            document.getElementById("getStatus").style.display = "inline";
+            clearInterval(refreshStatusInterval);
         }
     });
     
@@ -325,14 +333,16 @@
                     // Update flags
                     for (let i = 0; i < 2; i++) {
                         if (event.data.response[i] !== undefined) {
-                            document.getElementById("alarm-cmd-error-" + (i+1).toString()).src = event.data.response[i]['cmd-error'] ? circle_red_png : circle_empty_png;
-                            document.getElementById("alarm-uvlo-" + (i+1).toString()).src = event.data.response[i]['uvlo'] ? circle_red_png : circle_empty_png;
-                            document.getElementById("alarm-thermal-shutdown-" + (i+1).toString()).src = event.data.response[i]['thermal_shutdown'] ? circle_red_png : circle_empty_png;
-                            document.getElementById("alarm-thermal-warning-" + (i+1).toString()).src = event.data.response[i]['thermal_warning'] ? circle_red_png : circle_empty_png;
-                            document.getElementById("alarm-ocd-" + (i+1).toString()).src = event.data.response[i]['ocd'] ? circle_red_png : circle_empty_png;
-                            document.getElementById("alarm-stall-" + (i+1).toString()).src = (event.data.response[i]['stall-a'] | event.data.response[i]['stall-b'])    ? circle_red_png : circle_empty_png;
-                            document.getElementById("alarm-busy-" + (i+1).toString()).src = event.data.response[i]['busy'] ? circle_orange_png : circle_empty_png;
-                            document.getElementById("alarm-hiz-" + (i+1).toString()).src = event.data.response[i]['hiz'] ? circle_green_png : circle_empty_png;
+                            console.log(event.data.response[i]['cmd-error']);
+                            document.getElementById("alarm-cmd-error-" + (i+1).toString()).src = event.data.response[i]['cmd-error'] == 1 ? circle_red_png : circle_empty_png;
+                            document.getElementById("alarm-uvlo-" + (i+1).toString()).src = event.data.response[i]['uvlo'] == 0 ? circle_red_png : circle_empty_png;
+                            document.getElementById("alarm-thermal-shutdown-" + (i+1).toString()).src = event.data.response[i]['thermal_shutdown'] == 1 ? circle_red_png : circle_empty_png;
+                            document.getElementById("alarm-thermal-warning-" + (i+1).toString()).src = event.data.response[i]['thermal_warning'] == 1 ? circle_red_png : circle_empty_png;
+                            document.getElementById("alarm-ocd-" + (i+1).toString()).src = event.data.response[i]['ocd'] == 0 ? circle_red_png : circle_empty_png;
+                            document.getElementById("alarm-stall-" + (i+1).toString()).src = (event.data.response[i]['stall-a'] == 0 | event.data.response[i]['stall-b'] == 0) ? circle_red_png : circle_empty_png;
+                            document.getElementById("alarm-motor-running-" + (i+1).toString()).src = event.data.response[i]['motor-running'] == 1 ? circle_orange_png : circle_empty_png;
+                            document.getElementById("alarm-busy-" + (i+1).toString()).src = event.data.response[i]['busy'] == 0 ? circle_orange_png : circle_empty_png;
+                            document.getElementById("alarm-hiz-" + (i+1).toString()).src = event.data.response[i]['hiz'] == 1 ? circle_green_png : circle_empty_png;
                         }
                     }
                 }
@@ -514,7 +524,7 @@
         })
     }
 
-    function clearFlags() {
+    function clearStatus() {
 
     }
     
