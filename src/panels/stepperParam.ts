@@ -46,7 +46,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 						panel.webview.postMessage({command: message.command, response: "error: already connected"});
 						return;
 					}
-					stepper = new OIStepper(message.portName, message?.serialNum);
+					stepper = new OIStepper(message.portName, message?.serialNum, message?.id, message?.onBus);
 					await stepper.connect().then((response) => {
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
@@ -166,7 +166,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 
 	// If stepper info where given, create the stepper object
 	if (portName && stepperModuleInfo) {
-		stepper = new OIStepper(portName, stepperModuleInfo.serialNum);
+		stepper = new OIStepper(portName, stepperModuleInfo.serialNum, "0", false);
 		await stepper.connect().then((response) => {
 			panel.webview.postMessage({command: 'connect', response: response});
 		}).catch((error) => {

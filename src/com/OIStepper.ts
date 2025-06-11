@@ -1,10 +1,13 @@
 import { OISerial } from "./OISerial";
 import { logger } from "../extension";
-import { parse } from "path";
+import { setTimeout } from 'timers-promises';
 
 export class OIStepper extends OISerial {
     
     serialNum: string;
+    id: number;
+    onBus: boolean;
+
     paramList: string[] = [
         'acc',
         'dec',
@@ -65,14 +68,16 @@ export class OIStepper extends OISerial {
         'stall-a',
     ];
 
-    constructor(portPath: string, serialNum?: string) {
+    constructor(portPath: string, serialNum: string, id: string, onBus: boolean = false) {
         super(portPath);
-        serialNum = serialNum;
+        this.serialNum = serialNum;
+        this.id = parseInt(id, 10);
+        this.onBus = onBus;
     }
 
     static listStepper(): Promise<{port: string, serialNum: string}[]> {
         return new Promise(async (resolve) => {
-            let stepperPorts: {port: string, serialNum: string}[] = [];
+            let stepperPorts: {port: string, serialNum: string, id:string, onBus: boolean}[] = [];
             let ports = await OISerial.list();
             // Loop through all available ports
             for await (let port of ports) {
@@ -83,13 +88,13 @@ export class OIStepper extends OISerial {
                     await serial.getInfo().then(async (moduleInfo) => {    
                         // Check if port is a stepper
                         if (moduleInfo.type === "11") {
-                            stepperPorts.push({ port: port.path, serialNum: moduleInfo.serialNum });
+                            stepperPorts.push({ port: port.path, serialNum: moduleInfo.serialNum, id: "0", onBus: false });
                         }
                         // Try to get slaves and check if they are steppers modules
                         await serial.getSlaves().then((slaves) => {
                             for (let slave of slaves) {
                                 if (slave.type === "11") {
-                                    stepperPorts.push({ port: port.path, serialNum: slave.serialNum });
+                                    stepperPorts.push({ port: port.path, serialNum: slave.serialNum, id: slave.id, onBus: true });
                                 }
                             }
                         }).catch(() => { logger.info("Module is not a master module"); }); // If it is not a master module, it will be catched here and ignored
@@ -122,7 +127,9 @@ export class OIStepper extends OISerial {
                 (args[0] === 'advanced-param' && args[2] === 'set') ||
                 (args[0] === 'advanced-param' && args[2] === 'reset')) {
                 try {
-                    await super.sendMsg(args.join(' '));
+                    let cmd = args.join(' ');
+                    if (this.onBus) { cmd = 'stepper-' + cmd + ' -i ' + this.id; }
+                    await super.sendMsg(cmd);
                     resolve("");
                 } catch (error) {
                     reject(error);
@@ -132,9 +139,11 @@ export class OIStepper extends OISerial {
                      (args[0] === 'get-speed') ||
                      (args[0] === 'get-status') ||
                      (args[0] === 'read-status') ||
-                     (args[0] === 'advanced-param' && args[2] === 'get')) {
+                     (args[0] === 'advanced-param' && args[1] === 'get')) {
                 try {
-                    const response = await super.sendMsgWithReturn(args.join(' '));
+                    let cmd = args.join(' ');
+                    if (this.onBus) { cmd = 'stepper-' + cmd + ' -i ' + this.id; }
+                    const response = await super.sendMsgWithReturn(cmd);
                     resolve(response);
                 } catch (error) {
                     reject(error);
@@ -151,7 +160,7 @@ export class OIStepper extends OISerial {
             let advancedParamList: {[key: string]: string} = {};
             for (let param of this.paramList) {
                 try {
-                    const response = await this.cmd(['advanced-param', motor, 'get', param]);
+                    const response = await this.cmd(['advanced-param', 'get', motor, param]);
                     advancedParamList[param] = response;
                 } catch (err) {
                     reject(err);

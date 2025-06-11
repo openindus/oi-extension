@@ -1,4 +1,4 @@
-import { SerialPort, ReadlineParser, ReadyParser } from 'serialport';
+    import { SerialPort, ReadlineParser, ReadyParser } from 'serialport';
 import { setTimeout } from 'timers-promises';
 import { logger } from '../extension';
 import {Mutex} from 'async-mutex';
@@ -16,6 +16,15 @@ export class OISerial extends SerialPort {
             logger.info("Connected !!");
             this.setDTR(true);
             this.setRTS(true);
+            // Pipe the readyline parser only after a connection
+            this.readyParser = super.pipe(new ReadyParser({ delimiter: '>' }));
+                this.readyParser.on('ready', async () => {
+                this.setDTR(false); // Important
+                this.setRTS(false); // Important
+                logger.info('The ready byte sequence has been received');
+                // Unpipe it right after the detecttion of the console prompt
+                super.unpipe(this.readyParser);
+            });
         });
 
         super.on('close', () => {
@@ -24,15 +33,12 @@ export class OISerial extends SerialPort {
 
         this.serialMutex = new Mutex();
 
-        this.readyParser = super.pipe(new ReadyParser({ delimiter: '>' }));
-        this.readyParser.on('ready', async () => {
-            this.setDTR(false); // Important
-            this.setRTS(false); // Important
-            logger.info('The ready byte sequence has been received');
-        });
+        this 
+        
 
         this.lineParser = super.pipe(new ReadlineParser({ delimiter: '\n' }));
         this.lineParser.on('data', (data: string) => {
+            logger.info(data);
             // Add data to the response list if it doesn't contain a color escape sequence
             if (!data.includes('\x1b[0;')) {
                 this.lastResponse.push(
@@ -42,6 +48,17 @@ export class OISerial extends SerialPort {
                     .replace(" ", ""));
             }
         });
+
+        super.on('error', (err) => {
+            logger.error("Error on serial port: " + err.message);
+            this.lastResponse = [];
+        });
+
+        this.lineParser.on('error', (err) => {
+            logger.error("Error on line parser: " + err.message);
+            this.lastResponse = [];
+        });
+
     }
 
     private setDTR(state: boolean): void {
@@ -142,19 +159,27 @@ export class OISerial extends SerialPort {
         }); 
     }
 
+    protected async waitForResponse(timeout: number = 50): Promise<void> {
+        const startTime = Date.now();
+        while (this.lastResponse.length === 0) {
+            if (Date.now() - startTime > timeout) {
+                return;
+            }
+            await setTimeout(1);
+        }
+    }
+
     protected sendMsg(args: string, tryNumber = 0): Promise<void> {
         return new Promise(async (resolve, reject) => {
             await this.serialMutex.runExclusive(async () => {
-                if (tryNumber > 10 || !this.readyParser.ready) {
+                if (tryNumber > 10 || !this.readyParser.ready || !super.isOpen) {
                     reject("Failed to send message");
                 } else {
                     logger.info("Sending message: " + args);
                     this.lastResponse = []; // Emptying response table
-                    super.write('\n');
-                    super.drain();
                     super.write(args + '\n'); // Send command
                     super.drain();
-                    await setTimeout(100); // Wait for echo to be read
+                    await this.waitForResponse();
                     let txt = this.lastResponse.shift();
                     while (txt !== undefined) {
                         if (txt.includes(args)) {
@@ -162,6 +187,8 @@ export class OISerial extends SerialPort {
                             resolve();
                             return;
                         }
+                        // If received txt was not the expected one, try to read again
+                        await this.waitForResponse();
                         txt = this.lastResponse.shift();
                     }
                     logger.warn("Failed to send message (" + tryNumber + "), retrying...");
@@ -174,16 +201,14 @@ export class OISerial extends SerialPort {
     protected sendMsgWithReturn(args: string, tryNumber = 0): Promise<string> {
         return new Promise(async (resolve, reject) => {
             await this.serialMutex.runExclusive(async () => {
-                if (tryNumber > 10 || !this.readyParser.ready) {
+                if (tryNumber > 10 || !this.readyParser.ready || !super.isOpen) {
                     reject("Failed to send message");
                 } else {
                     logger.info("Sending message: " + args);
                     this.lastResponse = []; // Emptying response table
-                    super.write('\n');
+                    super.write(args + '\n'); // Send command
                     super.drain();
-                    super.write(args + '\n');
-                    super.drain();
-                    await setTimeout(100); // Wait for echo to be read
+                    await this.waitForResponse();
                     let txt = this.lastResponse.shift();
                     while (txt !== undefined) {
                         if (txt.includes(args)) {
@@ -203,6 +228,8 @@ export class OISerial extends SerialPort {
                                 return;
                             }
                         }
+                        // If received txt was not the expected one, try to read again
+                        await this.waitForResponse();
                         txt = this.lastResponse.shift();
                     }
                     logger.warn("Failed to send message (" + tryNumber + "), retrying...");
@@ -253,7 +280,8 @@ export class OISerial extends SerialPort {
                 type: "undefined",
                 serialNum: "undefined",
                 hardwareVar: "undefined",
-                versionSw: "undefined"
+                versionSw: "undefined",
+                id: slaveSn.id.toString()
             };
 
             await this.sendMsgWithReturn(`get-slave-info ${slaveSn.type} ${slaveSn.sn} -t`).then((response) => {

@@ -283,8 +283,14 @@
                 for (port of event.data.response) {
                     console.log(port);
                     let opt = document.createElement('option');
-                    opt.value = port.port;
+                    opt.value = port.port + ';' + port.serialNum + ';' + port.id;
                     opt.innerHTML = port.port + " - OIStepper n°" + port.serialNum;
+                    if (port.onBus === true) {
+                        opt.innerHTML += " (on bus)";
+                        opt.value += ";true";
+                    } else {
+                        opt.value += ";false";
+                    }
                     select_port.appendChild(opt);
                 }
                 if (event.data.response.length === 0) {
@@ -355,7 +361,10 @@
         let port = document.getElementById("port").value;
         vscode.postMessage({
             command: 'connect',
-            portName: port
+            portName: port.split(';')[0],
+            serialNum: port.split(';')[1],
+            id: port.split(';')[2],
+            onBus: port.split(';')[3] === 'true' ? true : false
         });
     }
     
@@ -443,7 +452,7 @@
         let speed = document.getElementById('runSpeed').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['run', motor, direction==="FORWARD"?"1":"0", speed]
+            args: ['run', '-m', motor, '-d', direction==="FORWARD"?"1":"0", '-s', speed]
         });
         if (document.getElementById('moveTwin').checked) {
             let twinMotor = motor === '1' ? '2' : '1';
@@ -506,7 +515,7 @@
         let motor = document.querySelector('input[name="motor"]:checked').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['stop', motor]
+            args: ['stop', '-m', motor]
         });
         if (document.getElementById('moveTwin').checked) {
             let twinMotor = motor === '1' ? '2' : '1';
