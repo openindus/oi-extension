@@ -452,7 +452,7 @@
         let speed = document.getElementById('runSpeed').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['run', '-m', motor, '-d', direction==="FORWARD"?"1":"0", '-s', speed]
+            args: ['run', motor, direction==="FORWARD"?"1":"0", speed]
         });
         if (document.getElementById('moveTwin').checked) {
             let twinMotor = motor === '1' ? '2' : '1';
@@ -515,7 +515,7 @@
         let motor = document.querySelector('input[name="motor"]:checked').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['stop', '-m', motor]
+            args: ['stop', motor]
         });
         if (document.getElementById('moveTwin').checked) {
             let twinMotor = motor === '1' ? '2' : '1';
@@ -534,7 +534,11 @@
     }
 
     function clearStatus() {
-
+        let motor = document.querySelector('input[name="motor"]:checked').value;
+        vscode.postMessage({
+            command: 'cmd',
+            args: ['clear-status', motor]
+        });
     }
     
 </script>

@@ -38,7 +38,6 @@ export class OISerial extends SerialPort {
 
         this.lineParser = super.pipe(new ReadlineParser({ delimiter: '\n' }));
         this.lineParser.on('data', (data: string) => {
-            logger.info(data);
             // Add data to the response list if it doesn't contain a color escape sequence
             if (!data.includes('\x1b[0;')) {
                 this.lastResponse.push(

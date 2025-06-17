@@ -179,5 +179,5 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 		}).catch((error) => {
 			vscode.window.showErrorMessage("Cannot get list of connected device: " + error);
 		});
-	}
+	}	
 }

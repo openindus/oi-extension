@@ -124,6 +124,7 @@ export class OIStepper extends OISerial {
                 (args[0] === 'move-relative') ||
                 (args[0] === 'run') ||
                 (args[0] === 'stop') ||
+                (args[0] === 'clear-status') ||
                 (args[0] === 'advanced-param' && args[2] === 'set') ||
                 (args[0] === 'advanced-param' && args[2] === 'reset')) {
                 try {
@@ -138,8 +139,7 @@ export class OIStepper extends OISerial {
             else if ((args[0] === 'get-position') ||
                      (args[0] === 'get-speed') ||
                      (args[0] === 'get-status') ||
-                     (args[0] === 'read-status') ||
-                     (args[0] === 'advanced-param' && args[1] === 'get')) {
+                     (args[0] === 'advanced-param' && args[2] === 'get')) {
                 try {
                     let cmd = args.join(' ');
                     if (this.onBus) { cmd = 'stepper-' + cmd + ' -i ' + this.id; }
@@ -160,7 +160,7 @@ export class OIStepper extends OISerial {
             let advancedParamList: {[key: string]: string} = {};
             for (let param of this.paramList) {
                 try {
-                    const response = await this.cmd(['advanced-param', 'get', motor, param]);
+                    const response = await this.cmd(['advanced-param', motor, 'get', param]);
                     advancedParamList[param] = response;
                 } catch (err) {
                     reject(err);
