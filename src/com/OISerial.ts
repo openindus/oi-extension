@@ -31,10 +31,7 @@ export class OISerial extends SerialPort {
             logger.info("disconnected");
         });
 
-        this.serialMutex = new Mutex();
-
-        this 
-        
+        this.serialMutex = new Mutex();        
 
         this.lineParser = super.pipe(new ReadlineParser({ delimiter: '\n' }));
         this.lineParser.on('data', (data: string) => {
@@ -101,8 +98,10 @@ export class OISerial extends SerialPort {
 
             // Otherwise, reset the board to get the console
             this.setDTR(false); // Important
+            this.setRTS(true); // Important
             await setTimeout(10);
             this.setDTR(true); // Important
+            this.setRTS(false); // Important
             await setTimeout(10);
             this.setDTR(false); // Important
             this.setRTS(false); // Important
@@ -158,7 +157,7 @@ export class OISerial extends SerialPort {
         }); 
     }
 
-    protected async waitForResponse(timeout: number = 50): Promise<void> {
+    protected async waitForResponse(timeout: number = 300): Promise<void> {
         const startTime = Date.now();
         while (this.lastResponse.length === 0) {
             if (Date.now() - startTime > timeout) {
@@ -171,7 +170,7 @@ export class OISerial extends SerialPort {
     protected sendMsg(args: string, tryNumber = 0): Promise<void> {
         return new Promise(async (resolve, reject) => {
             await this.serialMutex.runExclusive(async () => {
-                if (tryNumber > 10 || !this.readyParser.ready || !super.isOpen) {
+                if (tryNumber > 5 || !this.readyParser.ready || !super.isOpen) {
                     reject("Failed to send message");
                 } else {
                     logger.info("Sending message: " + args);
@@ -200,7 +199,7 @@ export class OISerial extends SerialPort {
     protected sendMsgWithReturn(args: string, tryNumber = 0): Promise<string> {
         return new Promise(async (resolve, reject) => {
             await this.serialMutex.runExclusive(async () => {
-                if (tryNumber > 10 || !this.readyParser.ready || !super.isOpen) {
+                if (tryNumber > 5 || !this.readyParser.ready || !super.isOpen) {
                     reject("Failed to send message");
                 } else {
                     logger.info("Sending message: " + args);

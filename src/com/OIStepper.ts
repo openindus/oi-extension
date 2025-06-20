@@ -116,33 +116,33 @@ export class OIStepper extends OISerial {
     cmd(args: string[]): Promise<string> {
         return new Promise(async (resolve, reject) => {
             // Commands without return
-            if ((args[0] === 'restart') ||
-                (args[0] === 'homing') ||
-                (args[0] === 'attach-limit-switch') ||
-                (args[0] === 'set-speed') ||
-                (args[0] === 'move-absolute') ||
-                (args[0] === 'move-relative') ||
-                (args[0] === 'run') ||
-                (args[0] === 'stop') ||
-                (args[0] === 'clear-status') ||
-                (args[0] === 'advanced-param' && args[2] === 'set') ||
-                (args[0] === 'advanced-param' && args[2] === 'reset')) {
+            if ((args[0] === 'stepper-restart') ||
+                (args[0] === 'stepper-homing') ||
+                (args[0] === 'stepper-attach-limit-switch') ||
+                (args[0] === 'stepper-set-speed') ||
+                (args[0] === 'stepper-move-absolute') ||
+                (args[0] === 'stepper-move-relative') ||
+                (args[0] === 'stepper-run') ||
+                (args[0] === 'stepper-stop') ||
+                (args[0] === 'stepper-clear-status') ||
+                (args[0] === 'stepper-advanced-param' && args[2] === 'set') ||
+                (args[0] === 'stepper-advanced-param' && args[2] === 'reset')) {
                 try {
                     let cmd = args.join(' ');
-                    if (this.onBus) { cmd = 'stepper-' + cmd + ' -i ' + this.id; }
+                    if (this.onBus) { cmd = cmd + ' -i ' + this.id; }
                     await super.sendMsg(cmd);
                     resolve("");
                 } catch (error) {
                     reject(error);
                 }
             }
-            else if ((args[0] === 'get-position') ||
-                     (args[0] === 'get-speed') ||
-                     (args[0] === 'get-status') ||
-                     (args[0] === 'advanced-param' && args[2] === 'get')) {
+            else if ((args[0] === 'stepper-get-position') ||
+                     (args[0] === 'stepper-get-speed') ||
+                     (args[0] === 'stepper-get-status') ||
+                     (args[0] === 'stepper-advanced-param' && args[2] === 'get')) {
                 try {
                     let cmd = args.join(' ');
-                    if (this.onBus) { cmd = 'stepper-' + cmd + ' -i ' + this.id; }
+                    if (this.onBus) { cmd = cmd + ' -i ' + this.id; }
                     const response = await super.sendMsgWithReturn(cmd);
                     resolve(response);
                 } catch (error) {
@@ -160,7 +160,7 @@ export class OIStepper extends OISerial {
             let advancedParamList: {[key: string]: string} = {};
             for (let param of this.paramList) {
                 try {
-                    const response = await this.cmd(['advanced-param', motor, 'get', param]);
+                    const response = await this.cmd(['stepper-advanced-param', motor, 'get', param]);
                     advancedParamList[param] = response;
                 } catch (err) {
                     reject(err);
@@ -176,7 +176,7 @@ export class OIStepper extends OISerial {
             for (let param of this.paramList) {
                 try {
                     if (advancedParamList[param] !== undefined) {
-                        await this.cmd(['advanced-param', motor, 'set', param, advancedParamList[param]]);
+                        await this.cmd(['stepper-advanced-param', motor, 'set', param, advancedParamList[param]]);
                     }
                 } catch (err) {
                     reject(err);
@@ -189,7 +189,7 @@ export class OIStepper extends OISerial {
 
     resetParam(motor: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            await this.cmd(['advanced-param', motor, 'reset']).then(() => { resolve(); }).catch(reject);
+            await this.cmd(['stepper-advanced-param', motor, 'reset']).then(() => { resolve(); }).catch(reject);
         });
     }
 
@@ -197,8 +197,8 @@ export class OIStepper extends OISerial {
         return new Promise(async (resolve, reject) => {
             let status: {[key: string]: string}[] = [{}, {}];
             try {
-                let rawStatus1 = await this.cmd(['get-status', '1', '--raw']);
-                let rawStatus2 = await this.cmd(['get-status', '2', '--raw']);
+                let rawStatus1 = await this.cmd(['stepper-get-status', '1', '--raw']);
+                let rawStatus2 = await this.cmd(['stepper-get-status', '2', '--raw']);
                 let status1 = parseInt(rawStatus1, 16);
                 let status2 = parseInt(rawStatus2, 16);
                 for (let statusName of this.statusList) {

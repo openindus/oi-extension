@@ -72,6 +72,16 @@
                     <option value="2">6</option>
                     <option value="3">8</option>
                     <option value="4" selected>10</option>
+                    <option value="5">12</option>
+                    <option value="6">14</option>
+                    <option value="7">16</option>
+                    <option value="8">18</option>
+                    <option value="9">20</option>
+                    <option value="10">22</option>
+                    <option value="11">24</option>
+                    <option value="12">26</option>
+                    <option value="13">28</option>
+                    <option value="14">30</option>
                 </select>
                 <label for="stall-th">Stall threshold (A)</label>
                 <select id="stall-th" name="stall-th">
@@ -388,7 +398,7 @@
         let logic = document.getElementById('logic-switch-'+id).value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['attach-limit-switch', motor, input, logic]
+            args: ['stepper-attach-limit-switch', motor, input, logic]
         });
     }
 
@@ -415,7 +425,7 @@
         paramList['fn-slp-acc'] = document.getElementById("f-slp-acc").value,
         paramList['fn-slp-dec'] = document.getElementById("f-slp-acc").value, // This a hidden parameter which depends on fn-slp-acc
         paramList['st-slp'] = (document.getElementById("f-slp-acc").value/2).toString(), // This a hidden parameter which depends on fn-slp-acc
-        paramList['ocd-th'] = (document.getElementById("ocd-th").value*31.25).toString(), // Convert to mV
+        paramList['ocd-th'] = (document.getElementById("ocd-th").value*31.25*4).toString(), // Convert to mV
         paramList['stall-th'] = (document.getElementById("stall-th").value*31.25).toString() // Convert to mV
 
         vscode.postMessage({
@@ -452,13 +462,13 @@
         let speed = document.getElementById('runSpeed').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['run', motor, direction==="FORWARD"?"1":"0", speed]
+            args: ['stepper-run', motor, direction==="FORWARD"?"1":"0", speed]
         });
         if (document.getElementById('moveTwin').checked) {
             let twinMotor = motor === '1' ? '2' : '1';
             vscode.postMessage({
                 command: 'cmd',
-                args: ['run', twinMotor, direction==="FORWARD"?"1":"0", speed]
+                args: ['stepper-run', twinMotor, direction==="FORWARD"?"1":"0", speed]
             });
         }
     }
@@ -468,13 +478,13 @@
         let steps = document.getElementById('moveRelativeStep').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['move-relative', motor, steps]
+            args: ['stepper-move-relative', motor, steps]
         });
         if (document.getElementById('moveTwin').checked) {
             let twinMotor = motor === '1' ? '2' : '1';
             vscode.postMessage({
                 command: 'cmd',
-                args: ['move-relative', twinMotor, steps]
+                args: ['stepper-move-relative', twinMotor, steps]
             });
         }
     }
@@ -484,13 +494,13 @@
         let steps = document.getElementById('moveAbsoluteStep').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['move-absolute', motor, steps]
+            args: ['stepper-move-absolute', motor, steps]
         });
         if (document.getElementById('moveTwin').checked) {
             let twinMotor = motor === '1' ? '2' : '1';
             vscode.postMessage({
                 command: 'cmd',
-                args: ['move-absolute', twinMotor, steps]
+                args: ['stepper-move-absolute', twinMotor, steps]
             });
         }
     }
@@ -500,13 +510,13 @@
         let speed = document.getElementById('runSpeed').value; // Todo set a specific speed for homing
         vscode.postMessage({
             command: 'cmd',
-            args: ['homing', motor, speed]
+            args: ['stepper-homing', motor, speed]
         });
         if (document.getElementById('moveTwin').checked) {
             let twinMotor = motor === '1' ? '2' : '1';
             vscode.postMessage({
                 command: 'cmd',
-                args: ['homing', twinMotor, speed]
+                args: ['stepper-homing', twinMotor, speed]
             });
         }
     }
@@ -515,13 +525,13 @@
         let motor = document.querySelector('input[name="motor"]:checked').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['stop', motor]
+            args: ['stepper-stop', motor]
         });
         if (document.getElementById('moveTwin').checked) {
             let twinMotor = motor === '1' ? '2' : '1';
             vscode.postMessage({
                 command: 'cmd',
-                args: ['stop', twinMotor]
+                args: ['stepper-stop', twinMotor]
             });
         }
     }
@@ -537,7 +547,7 @@
         let motor = document.querySelector('input[name="motor"]:checked').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['clear-status', motor]
+            args: ['stepper-clear-status', motor]
         });
     }
     
