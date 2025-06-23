@@ -87,7 +87,10 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 					await stepper?.cmd(message.args).then((response) => {
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
-						vscode.window.showErrorMessage("Cannot send command (" + message.args.join(' ') + "): " + error);
+						vscode.window.showErrorMessage("Cannot send command (" + message.args.join(' ') + "): " + error);						
+						if (error.includes("disconnected")) {
+							panel.webview.postMessage({command: 'disconnect', response: true});
+						}
 					});
 					break;
 				case 'get-parameters':
@@ -101,7 +104,10 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 								vscode.window.showInformationMessage("Get parameter successfully on OIStepper.");
 							});
 						}).catch((error) => {
-							vscode.window.showErrorMessage("Error while getting parameters on OIStepper: " + error);
+							vscode.window.showErrorMessage("Error while getting parameters on OIStepper: " + error);						
+							if (error.includes("disconnected")) {
+								panel.webview.postMessage({command: 'disconnect', response: true});
+							}
 						});
 					});
 					break;
@@ -116,7 +122,10 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 								vscode.window.showInformationMessage("Parameters set successfully on OIStepper.");
 							});
 						}).catch((error) => {
-							vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);
+							vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);						
+							if (error.includes("disconnected")) {
+								panel.webview.postMessage({command: 'disconnect', response: true});
+							}
 						});
 					});
 					break;
@@ -131,7 +140,10 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 								vscode.window.showInformationMessage("Parameters where resetted successfully on OIStepper. Reading parameters again to get the default values.");
 							});
 						}).catch((error) => {
-							vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);
+							vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);						
+							if (error.includes("disconnected")) {
+								panel.webview.postMessage({command: 'disconnect', response: true});
+							}
 						});
 					});
 					break;
@@ -168,6 +180,9 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
 						vscode.window.showErrorMessage("Cannot get status from OIStepper: " + error);
+						if (error.includes("disconnected")) {
+							panel.webview.postMessage({command: 'disconnect', response: true});
+						}
 					});
 					break;
 				default:

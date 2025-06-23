@@ -15,8 +15,11 @@
 
         <div class="flex-col flex-col-big">
 
+            <div class="flex-block" onclick="changeView(this)" class="toggle-view">
+                <h2 class="h2select">Connexion</h2>
+            </div>
+
             <div class="flex-block" id="connexion">
-                <h2>Connexion</h2>
                 <label for="port">Port :</label>
                 <select id="port" name="port"></select>
                 <button id="connect" onclick="connect()">Connect</button>
@@ -183,6 +186,47 @@
                 </select>
             </div>
 
+            <div class="flex-block" onclick="changeView(this)" class="toggle-view">
+                <h2 class="h2notselect">Configure limit-switch</h2>
+            </div>
+
+            <div class="flex-block" id="motor-switches" style="display: none;">
+                <p><i>You can configure up to two limit switch per motor. <br>
+                Limit switches have to be configured in the init sequence of our main program.</i></p>
+                <div>
+                    <label for="limit-switch-1">Limit switch 1 input</label>
+                    <select id="limit-switch-1" name="limit-switch-1">
+                        <option value="0" selected>NONE</option>
+                        <option value="1">DIN 1</option>
+                        <option value="2">DIN 2</option>
+                        <option value="3">DIN 3</option>
+                        <option value="4">DIN 4</option>
+                    </select>
+                    <label for="logic-switch-1">Logic</label>
+                    <select id="logic-switch-1" name="logic-switch-1">
+                        <option value="1" selected>Active HIGH</option>
+                        <option value="0">Active LOW</option>
+                    </select>
+                    <button if="add-limit-switch-1" onclick="setLimitSwitch(1)">Set</button>
+                </div>
+                <div>
+                    <label for="limit-switch-2">Limit switch 2 input</label>
+                    <select id="limit-switch-2" name="limit-switch-2">
+                        <option value="0" selected>NONE</option>
+                        <option value="1">DIN 1</option>
+                        <option value="2">DIN 2</option>
+                        <option value="3">DIN 3</option>
+                        <option value="4">DIN 4</option>
+                    </select>
+                    <label for="logic-switch-2">Logic</label>
+                    <select id="logic-switch-2" name="logic-switch-2">
+                        <option value="1" selected>Active HIGH</option>
+                        <option value="0">Active LOW</option>
+                    </select>
+                    <button if="add-limit-switch-1" onclick="setLimitSwitch(2)">Set</button>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -192,7 +236,7 @@
             <button onclick="getStatus()">Get status</button>
             <button onclick="clearStatus()">Clear status</button>
             <div class="large-width">
-                <input type="checkbox" id="autoPoolStatus" name="autoPoolStatus">
+                <input type="checkbox" id="autoPoolStatus" name="autoPoolStatus" checked>
                 <label for="autoPoolStatus">Auto pool status</label>
             </div>
             <div id="statusList">
@@ -284,12 +328,16 @@
                 if (event.data.response === true) {
                     document.getElementById("connect").style.display = "none";
                     document.getElementById("disconnect").style.display = "inline";
+                    if (document.getElementById("autoPoolStatus").checked) {
+                        refreshStatusInterval = setInterval(getStatus, 500);
+                    }
                 }
                 break;
             case 'disconnect':
                 // If data.response is true OR false, display connect button anyway
                 document.getElementById("connect").style.display = "inline";
                 document.getElementById("disconnect").style.display = "none";
+                clearInterval(refreshStatusInterval);
                 break;
             case 'list':
                 let select_port = document.getElementById('port');

@@ -170,8 +170,10 @@ export class OISerial extends SerialPort {
     protected sendMsg(args: string, tryNumber = 0): Promise<void> {
         return new Promise(async (resolve, reject) => {
             await this.serialMutex.runExclusive(async () => {
-                if (tryNumber > 5 || !this.readyParser.ready || !super.isOpen) {
-                    reject("Failed to send message");
+                if (tryNumber > 5) {
+                    reject("Failed to send message: too much unsuccessful attempts");
+                } else if (!this.readyParser.ready || !super.isOpen) {
+                    reject("Failed to send message: disconnected or not ready");
                 } else {
                     logger.info("Sending message: " + args);
                     this.lastResponse = []; // Emptying response table
@@ -199,8 +201,10 @@ export class OISerial extends SerialPort {
     protected sendMsgWithReturn(args: string, tryNumber = 0): Promise<string> {
         return new Promise(async (resolve, reject) => {
             await this.serialMutex.runExclusive(async () => {
-                if (tryNumber > 5 || !this.readyParser.ready || !super.isOpen) {
-                    reject("Failed to send message");
+                if (tryNumber > 5) {
+                    reject("Failed to send message: too much unsuccessful attempts");
+                } else if (!this.readyParser.ready || !super.isOpen) {
+                    reject("Failed to send message: disconnected or not ready");
                 } else {
                     logger.info("Sending message: " + args);
                     this.lastResponse = []; // Emptying response table
