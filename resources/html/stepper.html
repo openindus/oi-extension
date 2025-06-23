@@ -10,7 +10,7 @@
 
 <body>
     <!-- <img src="${content}/openindus_logo.png" alt="OpenIndus Logo" class="logo"> -->
-    <h1>[BETA] Stepper configuration tool</h1>
+    <h1>OIStepper configuration tool</h1>
     <div class="main-flex">
 
         <div class="flex-col flex-col-big">
@@ -18,19 +18,99 @@
             <div class="flex-block" id="connexion">
                 <h2>Connexion</h2>
                 <label for="port">Port :</label>
-                <button id="refresh" onclick="refresh()" title="Refresh">
-                    <img src="${content}/refresh_logo.png" alt="Refresh">
-                </button>
                 <select id="port" name="port"></select>
                 <button id="connect" onclick="connect()">Connect</button>
                 <button id="disconnect" onclick="disconnect()">Disconnect</button>
+                <button id="refresh" onclick="refresh()" title="Refresh">
+                    <img src="${content}/refresh_logo.png" alt="Refresh">
+                </button>
             </div>
 
-            <div class="flex-block"  id="motor-configuration">
-                <h2>Configure motor parameters</h2>
+            <div class="flex-block" onclick="changeView(this)" class="toggle-view">
+                <h2 class="h2notselect">Test motor</h2>
+            </div>
+
+            <div class="flex-block" id="motor-move" style="display: none;">
+                
+                <p><i>In this mode, you can try your motor with several commands. It will help you to tune motor parameters. You can move the two motors at the sem time or move them one by one.</i></p>
+                
+                <div class="motor-selection">
+                    <input type="radio" id="motor1" name="motor" value="1" checked onchange="updateHomingLimitSwitchChoices(this)">
+                    <label for="motor1">Motor 1</label>
+                    <input type="radio" id="motor2" name="motor" value="2" onchange="updateHomingLimitSwitchChoices(this)">
+                    <label for="motor2">Motor 2</label>
+                    <input type="radio" id="motor12" name="motor" value="3" onchange="updateHomingLimitSwitchChoices(this)">
+                    <label for="motor2">Motor 1+2</label>
+                </div>
+
+                <!-- <h3>Constant speed</h3> -->
+                <div class="flex-command">
+                    <button onclick="cmdRun()">Run</button>
+                    <label for="runSpeed">Speed :</label>
+                    <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000" value="200">
+                    <label for="runDirection">Direction :</label>
+                    <select id="runDirection" name="runDirection" list="direction" value="FORWARD">
+                        <option value="FORWARD">Forward</option>
+                        <option value="BACKWARD">Backward</option>
+                    </select>
+                </div>
+                
+                <!-- <h3>Relative move</h3> -->
+                <div class="flex-command">
+                    <button onclick="cmdMoveRelative()">Move relative</button>
+                    <label for="moveRelativeStep">Steps :</label>
+                    <input id="moveRelativeStep" name="moveRelativeStep" type="number" min="-100000" max="100000" value="0">
+                </div>
+                
+                <!-- <h3>Absolute speed</h3> -->
+                <div class="flex-command">
+                    <button onclick="cmdMoveAbsolute()">Move absolute</button>
+                    <label for="moveAbsoluteStep">Steps :</label>
+                    <input id="moveAbsoluteStep" name="moveAbsoluteStep" type="number" min="0" max="100000" value="0">
+                </div>
+                
+                <!-- <h3>Homing</h3> -->
+                <div class="flex-command">
+                    <button onclick="cmdHoming()">Homing</button>
+                    <label for="homingSpeed">Speed :</label>
+                    <input id="homingSpeed" name="homingSpeed" type="number" min="0" max="10000" value="200">
+                    <label for="limit-switch-1">Limit switch :</label>
+                    <select id="limit-switch-1" name="limit-switch-1">
+                        <option value="1" selected>DIN 1</option>
+                        <option value="2">DIN 2</option>
+                        <option value="3">DIN 3</option>
+                        <option value="4">DIN 4</option>
+                    </select>
+                    <label id="limit-switch-2-label" for="limit-switch-2">Limit switch :</label>
+                    <select id="limit-switch-2" name="limit-switch-2">
+                        <option value="1">DIN 1</option>
+                        <option value="2" selected>DIN 2</option>
+                        <option value="3">DIN 3</option>
+                        <option value="4">DIN 4</option>
+                    </select>
+                </div>
+                
+                <!-- <h3>Stop</h3> -->
+                <div class="flex-command">
+                    <button onclick="cmdStop()" class="red-button">Stop</button>
+                    <label for="stopMode">Mode :</label>
+                    <select id="stopMode" name="stopMode" list="mode" value="soft-hiz">
+                        <option value="soft-hiz">Soft Hiz</option>
+                        <option value="soft-stop">Soft Stop</option>
+                        <option value="hard-hiz">Hard Hiz</option>
+                        <option value="hard-stop">Hard Stop</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex-block" onclick="changeView(this)" class="toggle-view">
+                <h2 class="h2notselect">Configure motor</h2>
+            </div>
+
+            <div class="flex-block"  id="motor-configuration" style="display: none;">
                 <p><i>Configure your motor with the parameters below. <br>
-                Your motor have to be in HiZ (see flags) to be configured. <br>
-                The first time, you configure a motor, we recommend to click the "Reset parameters" button to set all parameters to their default values.<br>
+                Your motor have to be in HiZ (see flags) toconfigure motor parameters. <br>
+                The first time you configure a motor, we recommend to click the "Reset parameters" button to set all parameters to their default values.<br>
                 If you want to change a parameter, you can change it and click the "Set parameters" button.<br>
                 Before modifiyng a paramter, click the "Get parameters" button to get the current values.</i></p>
                 <button onclick="getParameters()">Get parameters</button>
@@ -103,147 +183,70 @@
                 </select>
             </div>
 
-            <div class="flex-block" id="motor-switches">
-                <h2>Configure limit switches</h2>
-                <p><i>You can configure up to two limit switch per motor. <br>
-                Limit switches have to be configured in the init sequence of our main program.</i></p>
-                <div>
-                    <label for="limit-switch-1">Limit switch 1 input</label>
-                    <select id="limit-switch-1" name="limit-switch-1">
-                        <option value="0" selected>NONE</option>
-                        <option value="1">DIN 1</option>
-                        <option value="2">DIN 2</option>
-                        <option value="3">DIN 3</option>
-                        <option value="4">DIN 4</option>
-                    </select>
-                    <label for="logic-switch-1">Logic</label>
-                    <select id="logic-switch-1" name="logic-switch-1">
-                        <option value="1" selected>Active HIGH</option>
-                        <option value="0">Active LOW</option>
-                    </select>
-                    <button if="add-limit-switch-1" onclick="setLimitSwitch(1)">Set</button>
-                </div>
-                <div>
-                    <label for="limit-switch-2">Limit switch 2 input</label>
-                    <select id="limit-switch-2" name="limit-switch-2">
-                        <option value="0" selected>NONE</option>
-                        <option value="1">DIN 1</option>
-                        <option value="2">DIN 2</option>
-                        <option value="3">DIN 3</option>
-                        <option value="4">DIN 4</option>
-                    </select>
-                    <label for="logic-switch-2">Logic</label>
-                    <select id="logic-switch-2" name="logic-switch-2">
-                        <option value="1" selected>Active HIGH</option>
-                        <option value="0">Active LOW</option>
-                    </select>
-                    <button if="add-limit-switch-1" onclick="setLimitSwitch(2)">Set</button>
-                </div>
-            </div>
-
-            <div class="flex-block" id="motor-move">
-                <h2>Test motor</h2>
-                    <input type="checkbox" id="moveTwin" name="moveTwin">
-                <label for="moveTwin">Also move twin motor</label>
-                <h3>Constant speed</h3>
-                <label for="runDirection">Direction</label>
-                <select id="runDirection" name="runDirection" list="direction" value="FORWARD">
-                    <option value="FORWARD">FORWARD</option>
-                    <option value="BACKWARD">BACKWARD</option>
-                </select>
-                <label for="runSpeed">Speed</label>
-                <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000" value="200">
-                <button onclick="cmdRun()">RUN</button>
-                <h3>Relative move</h3>
-                <label for="moveRelativeStep">Steps</label>
-                <input id="moveRelativeStep" name="moveRelativeStep" type="number" min="-100000" max="100000" value="0">
-                <button onclick="cmdMoveRelative()">MOVE RELATIVE</button>
-                <h3>Absolute speed</h3>
-                <label for="moveAbsoluteStep">Steps</label>
-                <input id="moveAbsoluteStep" name="moveAbsoluteStep" type="number" min="0" max="100000" value="0">
-                <button onclick="cmdMoveAbsolute()">MOVE ABSOLUTE</button>
-                <h3>Homing</h3>
-                <button onclick="cmdHoming()">HOMING</button>
-                <h3>Stop</h3>
-                <button onclick="cmdStop()">STOP</button>
-            </div>
-
         </div>
-        
-        <div class="flex-col flex-col-small">
+    </div>
 
-            <div class="flex-block" id="motor-selection">
-                <h2>Select a motor</h2>
-                <input type="radio" id="motor1" name="motor" value="1" checked>
-                <label for="motor1">Motor 1</label>
-                <input type="radio" id="motor2" name="motor" value="2">
-                <label for="motor2">Motor 2</label>
-            </div>
-            
-            <div class="flex-block" id="motor-status">
-                <h2>Motors status</h2>
-                <input type="checkbox" id="autoPoolStatus" name="autoPoolStatus" checked>
+    <div class="side-nav">
+        <div class="flex-block" id="motor-status">
+            <h2>Motors status</h2>
+            <button onclick="getStatus()">Get status</button>
+            <button onclick="clearStatus()">Clear status</button>
+            <div class="large-width">
+                <input type="checkbox" id="autoPoolStatus" name="autoPoolStatus">
                 <label for="autoPoolStatus">Auto pool status</label>
-                <button id="getStatus" onclick="getStatus()">Get status</button>
-                <button onclick="clearStatus()">Clear status</button>
-                <div id="statusList">
-                    <table>
-                        <tr>
-                            <th></th>
-                            <th>Motor 1</th>
-                            <th>Motor 2</th>
-                        </tr>
-                        <tr>
-                            <td class="right-align">Command error</td>
-                            <td><img id="alarm-cmd-error-1" src="${content}/circle_empty.png"></td>
-                            <td><img id="alarm-cmd-error-2" src="${content}/circle_empty.png"></td>
-                        </tr>
-                        <tr>
-                            <td class="right-align">Undervoltage</td>
-                            <td><img id="alarm-uvlo-1" src="${content}/circle_empty.png"></td>
-                            <td><img id="alarm-uvlo-2" src="${content}/circle_empty.png"></td>
-                        </tr>
-                        <tr>
-                            <td class="right-align">Thermal Shutdown</td>
-                            <td><img id="alarm-thermal-shutdown-1" src="${content}/circle_empty.png"></td>
-                            <td><img id="alarm-thermal-shutdown-2" src="${content}/circle_empty.png"></td>
-                        </tr>
-                        <tr>
-                            <td class="right-align">Thermal warning</td>
-                            <td><img id="alarm-thermal-warning-1" src="${content}/circle_empty.png"></td>
-                            <td><img id="alarm-thermal-warning-2" src="${content}/circle_empty.png"></td>
-                        </tr>
-                        <tr>
-                            <td class="right-align">Overcurrent</td>
-                            <td><img id="alarm-ocd-1" src="${content}/circle_empty.png"></td>
-                            <td><img id="alarm-ocd-2" src="${content}/circle_empty.png"></td>
-                        </tr>
-                        <tr>
-                            <td class="right-align">Stall</td>
-                            <td><img id="alarm-stall-1" src="${content}/circle_empty.png"></td>
-                            <td><img id="alarm-stall-2" src="${content}/circle_empty.png"></td>
-                        </tr>
-                        <tr>
-                            <td class="right-align">Motor runnning</td>
-                            <td><img id="alarm-motor-running-1" src="${content}/circle_empty.png"></td>
-                            <td><img id="alarm-motor-running-2" src="${content}/circle_empty.png"></td>
-                        </tr>
-                        <tr>
-                            <td class="right-align">Busy</td>
-                            <td><img id="alarm-busy-1" src="${content}/circle_empty.png"></td>
-                            <td><img id="alarm-busy-2" src="${content}/circle_empty.png"></td>
-                        </tr>
-                        <tr>
-                            <td class="right-align">HiZ</td>
-                            <td><img id="alarm-hiz-1" src="${content}/circle_empty.png"></td>
-                            <td><img id="alarm-hiz-2" src="${content}/circle_empty.png"></td>
-                        </tr>
-                </div>
-
-                <!-- <p><i>Below you can check the status of your motor driver with several flags<br>
-                By default, flags are automatically polled every second but you can chose to pool them manually.<br>
-                To clear a flag, click the "Clear flags" button.<br>
-                Some flags need to clear if you want to move motor (for example OCD (over-current detected)) need to be clear after a fault.</i></p> -->
+            </div>
+            <div id="statusList">
+                <table>
+                    <tr>
+                        <th></th>
+                        <th>Motor 1</th>
+                        <th>Motor 2</th>
+                    </tr>
+                    <tr>
+                        <td class="right-align">Command error</td>
+                        <td><img id="alarm-cmd-error-1" src="${content}/circle_empty.png"></td>
+                        <td><img id="alarm-cmd-error-2" src="${content}/circle_empty.png"></td>
+                    </tr>
+                    <tr>
+                        <td class="right-align">Undervoltage</td>
+                        <td><img id="alarm-uvlo-1" src="${content}/circle_empty.png"></td>
+                        <td><img id="alarm-uvlo-2" src="${content}/circle_empty.png"></td>
+                    </tr>
+                    <tr>
+                        <td class="right-align">Thermal Shutdown</td>
+                        <td><img id="alarm-thermal-shutdown-1" src="${content}/circle_empty.png"></td>
+                        <td><img id="alarm-thermal-shutdown-2" src="${content}/circle_empty.png"></td>
+                    </tr>
+                    <tr>
+                        <td class="right-align">Thermal warning</td>
+                        <td><img id="alarm-thermal-warning-1" src="${content}/circle_empty.png"></td>
+                        <td><img id="alarm-thermal-warning-2" src="${content}/circle_empty.png"></td>
+                    </tr>
+                    <tr>
+                        <td class="right-align">Overcurrent</td>
+                        <td><img id="alarm-ocd-1" src="${content}/circle_empty.png"></td>
+                        <td><img id="alarm-ocd-2" src="${content}/circle_empty.png"></td>
+                    </tr>
+                    <tr>
+                        <td class="right-align">Stall</td>
+                        <td><img id="alarm-stall-1" src="${content}/circle_empty.png"></td>
+                        <td><img id="alarm-stall-2" src="${content}/circle_empty.png"></td>
+                    </tr>
+                    <tr>
+                        <td class="right-align">Motor runnning</td>
+                        <td><img id="alarm-motor-running-1" src="${content}/circle_empty.png"></td>
+                        <td><img id="alarm-motor-running-2" src="${content}/circle_empty.png"></td>
+                    </tr>
+                    <tr>
+                        <td class="right-align">Busy</td>
+                        <td><img id="alarm-busy-1" src="${content}/circle_empty.png"></td>
+                        <td><img id="alarm-busy-2" src="${content}/circle_empty.png"></td>
+                    </tr>
+                    <tr>
+                        <td class="right-align">HiZ</td>
+                        <td><img id="alarm-hiz-1" src="${content}/circle_empty.png"></td>
+                        <td><img id="alarm-hiz-2" src="${content}/circle_empty.png"></td>
+                    </tr>
             </div>
         </div>
     </div>
@@ -261,15 +264,16 @@
 
     // By default disconnect is hidden
     document.getElementById("disconnect").style.display = "none";
-    // By default getFlags button is hidden
-    document.getElementById("getStatus").style.display = "none";
-    // When autoPoolStatus is unchecked, show "getStatus" button
+
+    // By default there is only on limit switch to homing command
+    document.getElementById("limit-switch-2").style.display = "none";
+    document.getElementById("limit-switch-2-label").style.display = "none";
+
+    // When autoPoolStatus is check, start autopooling
     document.getElementById("autoPoolStatus").addEventListener('change', function() {
         if (this.checked) {
-            document.getElementById("getStatus").style.display = "none";
             refreshStatusInterval = setInterval(getStatus, 500);
         } else {
-            document.getElementById("getStatus").style.display = "inline";
             clearInterval(refreshStatusInterval);
         }
     });
@@ -331,6 +335,7 @@
             case 'set-parameters':
                 if (event.data.response) {
                     console.log("Parameters set successfully");
+                    getParameters();
                 } else {
                     console.error("Failed to set parameters");
                 }
@@ -366,6 +371,19 @@
                 break;
         }
     });
+
+    function changeView(element) {
+        elementChild = element.firstElementChild;
+        if (elementChild.classList.contains("h2select")) {
+            elementChild.classList.remove("h2select");
+            elementChild.classList.add("h2notselect");
+            element.nextElementSibling.style.display = "none";
+        } else {
+            elementChild.classList.remove("h2notselect");
+            elementChild.classList.add("h2select");
+            element.nextElementSibling.style.display = "block";
+        }
+    }
     
     function connect() {
         let port = document.getElementById("port").value;
@@ -385,6 +403,9 @@
     }
     
     function refresh() {
+        if (document.getElementById("disconnect").style.display === "inline") {
+            disconnect();
+        }
         let select_port = document.getElementById('port');
         select_port.replaceChildren(); // delete existing options
         vscode.postMessage({
@@ -455,20 +476,33 @@
             args: []
         });
     }
+
+        function updateHomingLimitSwitchChoices(element) {
+        if (element.value === '3') {
+            // If both motors are selected, show limit switch 2
+            document.getElementById("limit-switch-2").style.display = "inline-block";
+            document.getElementById("limit-switch-2-label").style.display = "inline-block";
+        } else {
+            // If only one motor is selected, hide limit switch 2
+            document.getElementById("limit-switch-2").style.display = "none";
+            document.getElementById("limit-switch-2-label").style.display = "none";
+        }
+    }
     
     function cmdRun() {
         let motor = document.querySelector('input[name="motor"]:checked').value;
         let direction = document.getElementById('runDirection').value;
         let speed = document.getElementById('runSpeed').value;
-        vscode.postMessage({
-            command: 'cmd',
-            args: ['stepper-run', motor, direction==="FORWARD"?"1":"0", speed]
-        });
-        if (document.getElementById('moveTwin').checked) {
-            let twinMotor = motor === '1' ? '2' : '1';
+        if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
-                args: ['stepper-run', twinMotor, direction==="FORWARD"?"1":"0", speed]
+                args: ['stepper-run', '1', direction==="FORWARD"?"1":"0", speed]
+            });
+        }
+        if (motor === '2' || motor === '3') {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['stepper-run', '2', direction==="FORWARD"?"1":"0", speed]
             });
         }
     }
@@ -476,15 +510,16 @@
     function cmdMoveRelative() {
         let motor = document.querySelector('input[name="motor"]:checked').value;
         let steps = document.getElementById('moveRelativeStep').value;
-        vscode.postMessage({
-            command: 'cmd',
-            args: ['stepper-move-relative', motor, steps]
-        });
-        if (document.getElementById('moveTwin').checked) {
-            let twinMotor = motor === '1' ? '2' : '1';
+        if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
-                args: ['stepper-move-relative', twinMotor, steps]
+                args: ['stepper-move-relative', '1', steps]
+            });
+        }
+        if (motor === '2' || motor === '3') {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['stepper-move-relative', '2', steps]
             });
         }
     }
@@ -492,46 +527,68 @@
     function cmdMoveAbsolute() {
         let motor = document.querySelector('input[name="motor"]:checked').value;
         let steps = document.getElementById('moveAbsoluteStep').value;
-        vscode.postMessage({
-            command: 'cmd',
-            args: ['stepper-move-absolute', motor, steps]
-        });
-        if (document.getElementById('moveTwin').checked) {
-            let twinMotor = motor === '1' ? '2' : '1';
+        if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
-                args: ['stepper-move-absolute', twinMotor, steps]
+                args: ['stepper-move-absolute', '1', steps]
+            });
+        }
+        if (motor === '2' || motor === '3') {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['stepper-move-absolute', '2', steps]
             });
         }
     }
 
     function cmdHoming() {
         let motor = document.querySelector('input[name="motor"]:checked').value;
-        let speed = document.getElementById('runSpeed').value; // Todo set a specific speed for homing
-        vscode.postMessage({
-            command: 'cmd',
-            args: ['stepper-homing', motor, speed]
-        });
-        if (document.getElementById('moveTwin').checked) {
-            let twinMotor = motor === '1' ? '2' : '1';
+        let speed = document.getElementById('homingSpeed').value;
+        if (motor === '1' || motor === '2') {
+            let limitSwitch = document.getElementById('limit-switch-1').value;
             vscode.postMessage({
                 command: 'cmd',
-                args: ['stepper-homing', twinMotor, speed]
+                args: ['stepper-attach-limit-switch', motor, limitSwitch, '1'] // TODO : add possibility to change limit switch level
+            })
+        } else {
+            let limitSwitch1 = document.getElementById('limit-switch-1').value;
+            let limitSwitch2 = document.getElementById('limit-switch-2').value;
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['stepper-attach-limit-switch', '1', limitSwitch1, '1'] // TODO : add possibility to change limit switch level
+            });
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['stepper-attach-limit-switch', '2', limitSwitch2, '1'] // TODO : add possibility to change limit switch level
+            });
+        }
+        if (motor === '1' || motor === '3') {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['stepper-homing', '1', speed]
+            });
+        }
+        if (motor === '2' || motor === '3') {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['stepper-homing', '2', speed]
             });
         }
     }
     
     function cmdStop() {
         let motor = document.querySelector('input[name="motor"]:checked').value;
-        vscode.postMessage({
-            command: 'cmd',
-            args: ['stepper-stop', motor]
-        });
-        if (document.getElementById('moveTwin').checked) {
-            let twinMotor = motor === '1' ? '2' : '1';
+        let mode = document.getElementById('stopMode').value;
+        if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
-                args: ['stepper-stop', twinMotor]
+                args: ['stepper-stop', '1' , mode]
+            });
+        }
+        if (motor === '2' || motor === '3') {
+            vscode.postMessage({
+                command: 'cmd',
+                args: ['stepper-stop', '2' , mode]
             });
         }
     }
@@ -544,10 +601,13 @@
     }
 
     function clearStatus() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
         vscode.postMessage({
             command: 'cmd',
-            args: ['stepper-clear-status', motor]
+            args: ['stepper-clear-status', '1']
+        });
+        vscode.postMessage({
+            command: 'cmd',
+            args: ['stepper-clear-status', '2']
         });
     }
     

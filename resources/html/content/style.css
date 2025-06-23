@@ -1,9 +1,6 @@
 /* OpenIndus Stepper Configuration Tool - Professional Theme - Updated for Step Layouts */
 
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
-
 body {
-    font-family: 'Roboto', Arial, sans-serif;
     background-color: #181818;
     color: #ccc;
     margin: 0;
@@ -17,22 +14,80 @@ body {
     justify-content: center;
     align-items: flex-start;
     /* max-width: 1800px; */
-    margin: 0 auto;
+    margin: 80px auto 0 auto;
     gap: 24px;
-    padding: 24px;;
+    padding: 24px;
+    margin-right: 344px; /* 320px for side nav + 24px for padding */
 }
 
 .flex-col-big {
-   max-width: 840px;
+   width: 900px;
 }
 
-.flex-col-small {
-   max-width: 420px;
+.side-nav {
+    position: fixed;
+    top: 90px;
+    right: 24px;
+    width: 320px;
+    padding: 14px;
+}
+
+.side-nav button {
+    width: 125px;
+    margin: 10px 4px;
+    padding: 10px 0;
 }
 
 .flex-block {
     border-top: 1px solid #37373D;
     padding: 24px 24px 24px 24px;
+}
+
+.flex-command {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.motor-selection {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    padding: 32px;
+}
+
+.toogle-view {
+    padding-bottom: 0;
+}
+
+#motor-move, #motor-configuration {
+    border-width: 0px;
+    padding-top: 0;
+}
+
+.h2notselect {
+    font-weight: 300;
+    font-size: 18px;
+    border-left: 4px solid #37373D;
+    -webkit-transition: all 0.15s linear;
+    -moz-transition: all 0.15s linear;
+    -o-transition: all 0.15s linear;
+    transition: all 0.15s linear;
+}
+
+.h2select {
+    font-weight: 700;
+    font-size: 26px;
+    border-left: 4px solid #0078D4;
+    -webkit-transition: all 0.15s linear;
+    -moz-transition: all 0.15s linear;
+    -o-transition: all 0.15s linear;
+    transition: all 0.15s linear;
+}
+
+#change-view:hover {
+    cursor: pointer;
 }
 
 h1, h2, h3 {
@@ -43,55 +98,54 @@ h1, h2, h3 {
 
 h1 {
     font-size: 2.2rem;
-    margin: 24px;
+    margin: 0;
+    padding: 24px;
     text-align: center;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    background-color: #181818;
 }
 
 h2 {
-    font-size: 1.3rem;
-    margin-top: 1em;
-    margin-bottom: 0.7em;
+    font-size: 26px;
+    margin : 10px 0;
     border-left: 4px solid #0078D4;
     padding-left: 12px;
 }
 
 h3 {
     font-size: 1.1rem;
-    margin-bottom: 0.5em;
+    margin: 24px 0;
 }
 
 label {
-    display: block;
-    margin-top: 1em;
-    margin-bottom: 0.3em;
-    font-weight: 500;
+    font-size: 16px;
+    padding: 0 12px;
+    min-width: 60px;
+    text-align: right;
 }
 
 input[type="number"], select {
-    width: 250px;
+    min-width: 125px;
+    height: 36px;
     box-sizing:border-box;
     padding: 8px 10px;
+    margin: 10px 8px 10px 0;
     border: 1px solid #b3c6d6;
     border-radius: 6px;
-    font-size: 1rem;
     background: #fafdff;
-    margin-bottom: 0.5em;
-    transition: border 0.2s;
-}
-
-input[type="number"]:focus, select:focus {
-    border: 1.5px solid #0b3a5e;
-    outline: none;
+    font-size: 16px;
 }
 
 /* Flat button design */
 button {
     background: #0078D4;
-    color: #fff;
     border: none;
+    color: #fff;
     border-radius: 6px;
-    padding: 10px 22px;
-    font-size: 1rem;
+    padding: 8px 10px;
+    font-size: 16px;
     font-weight: 600;
     margin: 10px 8px 10px 0;
     cursor: pointer;
@@ -99,10 +153,23 @@ button {
     transition: background 0.2s, color 0.2s, box-shadow 0.2s;
     outline: none;
 }
+
 button:hover, button:focus {
     background: #1565c0;
-    color: #fff;
     box-shadow: 0 2px 8px rgba(30,136,229,0.10);
+}
+
+.red-button {
+    background: #ac3a3a;
+}
+
+.red-button:hover, .red-button:focus {
+    background: #b71c1c;
+    box-shadow: 0 2px 8px rgba(229,115,115,0.10);
+}
+
+.flex-command button {
+    min-width: 160px;
 }
 
 input[type="radio"] {
@@ -172,4 +239,10 @@ td.right-align {
 
 th {
     padding: 12px;
+}
+
+.large-width {
+    width: 100%;
+    margin: auto;
+    text-align: center;
 }
