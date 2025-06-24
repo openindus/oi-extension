@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System configuration</title>
-    <link href="${content}/style.css" rel="stylesheet" />
+    <link href="${content}/style2.css" rel="stylesheet" />
+    <script type="module" src="https://unpkg.com/@vscode/webview-ui-toolkit/dist/toolkit.min.js"></script>
 </head>
 
 <body>
@@ -32,11 +33,11 @@
             <div class="flex-block" id="connexion">
                 <label for="port">Port :</label>
                 <select id="port" name="port"></select>
-                <button id="connect" onclick="connect()">Connect</button>
-                <button id="disconnect" onclick="disconnect()">Disconnect</button>
-                <button id="refresh" onclick="refresh()" title="Refresh">
+                <vscode-button id="connect" onclick="connect()">Connect</vscode-button>
+                <vscode-button id="disconnect" onclick="disconnect()">Disconnect</vscode-button>
+                <vscode-button id="refresh" onclick="refresh()" title="Refresh">
                     <img src="${content}/refresh_logo.png" alt="Refresh">
-                </button>
+                </vscode-button>
             </div>
 
             <div class="flex-block toggle-view" id="motor-move-title" onclick="changeView(this)">
@@ -49,17 +50,15 @@
                     You can move the two motors at the sem time or move them one by one.
                     before issuing a "homing" command, you must set a limit-switch for the motor</i></p>
                 
-                <div class="motor-selection">
-                    <input type="radio" id="motor1" name="motor" value="1" checked>
-                    <label for="motor1">Motor 1</label>
-                    <input type="radio" id="motor2" name="motor" value="2">
-                    <label for="motor2">Motor 2</label>
-                    <input type="radio" id="motor12" name="motor" value="3">
-                    <label for="motor2">Motor 1+2</label>
-                </div>
+                <vscode-radio-group name="motor-move-selection">
+                    <label slot="label">Select the motor to parameter</label>
+                    <vscode-radio value="1">Motor 1</vscode-radio>
+                    <vscode-radio value="2">Motor 2</vscode-radio>
+                    <vscode-radio value="3">Motor 1+2</vscode-radio>
+                </vscode-radio-group>
 
                 <div class="flex-command">
-                    <button onclick="cmdRun()">Run</button>
+                    <vscode-button onclick="cmdRun()">Run</vscode-button>
                     <label for="runSpeed">Speed :</label>
                     <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000" value="200">
                     <label for="runDirection">Direction :</label>
@@ -70,25 +69,25 @@
                 </div>
                 
                 <div class="flex-command">
-                    <button onclick="cmdMoveRelative()">Move relative</button>
+                    <vscode-button onclick="cmdMoveRelative()">Move relative</vscode-button>
                     <label for="moveRelativeStep">Steps :</label>
                     <input id="moveRelativeStep" name="moveRelativeStep" type="number" min="-100000" max="100000" value="0">
                 </div>
                 
                 <div class="flex-command">
-                    <button onclick="cmdMoveAbsolute()">Move absolute</button>
+                    <vscode-button onclick="cmdMoveAbsolute()">Move absolute</vscode-button>
                     <label for="moveAbsoluteStep">Steps :</label>
                     <input id="moveAbsoluteStep" name="moveAbsoluteStep" type="number" min="0" max="100000" value="0">
                 </div>
                 
                 <div class="flex-command">
-                    <button onclick="cmdHoming()">Homing</button>
+                    <vscode-button onclick="cmdHoming()">Homing</vscode-button>
                     <label for="homingSpeed">Speed :</label>
                     <input id="homingSpeed" name="homingSpeed" type="number" min="0" max="10000" value="200">
                 </div>
                 
                 <div class="flex-command">
-                    <button onclick="cmdStop()" class="red-button">Stop</button>
+                    <vscode-button onclick="cmdStop()" class="red-vscode-button">Stop</vscode-button>
                     <label for="stopMode">Mode :</label>
                     <select id="stopMode" name="stopMode" list="mode" value="soft-hiz">
                         <option value="soft-hiz">Soft Hiz</option>
@@ -108,23 +107,29 @@
                 <p>
                     <i>Configure your motor with the parameters below.
                     Your motor have to be in HiZ (see flags) toconfigure motor parameters.
-                    The first time you configure a motor, we recommend to click the "Reset parameters" button to set all parameters to their default values.
-                    If you want to change a parameter, you can change it and click the "Set parameters" button.
-                    Before modifiyng a paramter, click the "Get parameters" button to get the current values.</i>
+                    The first time you configure a motor, we recommend to click the "Reset parameters" vscode-button to set all parameters to their default values.
+                    If you want to change a parameter, you can change it and click the "Set parameters" vscode-button.
+                    Before modifiyng a paramter, click the "Get parameters" vscode-button to get the current values.</i>
                 </p>
 
+                <vscode-radio-group name="motor-configure-selection">
+                    <label slot="label">Select the motor to parameter</label>
+                    <vscode-radio value="1">Motor 1</vscode-radio>
+                    <vscode-radio value="2">Motor 2</vscode-radio>
+                </vscode-radio-group>
+
                 <div class="flex-command">
-                    <button onclick="getParameters()">Get</button>
-                    <button onclick="resetParameters()">Reset</button>
-                    <button onclick="setParameters()">Set</button>
-                    <button onclick="saveParameters()">Save to file</button>
-                    <button onclick="loadParameters()">Load from file</button>
+                    <vscode-button onclick="getParameters()">Get</vscode-button>
+                    <vscode-button onclick="resetParameters()">Reset</vscode-button>
+                    <vscode-button onclick="setParameters()">Set</vscode-button>
+                    <vscode-button onclick="saveParameters()">Save to file</vscode-button>
+                    <vscode-button onclick="loadParameters()">Load from file</vscode-button>
                 </div>
 
                 <div class="flex-command">
                     <label for="max-speed">Maximum Speed (step/s) :</label>
                     <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="992" step="15">
-                    <button><img src="${content}/info.png"></button>
+                    <vscode-button><img src="${content}/info.png"></vscode-button>
                     <p><i>This is the target speed for relative and absolute move command. This is the maximum speed for run command</i></p>
                 </div>
 
@@ -249,8 +254,8 @@
                         </select>
                     </div>
                     <div class="flex-command"></div>
-                        <button id="attach-limit-switch" onclick="setLimitSwitch(1)">Attach</button>
-                        <button id="dettach-limit-switch" onclick="setLimitSwitch(0)">Dettach</button>
+                        <vscode-button id="attach-limit-switch" onclick="setLimitSwitch(1)">Attach</vscode-button>
+                        <vscode-button id="dettach-limit-switch" onclick="setLimitSwitch(0)">Dettach</vscode-button>
                     </div>
                 </div>
             </div>
@@ -260,8 +265,8 @@
     <div class="side-nav">
         <div class="flex-block" id="motor-status">
             <h2>Motors status</h2>
-            <button onclick="getStatus()">Get status</button>
-            <button onclick="clearStatus()">Clear status</button>
+            <vscode-button onclick="getStatus()">Get status</vscode-button>
+            <vscode-button onclick="clearStatus()">Clear status</vscode-button>
             <div class="large-width">
                 <input type="checkbox" id="autoPoolStatus" name="autoPoolStatus" checked>
                 <label for="autoPoolStatus">Auto pool status</label>
@@ -325,14 +330,7 @@
 </body>
 
 <script type="text/javascript">
-    
-    /* VSCode theme */
-    
-    import { provideVSCodeDesignSystem, vsCodeButton } from "@vscode/webview-ui-toolkit";
 
-    // Init webview-ui-toolkit
-	provideVSCodeDesignSystem().register(vsCodeButton());
-    
     /* Page dynamix content display */
 
     function changeView(element) {
@@ -413,7 +411,7 @@
                 }
                 break;
             case 'disconnect':
-                // If data.response is true OR false, display connect button anyway
+                // If data.response is true OR false, display connect vscode-button anyway
                 document.getElementById("connect").style.display = "inline";
                 document.getElementById("disconnect").style.display = "none";
                 clearInterval(refreshStatusInterval);
@@ -547,7 +545,7 @@
     }
 
     function getParameters() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let motor = document.getElementsByName("motor-configure-selection").value;
         vscode.postMessage({
             command: 'get-parameters',
             args: [motor]
@@ -555,7 +553,7 @@
     }
 
     function setParameters() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let motor = document.getElementsByName("motor-configure-selection").value;
 
         paramList['max-speed'] = document.getElementById("max-speed").value,
         paramList['fs-spd'] = document.getElementById("max-speed").value, // This a hidden parameter which depends on max-speed
@@ -579,7 +577,7 @@
     }
 
     function resetParameters() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let motor = document.getElementsByName("motor-configure-selection").value;
         vscode.postMessage({
             command: 'reset-parameters',
             args: [motor]
@@ -601,7 +599,7 @@
     }
     
     function cmdRun() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let motor = document.getElementsByName("motor-move-selection").value;
         let direction = document.getElementById('runDirection').value;
         let speed = document.getElementById('runSpeed').value;
         if (motor === '1' || motor === '3') {
@@ -619,7 +617,7 @@
     }
     
     function cmdMoveRelative() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let motor = document.getElementsByName("motor-move-selection").value;
         let steps = document.getElementById('moveRelativeStep').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
@@ -636,7 +634,7 @@
     }
     
     function cmdMoveAbsolute() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let motor = document.getElementsByName("motor-move-selection").value;
         let steps = document.getElementById('moveAbsoluteStep').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
@@ -653,26 +651,8 @@
     }
 
     function cmdHoming() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let motor = document.getElementsByName("motor-move-selection").value;
         let speed = document.getElementById('homingSpeed').value;
-        if (motor === '1' || motor === '2') {
-            let limitSwitch = document.getElementById('limit-switch-1').value;
-            vscode.postMessage({
-                command: 'cmd',
-                args: ['stepper-attach-limit-switch', motor, limitSwitch, '1'] // TODO : add possibility to change limit switch level
-            })
-        } else {
-            let limitSwitch1 = document.getElementById('limit-switch-1').value;
-            let limitSwitch2 = document.getElementById('limit-switch-2').value;
-            vscode.postMessage({
-                command: 'cmd',
-                args: ['stepper-attach-limit-switch', '1', limitSwitch1, '1'] // TODO : add possibility to change limit switch level
-            });
-            vscode.postMessage({
-                command: 'cmd',
-                args: ['stepper-attach-limit-switch', '2', limitSwitch2, '1'] // TODO : add possibility to change limit switch level
-            });
-        }
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
@@ -688,7 +668,7 @@
     }
     
     function cmdStop() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let motor = document.getElementsByName("motor-move-selection").value;
         let mode = document.getElementById('stopMode').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({

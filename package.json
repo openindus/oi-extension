@@ -83,8 +83,7 @@
         "platformio-node-helpers": "^11.3.0",
         "python-shell": "^3.0.0",
         "serialport": "^10.4.0",
-        "timers-promises": "^1.0.1",
-        "vsce": "^2.15.0"
+        "timers-promises": "^1.0.1"
     },
     "extensionDependencies": [
         "platformio.platformio-ide"

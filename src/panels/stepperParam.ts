@@ -2,8 +2,6 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { provideVSCodeDesignSystem, vsCodeButton } from "@vscode/webview-ui-toolkit";
-
 import {Mutex} from 'async-mutex';
 import { OIStepper } from "../com/OIStepper";
 import { logger } from "../extension";
@@ -14,9 +12,7 @@ var currentPanel:vscode.WebviewPanel = undefined;
 var stepper:OIStepper = undefined;
 
 export async function startStepperPanelConfig(context: vscode.ExtensionContext, portName?: string, stepperModuleInfo?: ModuleInfo) {
-    
-	// Init webview-ui-toolkit
-	provideVSCodeDesignSystem().register(vsCodeButton());
+
 
     // If we already have a panel, show it.
     if (currentPanel !== undefined) {
@@ -30,7 +26,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 
 	const contentUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'resources', 'html', 'content'));
 
-	fs.readFile(path.join(context.extensionPath, 'resources', 'html', 'stepper.html'), (err,data) => {
+	fs.readFile(path.join(context.extensionPath, 'resources', 'html', 'stepper2.html'), (err,data) => {
 		if (err) {
 			logger.error(err);
 		} else {
