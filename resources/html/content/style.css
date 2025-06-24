@@ -116,6 +116,7 @@ h2 {
     margin : 10px 0;
     border-left: 4px solid #0078D4;
     padding-left: 12px;
+    user-select: none;
 }
 
 h3 {

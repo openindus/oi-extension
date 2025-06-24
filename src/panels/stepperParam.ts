@@ -1,16 +1,23 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+
+import { provideVSCodeDesignSystem, vsCodeButton } from "@vscode/webview-ui-toolkit";
+
 import {Mutex} from 'async-mutex';
 import { OIStepper } from "../com/OIStepper";
 import { logger } from "../extension";
 import { ModuleInfo } from '../utils';
+
 
 var currentPanel:vscode.WebviewPanel = undefined;
 var stepper:OIStepper = undefined;
 
 export async function startStepperPanelConfig(context: vscode.ExtensionContext, portName?: string, stepperModuleInfo?: ModuleInfo) {
     
+	// Init webview-ui-toolkit
+	provideVSCodeDesignSystem().register(vsCodeButton());
+
     // If we already have a panel, show it.
     if (currentPanel !== undefined) {
         currentPanel.reveal();

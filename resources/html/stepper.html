@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System configuration</title>
     <link href="${content}/style.css" rel="stylesheet" />
+    <script src="${content}/adjustSideNav.js"></script>
 </head>
 
 <body>
@@ -39,13 +40,15 @@
                 </button>
             </div>
 
-            <div class="flex-block toggle-view" onclick="changeView(this)">
-                <h2 class="h2notselect">Test motor</h2>
+            <div class="flex-block toggle-view" id="motor-move-title" onclick="changeView(this)">
+                <h2 class="h2select">Test motor</h2>
             </div>
 
-            <div class="flex-block" id="motor-move" style="display: none;">
+            <div class="flex-block" id="motor-move">
                 
-                <p><i>In this mode, you can try your motor with several commands. It will help you to tune motor parameters. You can move the two motors at the sem time or move them one by one.</i></p>
+                <p><i>In this mode, you can try your motor with several commands. It will help you to tune motor parameters. 
+                    You can move the two motors at the sem time or move them one by one.
+                    before issuing a "homing" command, you must set a limit-switch for the motor</i></p>
                 
                 <div class="motor-selection">
                     <input type="radio" id="motor1" name="motor" value="1" checked>
@@ -56,7 +59,6 @@
                     <label for="motor2">Motor 1+2</label>
                 </div>
 
-                <!-- <h3>Constant speed</h3> -->
                 <div class="flex-command">
                     <button onclick="cmdRun()">Run</button>
                     <label for="runSpeed">Speed :</label>
@@ -68,28 +70,24 @@
                     </select>
                 </div>
                 
-                <!-- <h3>Relative move</h3> -->
                 <div class="flex-command">
                     <button onclick="cmdMoveRelative()">Move relative</button>
                     <label for="moveRelativeStep">Steps :</label>
                     <input id="moveRelativeStep" name="moveRelativeStep" type="number" min="-100000" max="100000" value="0">
                 </div>
                 
-                <!-- <h3>Absolute speed</h3> -->
                 <div class="flex-command">
                     <button onclick="cmdMoveAbsolute()">Move absolute</button>
                     <label for="moveAbsoluteStep">Steps :</label>
                     <input id="moveAbsoluteStep" name="moveAbsoluteStep" type="number" min="0" max="100000" value="0">
                 </div>
                 
-                <!-- <h3>Homing</h3> -->
                 <div class="flex-command">
                     <button onclick="cmdHoming()">Homing</button>
                     <label for="homingSpeed">Speed :</label>
                     <input id="homingSpeed" name="homingSpeed" type="number" min="0" max="10000" value="200">
                 </div>
                 
-                <!-- <h3>Stop</h3> -->
                 <div class="flex-command">
                     <button onclick="cmdStop()" class="red-button">Stop</button>
                     <label for="stopMode">Mode :</label>
@@ -102,35 +100,46 @@
                 </div>
             </div>
 
-            <div class="flex-block toggle-view" onclick="changeView(this)">
-                <h2 class="h2notselect">Configure motor</h2>
+            <div class="flex-block toggle-view" id="motor-configuration-title" onclick="changeView(this)">
+                <h2 class="h2select">Configure motor</h2>
             </div>
 
-            <div class="flex-block"  id="motor-configuration" style="display: none;">
-                <p><i>Configure your motor with the parameters below. <br>
-                Your motor have to be in HiZ (see flags) toconfigure motor parameters. <br>
-                The first time you configure a motor, we recommend to click the "Reset parameters" button to set all parameters to their default values.<br>
-                If you want to change a parameter, you can change it and click the "Set parameters" button.<br>
-                Before modifiyng a paramter, click the "Get parameters" button to get the current values.</i></p>
+            <div class="flex-block"  id="motor-configuration">
+
+                <p>
+                    <i>Configure your motor with the parameters below.
+                    Your motor have to be in HiZ (see flags) toconfigure motor parameters.
+                    The first time you configure a motor, we recommend to click the "Reset parameters" button to set all parameters to their default values.
+                    If you want to change a parameter, you can change it and click the "Set parameters" button.
+                    Before modifiyng a paramter, click the "Get parameters" button to get the current values.</i>
+                </p>
+
                 <div class="flex-command">
                     <button onclick="getParameters()">Get</button>
                     <button onclick="resetParameters()">Reset</button>
                     <button onclick="setParameters()">Set</button>
                     <button onclick="saveParameters()">Save to file</button>
                     <button onclick="loadParameters()">Load from file</button>
+                    <vscode-button>Button Text</vscode-button>
                 </div>
+
                 <div class="flex-command">
                     <label for="max-speed">Maximum Speed (step/s) :</label>
                     <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="992" step="15">
+                    <button><img src="${content}/info.png"></button>
+                    <p><i>This is the target speed for relative and absolute move command. This is the maximum speed for run command</i></p>
                 </div>
+
                 <div class="flex-command">
                     <label for="acc">Acceleration Speed (step/s²) :</label>
                     <input id="acc" name="acc" type="number" min="0" max="59575" value="2008" step="15">
                 </div>
+
                 <div class="flex-command">
                     <label for="dec">Deceleration Speed (step/s²) :</label>
                     <input id="dec" name="dec" type="number" min="0" max="59590" value="2008" step="15">
                 </div>
+
                 <div class="flex-command">
                     <label for="step-mode-step-sel">Step mode :</label>
                     <select id="step-mode-step-sel" name="step-mode-step-sel">
@@ -144,26 +153,32 @@
                         <option value="7">1/128</option>
                     </select>
                 </div>
+
                 <div class="flex-command">
                     <label for="kval-hold">Kval hold :</label>
                     <input id="kval-hold" name="kval-hold" type="number" min="1" max="99" value="16" step="1">
                 </div>
+
                 <div class="flex-command">
                     <label for="kval-run">Kval run :</label>
                     <input id="kval-run" name="kval-run" type="number" min="1" max="99" value="16" step="1">
                 </div>
+
                 <div class="flex-command">
                     <label for="kval-acc">Kval acceleration :</label>
                     <input id="kval-acc" name="kval-acc" type="number" min="1" max="99" value="16" step="1">
                 </div>
+
                 <div class="flex-command">
                     <label for="kval-dec">Kval deceleration :</label>
                     <input id="kval-dec" name="kval-dec" type="number" min="1" max="99" value="16" step="1">
                 </div>
+
                 <div class="flex-command">
                     <label for="f-slp-acc">Back-EMF compensation :</label>
                     <input id="f-slp-acc" name="f-slp-acc" type="number" min="0" max="0.4" value="0.06256" step="0.0015">
                 </div>
+
                 <div class="flex-command">
                     <label for="ocd-th">Over-current threshold (A) :</label>
                     <select id="ocd-th" name="ocd-th">
@@ -184,6 +199,7 @@
                         <option value="14">30</option>
                     </select>
                 </div>
+
                 <div class="flex-command">
                     <label for="stall-th">Stall threshold (A) :</label>
                     <select id="stall-th" name="stall-th">
@@ -206,11 +222,11 @@
                 </div>
             </div>
 
-            <div class="flex-block toggle-view" onclick="changeView(this)">
-                <h2 class="h2notselect">Configure limit-switch</h2>
+            <div class="flex-block toggle-view" id="motor-switches-title" onclick="changeView(this)">
+                <h2 class="h2select">Configure limit-switch</h2>
             </div>
 
-            <div class="flex-block" id="motor-switches" style="display: none;">
+            <div class="flex-block" id="motor-switches">
                 <p><i>Configure limit swicthes below for testing purposer. Limit switches are resetted when the program restart.<br>
                 Limit switches have to be configured in the init sequence of our main program.</i></p>
                 <div>
@@ -304,6 +320,7 @@
                         <td><img id="alarm-hiz-1" src="${content}/circle_empty.png"></td>
                         <td><img id="alarm-hiz-2" src="${content}/circle_empty.png"></td>
                     </tr>
+                </table>
             </div>
         </div>
     </div>
@@ -311,6 +328,50 @@
 
 <script type="text/javascript">
     
+    /* Page dynamix content display */
+
+    function changeView(element) {
+        elementChild = element.firstElementChild;
+        if (elementChild.classList.contains("h2select")) {
+            elementChild.classList.remove("h2select");
+            elementChild.classList.add("h2notselect");
+            element.nextElementSibling.style.display = "none";
+        } else {
+            elementChild.classList.remove("h2notselect");
+            elementChild.classList.add("h2select");
+            element.nextElementSibling.style.display = "block";
+        }
+    }
+
+    function hideContentOneByOne() {
+        setTimeout(() => {
+            changeView(document.getElementById("motor-move-title"));
+        }, 500);
+        setTimeout(() => {
+            changeView(document.getElementById("motor-configuration-title"));
+        }, 500);
+        setTimeout(() => {
+            changeView(document.getElementById("motor-switches-title"));
+        }, 500);
+    }
+
+    window.addEventListener('DOMContentLoaded', hideContentOneByOne);
+
+    function adjustSideNavTop() {
+        var presentation = document.querySelector('.presentation-text');
+        var sideNav = document.querySelector('.side-nav');
+        if (presentation && sideNav) {
+            var rect = presentation.getBoundingClientRect();
+            sideNav.style.top = (rect.bottom >0?rect.bottom:0) + 'px';
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', adjustSideNavTop);
+    window.addEventListener('resize', adjustSideNavTop);
+    window.addEventListener('scroll', adjustSideNavTop);
+
+    /* Communication with extension */
+
     const vscode = acquireVsCodeApi();
     var paramList = {};
     var circle_empty_png = "${content}/circle_empty.png";
@@ -432,19 +493,6 @@
                 break;
         }
     });
-
-    function changeView(element) {
-        elementChild = element.firstElementChild;
-        if (elementChild.classList.contains("h2select")) {
-            elementChild.classList.remove("h2select");
-            elementChild.classList.add("h2notselect");
-            element.nextElementSibling.style.display = "none";
-        } else {
-            elementChild.classList.remove("h2notselect");
-            elementChild.classList.add("h2select");
-            element.nextElementSibling.style.display = "block";
-        }
-    }
     
     function connect() {
         let port = document.getElementById("port").value;
