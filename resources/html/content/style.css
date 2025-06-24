@@ -8,13 +8,17 @@ body {
     min-height: 100vh;
 }
 
+.presentation-text {
+    background-color: #181818;
+    padding: 12px 48px;
+}
+
 .main-flex {
     display: flex;
     flex-flow: row;
     justify-content: center;
     align-items: flex-start;
     /* max-width: 1800px; */
-    margin: 80px auto 0 auto;
     gap: 24px;
     padding: 24px;
     margin-right: 344px; /* 320px for side nav + 24px for padding */
@@ -40,7 +44,15 @@ body {
 
 .flex-block {
     /* border-top: 1px solid #37373D; */
-    padding: 24px 24px 24px 24px;
+    padding: 12px 24px 24px 24px;
+}
+
+.toggle-view {
+    padding-bottom: 0;
+}
+
+.toggle-view:hover {
+    cursor: pointer;
 }
 
 .flex-command {
@@ -54,16 +66,16 @@ body {
     display: flex;
     flex-flow: row wrap;
     justify-content: center;
-    padding: 32px;
+    padding: 16px;
 }
 
-.toogle-view {
-    padding-bottom: 0;
-}
-
-#motor-move, #motor-configuration {
+#motor-move, #motor-configuration, #motor-switches {
     border-width: 0px;
     padding-top: 0;
+}
+
+#motor-configuration label {
+    min-width: 220px;
 }
 
 .h2notselect {
@@ -86,10 +98,6 @@ body {
     transition: all 0.15s linear;
 }
 
-#change-view:hover {
-    cursor: pointer;
-}
-
 h1, h2, h3 {
     color: #ccc;
     font-weight: 700;
@@ -98,13 +106,9 @@ h1, h2, h3 {
 
 h1 {
     font-size: 2.2rem;
-    margin: 0;
     padding: 24px;
     text-align: center;
-    position: fixed;
     width: 100%;
-    top: 0;
-    background-color: #181818;
 }
 
 h2 {
@@ -146,7 +150,7 @@ button {
     border-radius: 6px;
     padding: 8px 10px;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 500;
     margin: 10px 8px 10px 0;
     cursor: pointer;
     box-shadow: none;
@@ -168,8 +172,8 @@ button:hover, button:focus {
     box-shadow: 0 2px 8px rgba(229,115,115,0.10);
 }
 
-.flex-command button {
-    min-width: 160px;
+.flex-block button {
+    min-width: 140px;
 }
 
 input[type="radio"] {
@@ -221,6 +225,7 @@ hr {
     margin-right: 8px;
     vertical-align: middle;
     cursor: pointer;
+    min-width: 0;
 }
 
 #refresh img {

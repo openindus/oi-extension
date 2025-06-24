@@ -10,12 +10,22 @@
 
 <body>
     <!-- <img src="${content}/openindus_logo.png" alt="OpenIndus Logo" class="logo"> -->
-    <h1>OIStepper configuration tool</h1>
+    <div class="presentation-text">
+        <h1>OIStepper configuration tool</h1>
+        <p>
+            This interface allow you to configure and test paramters of OIStepper module. 
+            You can control an OIStepper by connecting an USB cable directly to it or by connecting the USB cable to a master module which is on the same rail. 
+            Keep in mind that the OIStepper must be powerer on by it termminal block to function normally. 
+            Parameters in the section "configure motor" are same in the NVS (non-valative memory) of the module. 
+            Limit switches can be configured for testing purpose but are not persistant accros reboot. 
+            So be sure to set them into your application code.
+        </p>
+    </div>
     <div class="main-flex">
 
         <div class="flex-col flex-col-big">
 
-            <div class="flex-block" onclick="changeView(this)" class="toggle-view">
+            <div class="flex-block toggle-view" onclick="changeView(this)">
                 <h2 class="h2select">Connexion</h2>
             </div>
 
@@ -29,7 +39,7 @@
                 </button>
             </div>
 
-            <div class="flex-block" onclick="changeView(this)" class="toggle-view">
+            <div class="flex-block toggle-view" onclick="changeView(this)">
                 <h2 class="h2notselect">Test motor</h2>
             </div>
 
@@ -38,11 +48,11 @@
                 <p><i>In this mode, you can try your motor with several commands. It will help you to tune motor parameters. You can move the two motors at the sem time or move them one by one.</i></p>
                 
                 <div class="motor-selection">
-                    <input type="radio" id="motor1" name="motor" value="1" checked onchange="updateHomingLimitSwitchChoices(this)">
+                    <input type="radio" id="motor1" name="motor" value="1" checked>
                     <label for="motor1">Motor 1</label>
-                    <input type="radio" id="motor2" name="motor" value="2" onchange="updateHomingLimitSwitchChoices(this)">
+                    <input type="radio" id="motor2" name="motor" value="2">
                     <label for="motor2">Motor 2</label>
-                    <input type="radio" id="motor12" name="motor" value="3" onchange="updateHomingLimitSwitchChoices(this)">
+                    <input type="radio" id="motor12" name="motor" value="3">
                     <label for="motor2">Motor 1+2</label>
                 </div>
 
@@ -77,20 +87,6 @@
                     <button onclick="cmdHoming()">Homing</button>
                     <label for="homingSpeed">Speed :</label>
                     <input id="homingSpeed" name="homingSpeed" type="number" min="0" max="10000" value="200">
-                    <label for="limit-switch-1">Limit switch :</label>
-                    <select id="limit-switch-1" name="limit-switch-1">
-                        <option value="1" selected>DIN 1</option>
-                        <option value="2">DIN 2</option>
-                        <option value="3">DIN 3</option>
-                        <option value="4">DIN 4</option>
-                    </select>
-                    <label id="limit-switch-2-label" for="limit-switch-2">Limit switch :</label>
-                    <select id="limit-switch-2" name="limit-switch-2">
-                        <option value="1">DIN 1</option>
-                        <option value="2" selected>DIN 2</option>
-                        <option value="3">DIN 3</option>
-                        <option value="4">DIN 4</option>
-                    </select>
                 </div>
                 
                 <!-- <h3>Stop</h3> -->
@@ -106,7 +102,7 @@
                 </div>
             </div>
 
-            <div class="flex-block" onclick="changeView(this)" class="toggle-view">
+            <div class="flex-block toggle-view" onclick="changeView(this)">
                 <h2 class="h2notselect">Configure motor</h2>
             </div>
 
@@ -116,117 +112,134 @@
                 The first time you configure a motor, we recommend to click the "Reset parameters" button to set all parameters to their default values.<br>
                 If you want to change a parameter, you can change it and click the "Set parameters" button.<br>
                 Before modifiyng a paramter, click the "Get parameters" button to get the current values.</i></p>
-                <button onclick="getParameters()">Get parameters</button>
-                <button onclick="resetParameters()">Reset parameters</button>
-                <button onclick="setParameters()">Set parameters</button>
-                <button onclick="saveParameters()">Save parameters to file</button>
-                <button onclick="loadParameters()">Load parameters from file</button>
-                <label for="max-speed">Maximum Speed (step/s)</label>
-                <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="992" step="15">
-                <label for="acc">Acceleration Speed (step/s²)</label>
-                <input id="acc" name="acc" type="number" min="0" max="59575" value="2008" step="15">
-                <label for="dec">Deceleration Speed (step/s²)</label>
-                <input id="dec" name="dec" type="number" min="0" max="59590" value="2008" step="15">
-                <label for="step-mode-step-sel">Step mode</label>
-                <select id="step-mode-step-sel" name="step-mode-step-sel">
-                    <option value="0">FULL</option>
-                    <option value="1">1/2</option>
-                    <option value="2">1/4</option>
-                    <option value="3">1/8</option>
-                    <option value="4" selected>1/16</option>
-                    <option value="5">1/32</option>
-                    <option value="6">1/64</option>
-                    <option value="7">1/128</option>
-                </select>
-                <label for="kval-hold">Kval hold</label>
-                <input id="kval-hold" name="kval-hold" type="number" min="1" max="99" value="16" step="1">
-                <label for="kval-run">Kval run</label>
-                <input id="kval-run" name="kval-run" type="number" min="1" max="99" value="16" step="1">
-                <label for="kval-acc">Kval acceleration</label>
-                <input id="kval-acc" name="kval-acc" type="number" min="1" max="99" value="16" step="1">
-                <label for="kval-dec">Kval deceleration</label>
-                <input id="kval-dec" name="kval-dec" type="number" min="1" max="99" value="16" step="1">
-                <label for="f-slp-acc">Back-EMF compensation</label>
-                <input id="f-slp-acc" name="f-slp-acc" type="number" min="0" max="0.4" value="0.06256" step="0.0015">
-                <label for="ocd-th">Over-current threshold (A)</label>
-                <select id="ocd-th" name="ocd-th">
-                    <option value="0">2</option>
-                    <option value="1">4</option>
-                    <option value="2">6</option>
-                    <option value="3">8</option>
-                    <option value="4" selected>10</option>
-                    <option value="5">12</option>
-                    <option value="6">14</option>
-                    <option value="7">16</option>
-                    <option value="8">18</option>
-                    <option value="9">20</option>
-                    <option value="10">22</option>
-                    <option value="11">24</option>
-                    <option value="12">26</option>
-                    <option value="13">28</option>
-                    <option value="14">30</option>
-                </select>
-                <label for="stall-th">Stall threshold (A)</label>
-                <select id="stall-th" name="stall-th">
-                    <option value="0">0.7</option>
-                    <option value="1">1.3</option>
-                    <option value="2">2</option>
-                    <option value="3">2.7</option>
-                    <option value="4">3.4</option>
-                    <option value="5">4</option>
-                    <option value="6">4.7</option>
-                    <option value="7">5.4</option>
-                    <option value="8">6.1</option>
-                    <option value="9">6.8</option>
-                    <option value="10">7.4</option>
-                    <option value="11">8.1</option>
-                    <option value="12">8.8</option>
-                    <option value="13">9.5</option>
-                    <option value="14" selected>10.2</option>
-                </select>
+                <div class="flex-command">
+                    <button onclick="getParameters()">Get</button>
+                    <button onclick="resetParameters()">Reset</button>
+                    <button onclick="setParameters()">Set</button>
+                    <button onclick="saveParameters()">Save to file</button>
+                    <button onclick="loadParameters()">Load from file</button>
+                </div>
+                <div class="flex-command">
+                    <label for="max-speed">Maximum Speed (step/s) :</label>
+                    <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="992" step="15">
+                </div>
+                <div class="flex-command">
+                    <label for="acc">Acceleration Speed (step/s²) :</label>
+                    <input id="acc" name="acc" type="number" min="0" max="59575" value="2008" step="15">
+                </div>
+                <div class="flex-command">
+                    <label for="dec">Deceleration Speed (step/s²) :</label>
+                    <input id="dec" name="dec" type="number" min="0" max="59590" value="2008" step="15">
+                </div>
+                <div class="flex-command">
+                    <label for="step-mode-step-sel">Step mode :</label>
+                    <select id="step-mode-step-sel" name="step-mode-step-sel">
+                        <option value="0">FULL</option>
+                        <option value="1">1/2</option>
+                        <option value="2">1/4</option>
+                        <option value="3">1/8</option>
+                        <option value="4" selected>1/16</option>
+                        <option value="5">1/32</option>
+                        <option value="6">1/64</option>
+                        <option value="7">1/128</option>
+                    </select>
+                </div>
+                <div class="flex-command">
+                    <label for="kval-hold">Kval hold :</label>
+                    <input id="kval-hold" name="kval-hold" type="number" min="1" max="99" value="16" step="1">
+                </div>
+                <div class="flex-command">
+                    <label for="kval-run">Kval run :</label>
+                    <input id="kval-run" name="kval-run" type="number" min="1" max="99" value="16" step="1">
+                </div>
+                <div class="flex-command">
+                    <label for="kval-acc">Kval acceleration :</label>
+                    <input id="kval-acc" name="kval-acc" type="number" min="1" max="99" value="16" step="1">
+                </div>
+                <div class="flex-command">
+                    <label for="kval-dec">Kval deceleration :</label>
+                    <input id="kval-dec" name="kval-dec" type="number" min="1" max="99" value="16" step="1">
+                </div>
+                <div class="flex-command">
+                    <label for="f-slp-acc">Back-EMF compensation :</label>
+                    <input id="f-slp-acc" name="f-slp-acc" type="number" min="0" max="0.4" value="0.06256" step="0.0015">
+                </div>
+                <div class="flex-command">
+                    <label for="ocd-th">Over-current threshold (A) :</label>
+                    <select id="ocd-th" name="ocd-th">
+                        <option value="0">2</option>
+                        <option value="1">4</option>
+                        <option value="2">6</option>
+                        <option value="3">8</option>
+                        <option value="4" selected>10</option>
+                        <option value="5">12</option>
+                        <option value="6">14</option>
+                        <option value="7">16</option>
+                        <option value="8">18</option>
+                        <option value="9">20</option>
+                        <option value="10">22</option>
+                        <option value="11">24</option>
+                        <option value="12">26</option>
+                        <option value="13">28</option>
+                        <option value="14">30</option>
+                    </select>
+                </div>
+                <div class="flex-command">
+                    <label for="stall-th">Stall threshold (A) :</label>
+                    <select id="stall-th" name="stall-th">
+                        <option value="0">0.7</option>
+                        <option value="1">1.3</option>
+                        <option value="2">2</option>
+                        <option value="3">2.7</option>
+                        <option value="4">3.4</option>
+                        <option value="5">4</option>
+                        <option value="6">4.7</option>
+                        <option value="7">5.4</option>
+                        <option value="8">6.1</option>
+                        <option value="9">6.8</option>
+                        <option value="10">7.4</option>
+                        <option value="11">8.1</option>
+                        <option value="12">8.8</option>
+                        <option value="13">9.5</option>
+                        <option value="14" selected>10.2</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="flex-block" onclick="changeView(this)" class="toggle-view">
+            <div class="flex-block toggle-view" onclick="changeView(this)">
                 <h2 class="h2notselect">Configure limit-switch</h2>
             </div>
 
             <div class="flex-block" id="motor-switches" style="display: none;">
-                <p><i>You can configure up to two limit switch per motor. <br>
+                <p><i>Configure limit swicthes below for testing purposer. Limit switches are resetted when the program restart.<br>
                 Limit switches have to be configured in the init sequence of our main program.</i></p>
                 <div>
-                    <label for="limit-switch-1">Limit switch 1 input</label>
-                    <select id="limit-switch-1" name="limit-switch-1">
-                        <option value="0" selected>NONE</option>
-                        <option value="1">DIN 1</option>
-                        <option value="2">DIN 2</option>
-                        <option value="3">DIN 3</option>
-                        <option value="4">DIN 4</option>
-                    </select>
-                    <label for="logic-switch-1">Logic</label>
-                    <select id="logic-switch-1" name="logic-switch-1">
-                        <option value="1" selected>Active HIGH</option>
-                        <option value="0">Active LOW</option>
-                    </select>
-                    <button if="add-limit-switch-1" onclick="setLimitSwitch(1)">Set</button>
-                </div>
-                <div>
-                    <label for="limit-switch-2">Limit switch 2 input</label>
-                    <select id="limit-switch-2" name="limit-switch-2">
-                        <option value="0" selected>NONE</option>
-                        <option value="1">DIN 1</option>
-                        <option value="2">DIN 2</option>
-                        <option value="3">DIN 3</option>
-                        <option value="4">DIN 4</option>
-                    </select>
-                    <label for="logic-switch-2">Logic</label>
-                    <select id="logic-switch-2" name="logic-switch-2">
-                        <option value="1" selected>Active HIGH</option>
-                        <option value="0">Active LOW</option>
-                    </select>
-                    <button if="add-limit-switch-1" onclick="setLimitSwitch(2)">Set</button>
+                    <div class="flex-command">
+                        <label for="limit-switch-motor">Motor :</label>
+                        <select id="limit-switch-motor" name="limit-switch-motor">
+                            <option value="1">Motor 1</option>
+                            <option value="2">Motor 2</option>
+                        </select>
+                        <label for="limit-switch-input">Input :</label>
+                        <select id="limit-switch-input" name="limit-switch-input">
+                            <option value="0" selected>---</option>
+                            <option value="1">DIN 1</option>
+                            <option value="2">DIN 2</option>
+                            <option value="3">DIN 3</option>
+                            <option value="4">DIN 4</option>
+                        </select>
+                        <label for="limit-switch-logic">Logic :</label>
+                        <select id="limit-switch-logic" name="limit-switch-logic">
+                            <option value="1" selected>Active HIGH</option>
+                            <option value="0">Active LOW</option>
+                        </select>
+                    </div>
+                    <div class="flex-command"></div>
+                        <button id="attach-limit-switch" onclick="setLimitSwitch(1)">Attach</button>
+                        <button id="dettach-limit-switch" onclick="setLimitSwitch(0)">Dettach</button>
+                    </div>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -461,14 +474,23 @@
         });
     }
 
-    function setLimitSwitch(id) {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
-        let input = document.getElementById('limit-switch-' + id).value;
-        let logic = document.getElementById('logic-switch-'+id).value;
-        vscode.postMessage({
-            command: 'cmd',
-            args: ['stepper-attach-limit-switch', motor, input, logic]
-        });
+    function setLimitSwitch(setUnset) {
+        let motor = document.getElementById('limit-switch-motor').value;
+        let input = document.getElementById('limit-switch-input').value;
+        let logic = document.getElementById('limit-switch-logic').value;
+        if (input !== '0') {
+            if (setUnset === 1) {
+                vscode.postMessage({
+                    command: 'cmd',
+                    args: ['stepper-attach-limit-switch', motor, input, logic]
+                });
+            } else {
+                vscode.postMessage({
+                    command: 'cmd',
+                    args: ['stepper-detach-limit-switch', motor, input]
+                });
+            }
+        }
     }
 
     function getParameters() {
@@ -523,18 +545,6 @@
             command: 'load-parameters',
             args: []
         });
-    }
-
-        function updateHomingLimitSwitchChoices(element) {
-        if (element.value === '3') {
-            // If both motors are selected, show limit switch 2
-            document.getElementById("limit-switch-2").style.display = "inline-block";
-            document.getElementById("limit-switch-2-label").style.display = "inline-block";
-        } else {
-            // If only one motor is selected, hide limit switch 2
-            document.getElementById("limit-switch-2").style.display = "none";
-            document.getElementById("limit-switch-2-label").style.display = "none";
-        }
     }
     
     function cmdRun() {
