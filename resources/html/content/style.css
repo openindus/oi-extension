@@ -36,15 +36,18 @@ body {
     padding: 14px;
 }
 
-.side-nav button {
-    width: 125px;
+#motor-status button {
+    min-width: 100px;
     margin: 10px 4px;
-    padding: 10px 0;
 }
 
 .flex-block {
     /* border-top: 1px solid #37373D; */
     padding: 12px 24px 24px 24px;
+}
+
+.flex-block button {
+    min-width: 140px;
 }
 
 .toggle-view {
@@ -125,7 +128,7 @@ h3 {
 }
 
 label {
-    font-size: 16px;
+    font-size: 14px;
     padding: 0 12px;
     min-width: 60px;
     text-align: right;
@@ -133,14 +136,13 @@ label {
 
 input[type="number"], select {
     min-width: 125px;
-    height: 36px;
     box-sizing:border-box;
-    padding: 8px 10px;
+    padding: 6px;
     margin: 10px 8px 10px 0;
     border: 1px solid #b3c6d6;
-    border-radius: 6px;
+    border-radius: 2px;
     background: #fafdff;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 /* Flat button design */
@@ -148,9 +150,9 @@ button {
     background: #0078D4;
     border: none;
     color: #fff;
-    border-radius: 6px;
-    padding: 8px 10px;
-    font-size: 16px;
+    border-radius: 2px;
+    padding: 6px;
+    font-size: 14px;
     font-weight: 500;
     margin: 10px 8px 10px 0;
     cursor: pointer;
@@ -171,10 +173,6 @@ button:hover, button:focus {
 .red-button:hover, .red-button:focus {
     background: #b71c1c;
     box-shadow: 0 2px 8px rgba(229,115,115,0.10);
-}
-
-.flex-block button {
-    min-width: 140px;
 }
 
 input[type="radio"] {
@@ -203,7 +201,7 @@ input[type="checkbox"] {
 
 p, i {
     color: #aaa;
-    font-size: 1rem;
+    font-size: 14px;
     margin-bottom: 1em;
 }
 
@@ -237,10 +235,6 @@ hr {
 
 td {
     text-align: center;
-}
-
-td.right-align {
-    text-align: right;
 }
 
 th {

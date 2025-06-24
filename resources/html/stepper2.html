@@ -22,255 +22,252 @@
             So be sure to set them into your application code.
         </p>
     </div>
-    <div class="main-flex">
-
-        <div class="flex-col flex-col-big">
-
-            <div class="flex-block toggle-view" onclick="changeView(this)">
-                <h2 class="h2select">Connexion</h2>
-            </div>
-
-            <div class="flex-block" id="connexion">
-                <label for="port">Port :</label>
-                <select id="port" name="port"></select>
-                <vscode-button id="connect" onclick="connect()">Connect</vscode-button>
-                <vscode-button id="disconnect" onclick="disconnect()">Disconnect</vscode-button>
-                <vscode-button id="refresh" onclick="refresh()" title="Refresh">
-                    <img src="${content}/refresh_logo.png" alt="Refresh">
-                </vscode-button>
-            </div>
-
-            <div class="flex-block toggle-view" id="motor-move-title" onclick="changeView(this)">
-                <h2 class="h2select">Test motor</h2>
-            </div>
-
-            <div class="flex-block" id="motor-move">
-                
-                <p><i>In this mode, you can try your motor with several commands. It will help you to tune motor parameters. 
-                    You can move the two motors at the sem time or move them one by one.
-                    before issuing a "homing" command, you must set a limit-switch for the motor</i></p>
-                
-                <vscode-radio-group name="motor-move-selection">
-                    <label slot="label">Select the motor to parameter</label>
-                    <vscode-radio value="1">Motor 1</vscode-radio>
-                    <vscode-radio value="2">Motor 2</vscode-radio>
-                    <vscode-radio value="3">Motor 1+2</vscode-radio>
-                </vscode-radio-group>
-
-                <div class="flex-command">
-                    <vscode-button onclick="cmdRun()">Run</vscode-button>
-                    <label for="runSpeed">Speed :</label>
-                    <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000" value="200">
-                    <label for="runDirection">Direction :</label>
-                    <select id="runDirection" name="runDirection" list="direction" value="FORWARD">
-                        <option value="FORWARD">Forward</option>
-                        <option value="BACKWARD">Backward</option>
-                    </select>
-                </div>
-                
-                <div class="flex-command">
-                    <vscode-button onclick="cmdMoveRelative()">Move relative</vscode-button>
-                    <label for="moveRelativeStep">Steps :</label>
-                    <input id="moveRelativeStep" name="moveRelativeStep" type="number" min="-100000" max="100000" value="0">
-                </div>
-                
-                <div class="flex-command">
-                    <vscode-button onclick="cmdMoveAbsolute()">Move absolute</vscode-button>
-                    <label for="moveAbsoluteStep">Steps :</label>
-                    <input id="moveAbsoluteStep" name="moveAbsoluteStep" type="number" min="0" max="100000" value="0">
-                </div>
-                
-                <div class="flex-command">
-                    <vscode-button onclick="cmdHoming()">Homing</vscode-button>
-                    <label for="homingSpeed">Speed :</label>
-                    <input id="homingSpeed" name="homingSpeed" type="number" min="0" max="10000" value="200">
-                </div>
-                
-                <div class="flex-command">
-                    <vscode-button onclick="cmdStop()" class="red-vscode-button">Stop</vscode-button>
-                    <label for="stopMode">Mode :</label>
-                    <select id="stopMode" name="stopMode" list="mode" value="soft-hiz">
-                        <option value="soft-hiz">Soft Hiz</option>
-                        <option value="soft-stop">Soft Stop</option>
-                        <option value="hard-hiz">Hard Hiz</option>
-                        <option value="hard-stop">Hard Stop</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="flex-block toggle-view" id="motor-configuration-title" onclick="changeView(this)">
-                <h2 class="h2select">Configure motor</h2>
-            </div>
-
-            <div class="flex-block"  id="motor-configuration">
-
-                <p>
-                    <i>Configure your motor with the parameters below.
-                    Your motor have to be in HiZ (see flags) toconfigure motor parameters.
-                    The first time you configure a motor, we recommend to click the "Reset parameters" vscode-button to set all parameters to their default values.
-                    If you want to change a parameter, you can change it and click the "Set parameters" vscode-button.
-                    Before modifiyng a paramter, click the "Get parameters" vscode-button to get the current values.</i>
-                </p>
-
-                <vscode-radio-group name="motor-configure-selection">
-                    <label slot="label">Select the motor to parameter</label>
-                    <vscode-radio value="1">Motor 1</vscode-radio>
-                    <vscode-radio value="2">Motor 2</vscode-radio>
-                </vscode-radio-group>
-
-                <div class="flex-command">
-                    <vscode-button onclick="getParameters()">Get</vscode-button>
-                    <vscode-button onclick="resetParameters()">Reset</vscode-button>
-                    <vscode-button onclick="setParameters()">Set</vscode-button>
-                    <vscode-button onclick="saveParameters()">Save to file</vscode-button>
-                    <vscode-button onclick="loadParameters()">Load from file</vscode-button>
-                </div>
-
-                <div class="flex-command">
-                    <label for="max-speed">Maximum Speed (step/s) :</label>
-                    <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="992" step="15">
-                    <vscode-button><img src="${content}/info.png"></vscode-button>
-                    <p><i>This is the target speed for relative and absolute move command. This is the maximum speed for run command</i></p>
-                </div>
-
-                <div class="flex-command">
-                    <label for="acc">Acceleration Speed (step/s²) :</label>
-                    <input id="acc" name="acc" type="number" min="0" max="59575" value="2008" step="15">
-                </div>
-
-                <div class="flex-command">
-                    <label for="dec">Deceleration Speed (step/s²) :</label>
-                    <input id="dec" name="dec" type="number" min="0" max="59590" value="2008" step="15">
-                </div>
-
-                <div class="flex-command">
-                    <label for="step-mode-step-sel">Step mode :</label>
-                    <select id="step-mode-step-sel" name="step-mode-step-sel">
-                        <option value="0">FULL</option>
-                        <option value="1">1/2</option>
-                        <option value="2">1/4</option>
-                        <option value="3">1/8</option>
-                        <option value="4" selected>1/16</option>
-                        <option value="5">1/32</option>
-                        <option value="6">1/64</option>
-                        <option value="7">1/128</option>
-                    </select>
-                </div>
-
-                <div class="flex-command">
-                    <label for="kval-hold">Kval hold :</label>
-                    <input id="kval-hold" name="kval-hold" type="number" min="1" max="99" value="16" step="1">
-                </div>
-
-                <div class="flex-command">
-                    <label for="kval-run">Kval run :</label>
-                    <input id="kval-run" name="kval-run" type="number" min="1" max="99" value="16" step="1">
-                </div>
-
-                <div class="flex-command">
-                    <label for="kval-acc">Kval acceleration :</label>
-                    <input id="kval-acc" name="kval-acc" type="number" min="1" max="99" value="16" step="1">
-                </div>
-
-                <div class="flex-command">
-                    <label for="kval-dec">Kval deceleration :</label>
-                    <input id="kval-dec" name="kval-dec" type="number" min="1" max="99" value="16" step="1">
-                </div>
-
-                <div class="flex-command">
-                    <label for="f-slp-acc">Back-EMF compensation :</label>
-                    <input id="f-slp-acc" name="f-slp-acc" type="number" min="0" max="0.4" value="0.06256" step="0.0015">
-                </div>
-
-                <div class="flex-command">
-                    <label for="ocd-th">Over-current threshold (A) :</label>
-                    <select id="ocd-th" name="ocd-th">
-                        <option value="0">2</option>
-                        <option value="1">4</option>
-                        <option value="2">6</option>
-                        <option value="3">8</option>
-                        <option value="4" selected>10</option>
-                        <option value="5">12</option>
-                        <option value="6">14</option>
-                        <option value="7">16</option>
-                        <option value="8">18</option>
-                        <option value="9">20</option>
-                        <option value="10">22</option>
-                        <option value="11">24</option>
-                        <option value="12">26</option>
-                        <option value="13">28</option>
-                        <option value="14">30</option>
-                    </select>
-                </div>
-
-                <div class="flex-command">
-                    <label for="stall-th">Stall threshold (A) :</label>
-                    <select id="stall-th" name="stall-th">
-                        <option value="0">0.7</option>
-                        <option value="1">1.3</option>
-                        <option value="2">2</option>
-                        <option value="3">2.7</option>
-                        <option value="4">3.4</option>
-                        <option value="5">4</option>
-                        <option value="6">4.7</option>
-                        <option value="7">5.4</option>
-                        <option value="8">6.1</option>
-                        <option value="9">6.8</option>
-                        <option value="10">7.4</option>
-                        <option value="11">8.1</option>
-                        <option value="12">8.8</option>
-                        <option value="13">9.5</option>
-                        <option value="14" selected>10.2</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="flex-block toggle-view" id="motor-switches-title" onclick="changeView(this)">
-                <h2 class="h2select">Configure limit-switch</h2>
-            </div>
-
-            <div class="flex-block" id="motor-switches">
-                <p><i>Configure limit swicthes below for testing purposer. Limit switches are resetted when the program restart.<br>
-                Limit switches have to be configured in the init sequence of our main program.</i></p>
-                <div>
-                    <div class="flex-command">
-                        <label for="limit-switch-motor">Motor :</label>
-                        <select id="limit-switch-motor" name="limit-switch-motor">
-                            <option value="1">Motor 1</option>
-                            <option value="2">Motor 2</option>
-                        </select>
-                        <label for="limit-switch-input">Input :</label>
-                        <select id="limit-switch-input" name="limit-switch-input">
-                            <option value="0" selected>---</option>
-                            <option value="1">DIN 1</option>
-                            <option value="2">DIN 2</option>
-                            <option value="3">DIN 3</option>
-                            <option value="4">DIN 4</option>
-                        </select>
-                        <label for="limit-switch-logic">Logic :</label>
-                        <select id="limit-switch-logic" name="limit-switch-logic">
-                            <option value="1" selected>Active HIGH</option>
-                            <option value="0">Active LOW</option>
-                        </select>
-                    </div>
-                    <div class="flex-command"></div>
-                        <vscode-button id="attach-limit-switch" onclick="setLimitSwitch(1)">Attach</vscode-button>
-                        <vscode-button id="dettach-limit-switch" onclick="setLimitSwitch(0)">Dettach</vscode-button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    
+    <vscode-divider></vscode-divider>
+    
+    <div class="flex-block toggle-view" onclick="changeView(this)">
+        <h2 class="h2select">Connexion</h2>
     </div>
 
+    <div class="flex-block" id="connexion">
+        <label for="port">Port :</label>
+        <select id="port" name="port"></select>
+        <vscode-button id="connect" onclick="connect()">Connect</vscode-button>
+        <vscode-button id="disconnect" onclick="disconnect()">Disconnect</vscode-button>
+        <vscode-button id="refresh" onclick="refresh()" title="Refresh">
+            <img src="${content}/refresh_logo.png" alt="Refresh">
+        </vscode-button>
+    </div>
+
+    <vscode-divider></vscode-divider>
+
+    <vscode-panels activeid="motor-move">
+
+        <vscode-panel-tab id="motor-move">TESTS MOTORS</vscode-panel-tab>
+        <vscode-panel-tab id="motor-switches">LIMIT SWITCHES</vscode-panel-tab>
+        <vscode-panel-tab id="motor-configuration">CONFIGURATION</vscode-panel-tab>
+
+        <vscode-panel-view id="motor-move">
+        
+            <p><i>In this mode, you can try your motor with several commands. It will help you to tune motor parameters. 
+                You can move the two motors at the sem time or move them one by one.
+                before issuing a "homing" command, you must set a limit-switch for the motor</i></p>
+            
+            <vscode-radio-group name="motor-move-selection">
+                <label slot="label">Select the motor to parameter</label>
+                <vscode-radio value="1">Motor 1</vscode-radio>
+                <vscode-radio value="2">Motor 2</vscode-radio>
+                <vscode-radio value="3">Motor 1+2</vscode-radio>
+            </vscode-radio-group>
+
+            <div class="flex-command">
+                <vscode-button onclick="cmdRun()">Run</vscode-button>
+                <label for="runSpeed">Speed :</label>
+                <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000" value="200">
+                <div class="dropdown-container">
+                    <label for="run-direction">Direction:</label>
+                    <vscode-dropdown id="run-direction" position="below">
+                        <vscode-option value="FORWARD">Forward</vscode-option>
+                        <vscode-option value="BACKWARD">Backward</vscode-option>
+                    </vscode-dropdown>
+                </div>
+            </div>
+            
+            <div class="flex-command">
+                <vscode-button onclick="cmdMoveRelative()">Move relative</vscode-button>
+                <label for="moveRelativeStep">Steps :</label>
+                <input id="moveRelativeStep" name="moveRelativeStep" type="number" min="-100000" max="100000" value="0">
+            </div>
+            
+            <div class="flex-command">
+                <vscode-button onclick="cmdMoveAbsolute()">Move absolute</vscode-button>
+                <label for="moveAbsoluteStep">Steps :</label>
+                <input id="moveAbsoluteStep" name="moveAbsoluteStep" type="number" min="0" max="100000" value="0">
+            </div>
+            
+            <div class="flex-command">
+                <vscode-button onclick="cmdHoming()">Homing</vscode-button>
+                <label for="homingSpeed">Speed :</label>
+                <input id="homingSpeed" name="homingSpeed" type="number" min="0" max="10000" value="200">
+            </div>
+            
+            <div class="flex-command">
+                <vscode-button onclick="cmdStop()" class="red-vscode-button">Stop</vscode-button>
+                <div class="dropdown-container">
+                    <label for="stop-mode">Mode:</label>
+                    <vscode-dropdown id="stop-mode" position="below">
+                        <vscode-option value="soft-hiz">Soft Hiz</vscode-option>
+                        <vscode-option value="soft-stop">Soft Stop</vscode-option>
+                        <vscode-option value="hard-hiz">Hard Hiz</vscode-option>
+                        <vscode-option value="hard-stop">Hard Stop</vscode-option>
+                    </vscode-dropdown>
+                </div>
+            </div>
+
+        </vscode-panel-view>
+
+         <vscode-panel-view id="motor-switches">
+            <p><i>Configure limit swicthes below for testing purposer. Limit switches are resetted when the program restart.<br>
+            Limit switches have to be configured in the init sequence of our main program.</i></p>
+            <div>
+                <div class="flex-command">
+                    <label for="limit-switch-motor">Motor :</label>
+                    <select id="limit-switch-motor" name="limit-switch-motor">
+                        <option value="1">Motor 1</option>
+                        <option value="2">Motor 2</option>
+                    </select>
+                    <label for="limit-switch-input">Input :</label>
+                    <select id="limit-switch-input" name="limit-switch-input">
+                        <option value="0" selected>---</option>
+                        <option value="1">DIN 1</option>
+                        <option value="2">DIN 2</option>
+                        <option value="3">DIN 3</option>
+                        <option value="4">DIN 4</option>
+                    </select>
+                    <label for="limit-switch-logic">Logic :</label>
+                    <select id="limit-switch-logic" name="limit-switch-logic">
+                        <option value="1" selected>Active HIGH</option>
+                        <option value="0">Active LOW</option>
+                    </select>
+                </div>
+                <div class="flex-command"></div>
+                    <vscode-button id="attach-limit-switch" onclick="setLimitSwitch(1)">Attach</vscode-button>
+                    <vscode-button id="dettach-limit-switch" onclick="setLimitSwitch(0)">Dettach</vscode-button>
+                </div>
+            </div>
+        </vscode-panel-view>
+
+        <vscode-panel-view id="motor-configuration"> 
+
+            <p>
+                <i>Configure your motor with the parameters below.
+                Your motor have to be in HiZ (see flags) toconfigure motor parameters.
+                The first time you configure a motor, we recommend to click the "Reset parameters" vscode-button to set all parameters to their default values.
+                If you want to change a parameter, you can change it and click the "Set parameters" vscode-button.
+                Before modifiyng a paramter, click the "Get parameters" vscode-button to get the current values.</i>
+            </p>
+
+            <vscode-radio-group name="motor-configure-selection">
+                <label slot="label">Select the motor to parameter</label>
+                <vscode-radio value="1">Motor 1</vscode-radio>
+                <vscode-radio value="2">Motor 2</vscode-radio>
+            </vscode-radio-group>
+
+            <div class="flex-command">
+                <vscode-button onclick="getParameters()">Get</vscode-button>
+                <vscode-button onclick="resetParameters()">Reset</vscode-button>
+                <vscode-button onclick="setParameters()">Set</vscode-button>
+                <vscode-button onclick="saveParameters()">Save to file</vscode-button>
+                <vscode-button onclick="loadParameters()">Load from file</vscode-button>
+            </div>
+
+            <div class="flex-command">
+                <label for="max-speed">Maximum Speed (step/s) :</label>
+                <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="992" step="15">
+                <vscode-button><img src="${content}/info.png"></vscode-button>
+                <p><i>This is the target speed for relative and absolute move command. This is the maximum speed for run command</i></p>
+            </div>
+
+            <div class="flex-command">
+                <label for="acc">Acceleration Speed (step/s²) :</label>
+                <input id="acc" name="acc" type="number" min="0" max="59575" value="2008" step="15">
+            </div>
+
+            <div class="flex-command">
+                <label for="dec">Deceleration Speed (step/s²) :</label>
+                <input id="dec" name="dec" type="number" min="0" max="59590" value="2008" step="15">
+            </div>
+
+            <div class="flex-command">
+                <label for="step-mode-step-sel">Step mode :</label>
+                <select id="step-mode-step-sel" name="step-mode-step-sel">
+                    <option value="0">FULL</option>
+                    <option value="1">1/2</option>
+                    <option value="2">1/4</option>
+                    <option value="3">1/8</option>
+                    <option value="4" selected>1/16</option>
+                    <option value="5">1/32</option>
+                    <option value="6">1/64</option>
+                    <option value="7">1/128</option>
+                </select>
+            </div>
+
+            <div class="flex-command">
+                <label for="kval-hold">Kval hold :</label>
+                <input id="kval-hold" name="kval-hold" type="number" min="1" max="99" value="16" step="1">
+            </div>
+
+            <div class="flex-command">
+                <label for="kval-run">Kval run :</label>
+                <input id="kval-run" name="kval-run" type="number" min="1" max="99" value="16" step="1">
+            </div>
+
+            <div class="flex-command">
+                <label for="kval-acc">Kval acceleration :</label>
+                <input id="kval-acc" name="kval-acc" type="number" min="1" max="99" value="16" step="1">
+            </div>
+
+            <div class="flex-command">
+                <label for="kval-dec">Kval deceleration :</label>
+                <input id="kval-dec" name="kval-dec" type="number" min="1" max="99" value="16" step="1">
+            </div>
+
+            <div class="flex-command">
+                <label for="f-slp-acc">Back-EMF compensation :</label>
+                <input id="f-slp-acc" name="f-slp-acc" type="number" min="0" max="0.4" value="0.06256" step="0.0015">
+            </div>
+
+            <div class="flex-command">
+                <label for="ocd-th">Over-current threshold (A) :</label>
+                <select id="ocd-th" name="ocd-th">
+                    <option value="0">2</option>
+                    <option value="1">4</option>
+                    <option value="2">6</option>
+                    <option value="3">8</option>
+                    <option value="4" selected>10</option>
+                    <option value="5">12</option>
+                    <option value="6">14</option>
+                    <option value="7">16</option>
+                    <option value="8">18</option>
+                    <option value="9">20</option>
+                    <option value="10">22</option>
+                    <option value="11">24</option>
+                    <option value="12">26</option>
+                    <option value="13">28</option>
+                    <option value="14">30</option>
+                </select>
+            </div>
+
+            <div class="flex-command">
+                <label for="stall-th">Stall threshold (A) :</label>
+                <select id="stall-th" name="stall-th">
+                    <option value="0">0.7</option>
+                    <option value="1">1.3</option>
+                    <option value="2">2</option>
+                    <option value="3">2.7</option>
+                    <option value="4">3.4</option>
+                    <option value="5">4</option>
+                    <option value="6">4.7</option>
+                    <option value="7">5.4</option>
+                    <option value="8">6.1</option>
+                    <option value="9">6.8</option>
+                    <option value="10">7.4</option>
+                    <option value="11">8.1</option>
+                    <option value="12">8.8</option>
+                    <option value="13">9.5</option>
+                    <option value="14" selected>10.2</option>
+                </select>
+            </div>
+        </vscode-panel-view>
+
+    </vscode-panels>
+    
     <div class="side-nav">
         <div class="flex-block" id="motor-status">
             <h2>Motors status</h2>
             <vscode-button onclick="getStatus()">Get status</vscode-button>
             <vscode-button onclick="clearStatus()">Clear status</vscode-button>
-            <div class="large-width">
-                <input type="checkbox" id="autoPoolStatus" name="autoPoolStatus" checked>
-                <label for="autoPoolStatus">Auto pool status</label>
-            </div>
+            <vscode-checkbox id="autoPoolStatus" checked>Auto pool status</vscode-checkbox>
             <div id="statusList">
                 <table>
                     <tr>
@@ -330,48 +327,6 @@
 </body>
 
 <script type="text/javascript">
-
-    /* Page dynamix content display */
-
-    function changeView(element) {
-        elementChild = element.firstElementChild;
-        if (elementChild.classList.contains("h2select")) {
-            elementChild.classList.remove("h2select");
-            elementChild.classList.add("h2notselect");
-            element.nextElementSibling.style.display = "none";
-        } else {
-            elementChild.classList.remove("h2notselect");
-            elementChild.classList.add("h2select");
-            element.nextElementSibling.style.display = "block";
-        }
-    }
-
-    function hideContentOneByOne() {
-        setTimeout(() => {
-            changeView(document.getElementById("motor-move-title"));
-        }, 500);
-        setTimeout(() => {
-            changeView(document.getElementById("motor-configuration-title"));
-        }, 500);
-        setTimeout(() => {
-            changeView(document.getElementById("motor-switches-title"));
-        }, 500);
-    }
-
-    window.addEventListener('DOMContentLoaded', hideContentOneByOne);
-
-    function adjustSideNavTop() {
-        var presentation = document.querySelector('.presentation-text');
-        var sideNav = document.querySelector('.side-nav');
-        if (presentation && sideNav) {
-            var rect = presentation.getBoundingClientRect();
-            sideNav.style.top = (rect.bottom >0?rect.bottom:0) + 'px';
-        }
-    }
-
-    window.addEventListener('DOMContentLoaded', adjustSideNavTop);
-    window.addEventListener('resize', adjustSideNavTop);
-    window.addEventListener('scroll', adjustSideNavTop);
 
     /* Communication with extension */
 
@@ -600,25 +555,25 @@
     
     function cmdRun() {
         let motor = document.getElementsByName("motor-move-selection").value;
-        let direction = document.getElementById('runDirection').value;
-        let speed = document.getElementById('runSpeed').value;
+        let direction = document.getElementById('run-direction').value;
+        let speed = document.getElementById('run-speed').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
-                args: ['stepper-run', '1', direction==="FORWARD"?"1":"0", speed]
+                args: ['stepper-run', '1', direction==="backward"?"1":"0", speed]
             });
         }
         if (motor === '2' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
-                args: ['stepper-run', '2', direction==="FORWARD"?"1":"0", speed]
+                args: ['stepper-run', '2', direction==="forward"?"1":"0", speed]
             });
         }
     }
     
     function cmdMoveRelative() {
         let motor = document.getElementsByName("motor-move-selection").value;
-        let steps = document.getElementById('moveRelativeStep').value;
+        let steps = document.getElementById('move-relative-step').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
@@ -635,7 +590,7 @@
     
     function cmdMoveAbsolute() {
         let motor = document.getElementsByName("motor-move-selection").value;
-        let steps = document.getElementById('moveAbsoluteStep').value;
+        let steps = document.getElementById('move-absolute-step').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
@@ -652,7 +607,7 @@
 
     function cmdHoming() {
         let motor = document.getElementsByName("motor-move-selection").value;
-        let speed = document.getElementById('homingSpeed').value;
+        let speed = document.getElementById('homing-speed').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
@@ -669,7 +624,7 @@
     
     function cmdStop() {
         let motor = document.getElementsByName("motor-move-selection").value;
-        let mode = document.getElementById('stopMode').value;
+        let mode = document.getElementById('stop-mode').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',

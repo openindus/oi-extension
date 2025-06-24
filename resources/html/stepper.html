@@ -49,48 +49,45 @@
                     You can move the two motors at the sem time or move them one by one.
                     before issuing a "homing" command, you must set a limit-switch for the motor</i></p>
                 
-                <div class="motor-selection">
-                    <input type="radio" id="motor1" name="motor" value="1" checked>
-                    <label for="motor1">Motor 1</label>
-                    <input type="radio" id="motor2" name="motor" value="2">
-                    <label for="motor2">Motor 2</label>
-                    <input type="radio" id="motor12" name="motor" value="3">
-                    <label for="motor2">Motor 1+2</label>
+                <div>
+                    <label><input type="radio" name="motor-move-selection" value="1" checked>Motor 1</label>
+                    <label><input type="radio" name="motor-move-selection" value="2">Motor 2</label>
+                    <label><input type="radio" name="motor-move-selection" value="3">Motor 1+2</label>
                 </div>
 
                 <div class="flex-command">
                     <button onclick="cmdRun()">Run</button>
-                    <label for="runSpeed">Speed :</label>
-                    <input id="runSpeed" name="runSpeed" type="number" min="0" max="10000" value="200">
-                    <label for="runDirection">Direction :</label>
-                    <select id="runDirection" name="runDirection" list="direction" value="FORWARD">
-                        <option value="FORWARD">Forward</option>
-                        <option value="BACKWARD">Backward</option>
+                    <label for="run-speed">Speed :</label>
+                    <input id="run-speed" name="run-speed" type="number" min="0" max="10000" value="200">
+                    <label for="run-direction">Direction :</label>
+                    <select id="run-direction" name="run-direction" list="direction" value="forward">
+                        <option value="forward">Forward</option>
+                        <option value="backward">Backward</option>
                     </select>
                 </div>
                 
                 <div class="flex-command">
                     <button onclick="cmdMoveRelative()">Move relative</button>
-                    <label for="moveRelativeStep">Steps :</label>
-                    <input id="moveRelativeStep" name="moveRelativeStep" type="number" min="-100000" max="100000" value="0">
+                    <label for="move-relative-step">Steps :</label>
+                    <input id="move-relative-step" name="move-relative-step" type="number" min="-100000" max="100000" value="0">
                 </div>
                 
                 <div class="flex-command">
                     <button onclick="cmdMoveAbsolute()">Move absolute</button>
-                    <label for="moveAbsoluteStep">Steps :</label>
-                    <input id="moveAbsoluteStep" name="moveAbsoluteStep" type="number" min="0" max="100000" value="0">
+                    <label for="move-absolute-step">Steps :</label>
+                    <input id="move-absolute-step" name="move-absolute-step" type="number" min="0" max="100000" value="0">
                 </div>
                 
                 <div class="flex-command">
                     <button onclick="cmdHoming()">Homing</button>
-                    <label for="homingSpeed">Speed :</label>
-                    <input id="homingSpeed" name="homingSpeed" type="number" min="0" max="10000" value="200">
+                    <label for="homing-speed">Speed :</label>
+                    <input id="homing-speed" name="homing-speed" type="number" min="0" max="10000" value="200">
                 </div>
                 
                 <div class="flex-command">
                     <button onclick="cmdStop()" class="red-button">Stop</button>
-                    <label for="stopMode">Mode :</label>
-                    <select id="stopMode" name="stopMode" list="mode" value="soft-hiz">
+                    <label for="stop-mode">Mode :</label>
+                    <select id="stop-mode" name="stop-mode" list="mode" value="soft-hiz">
                         <option value="soft-hiz">Soft Hiz</option>
                         <option value="soft-stop">Soft Stop</option>
                         <option value="hard-hiz">Hard Hiz</option>
@@ -113,6 +110,11 @@
                     Before modifiyng a paramter, click the "Get parameters" button to get the current values.</i>
                 </p>
 
+                <div>
+                    <label><input type="radio" name="motor-configuration-selection" value="1" checked>Motor 1</label>
+                    <label><input type="radio" name="motor-configuration-selection" value="2">Motor 2</label>
+                </div>
+
                 <div class="flex-command">
                     <button onclick="getParameters()">Get</button>
                     <button onclick="resetParameters()">Reset</button>
@@ -124,7 +126,6 @@
                 <div class="flex-command">
                     <label for="max-speed">Maximum Speed (step/s) :</label>
                     <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="992" step="15">
-                    <button><img src="${content}/info.png"></button>
                     <p><i>This is the target speed for relative and absolute move command. This is the maximum speed for run command</i></p>
                 </div>
 
@@ -269,53 +270,53 @@
             <div id="statusList">
                 <table>
                     <tr>
-                        <th></th>
                         <th>Motor 1</th>
+                        <th></th>
                         <th>Motor 2</th>
                     </tr>
                     <tr>
-                        <td class="right-align">Command error</td>
                         <td><img id="alarm-cmd-error-1" src="${content}/circle_empty.png"></td>
+                        <td>Command error</td>
                         <td><img id="alarm-cmd-error-2" src="${content}/circle_empty.png"></td>
                     </tr>
                     <tr>
-                        <td class="right-align">Undervoltage</td>
                         <td><img id="alarm-uvlo-1" src="${content}/circle_empty.png"></td>
+                        <td>Undervoltage</td>
                         <td><img id="alarm-uvlo-2" src="${content}/circle_empty.png"></td>
                     </tr>
                     <tr>
-                        <td class="right-align">Thermal Shutdown</td>
                         <td><img id="alarm-thermal-shutdown-1" src="${content}/circle_empty.png"></td>
+                        <td>Thermal Shutdown</td>
                         <td><img id="alarm-thermal-shutdown-2" src="${content}/circle_empty.png"></td>
                     </tr>
                     <tr>
-                        <td class="right-align">Thermal warning</td>
                         <td><img id="alarm-thermal-warning-1" src="${content}/circle_empty.png"></td>
+                        <td>Thermal warning</td>
                         <td><img id="alarm-thermal-warning-2" src="${content}/circle_empty.png"></td>
                     </tr>
                     <tr>
-                        <td class="right-align">Overcurrent</td>
                         <td><img id="alarm-ocd-1" src="${content}/circle_empty.png"></td>
+                        <td>Overcurrent</td>
                         <td><img id="alarm-ocd-2" src="${content}/circle_empty.png"></td>
                     </tr>
                     <tr>
-                        <td class="right-align">Stall</td>
                         <td><img id="alarm-stall-1" src="${content}/circle_empty.png"></td>
+                        <td>Stall</td>
                         <td><img id="alarm-stall-2" src="${content}/circle_empty.png"></td>
                     </tr>
                     <tr>
-                        <td class="right-align">Motor runnning</td>
                         <td><img id="alarm-motor-running-1" src="${content}/circle_empty.png"></td>
+                        <td>Motor runnning</td>
                         <td><img id="alarm-motor-running-2" src="${content}/circle_empty.png"></td>
                     </tr>
                     <tr>
-                        <td class="right-align">Busy</td>
                         <td><img id="alarm-busy-1" src="${content}/circle_empty.png"></td>
+                        <td>Busy</td>
                         <td><img id="alarm-busy-2" src="${content}/circle_empty.png"></td>
                     </tr>
                     <tr>
-                        <td class="right-align">HiZ</td>
                         <td><img id="alarm-hiz-1" src="${content}/circle_empty.png"></td>
+                        <td>HiZ</td>
                         <td><img id="alarm-hiz-2" src="${content}/circle_empty.png"></td>
                     </tr>
                 </table>
@@ -325,13 +326,6 @@
 </body>
 
 <script type="text/javascript">
-    
-    /* VSCode theme */
-    
-    import { provideVSCodeDesignSystem, vsCodeButton } from "@vscode/webview-ui-toolkit";
-
-    // Init webview-ui-toolkit
-	provideVSCodeDesignSystem().register(vsCodeButton());
     
     /* Page dynamix content display */
 
@@ -354,10 +348,10 @@
         }, 500);
         setTimeout(() => {
             changeView(document.getElementById("motor-configuration-title"));
-        }, 500);
+        }, 700);
         setTimeout(() => {
             changeView(document.getElementById("motor-switches-title"));
-        }, 500);
+        }, 900);
     }
 
     window.addEventListener('DOMContentLoaded', hideContentOneByOne);
@@ -387,10 +381,6 @@
 
     // By default disconnect is hidden
     document.getElementById("disconnect").style.display = "none";
-
-    // By default there is only on limit switch to homing command
-    document.getElementById("limit-switch-2").style.display = "none";
-    document.getElementById("limit-switch-2-label").style.display = "none";
 
     // When autoPoolStatus is check, start autopooling
     document.getElementById("autoPoolStatus").addEventListener('change', function() {
@@ -547,7 +537,7 @@
     }
 
     function getParameters() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let motor = document.getElementsByName('motor-configuration-selection')[0].value
         vscode.postMessage({
             command: 'get-parameters',
             args: [motor]
@@ -555,7 +545,7 @@
     }
 
     function setParameters() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let motor = document.getElementsByName('motor-configuration-selection')[0].value
 
         paramList['max-speed'] = document.getElementById("max-speed").value,
         paramList['fs-spd'] = document.getElementById("max-speed").value, // This a hidden parameter which depends on max-speed
@@ -579,7 +569,7 @@
     }
 
     function resetParameters() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
+        let motor = document.getElementsByName('motor-configuration-selection')[0].value
         vscode.postMessage({
             command: 'reset-parameters',
             args: [motor]
@@ -601,26 +591,26 @@
     }
     
     function cmdRun() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
-        let direction = document.getElementById('runDirection').value;
-        let speed = document.getElementById('runSpeed').value;
+        let motor = document.getElementsByName('motor-move-selection')[0].value
+        let direction = document.getElementById('run-direction').value;
+        let speed = document.getElementById('run-speed').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
-                args: ['stepper-run', '1', direction==="FORWARD"?"1":"0", speed]
+                args: ['stepper-run', '1', direction==="forward"?"1":"0", speed]
             });
         }
         if (motor === '2' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
-                args: ['stepper-run', '2', direction==="FORWARD"?"1":"0", speed]
+                args: ['stepper-run', '2', direction==="forward"?"1":"0", speed]
             });
         }
     }
     
     function cmdMoveRelative() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
-        let steps = document.getElementById('moveRelativeStep').value;
+        let motor = document.getElementsByName('motor-move-selection')[0].value
+        let steps = document.getElementById('move-relative-step').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
@@ -636,8 +626,8 @@
     }
     
     function cmdMoveAbsolute() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
-        let steps = document.getElementById('moveAbsoluteStep').value;
+        let motor = document.getElementsByName('motor-move-selection')[0].value
+        let steps = document.getElementById('move-absolute-step').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
@@ -653,26 +643,8 @@
     }
 
     function cmdHoming() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
-        let speed = document.getElementById('homingSpeed').value;
-        if (motor === '1' || motor === '2') {
-            let limitSwitch = document.getElementById('limit-switch-1').value;
-            vscode.postMessage({
-                command: 'cmd',
-                args: ['stepper-attach-limit-switch', motor, limitSwitch, '1'] // TODO : add possibility to change limit switch level
-            })
-        } else {
-            let limitSwitch1 = document.getElementById('limit-switch-1').value;
-            let limitSwitch2 = document.getElementById('limit-switch-2').value;
-            vscode.postMessage({
-                command: 'cmd',
-                args: ['stepper-attach-limit-switch', '1', limitSwitch1, '1'] // TODO : add possibility to change limit switch level
-            });
-            vscode.postMessage({
-                command: 'cmd',
-                args: ['stepper-attach-limit-switch', '2', limitSwitch2, '1'] // TODO : add possibility to change limit switch level
-            });
-        }
+        let motor = document.getElementsByName('motor-move-selection')[0].value
+        let speed = document.getElementById('homing-speed').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
@@ -688,8 +660,8 @@
     }
     
     function cmdStop() {
-        let motor = document.querySelector('input[name="motor"]:checked').value;
-        let mode = document.getElementById('stopMode').value;
+        let motor = document.getElementsByName('motor-move-selection')[0].value
+        let mode = document.getElementById('stop-mode').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
