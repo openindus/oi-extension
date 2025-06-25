@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.1]
+
+- Improve stability
+
 ## [1.2.0]
 
 - Add online binaries download

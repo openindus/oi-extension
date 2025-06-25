@@ -149,6 +149,7 @@ export async function getDeviceInfoList(context: vscode.ExtensionContext, token:
                 await serial.disconnect();
             }
             catch (error) {
+                await serial.disconnect();
                 moduleInfoList.push({port: port.path, type: "undefined", serialNum: "undefined", hardwareVar: "undefined", versionSw: "undefined", imgName: "", caseName: ""});
             }
         }
