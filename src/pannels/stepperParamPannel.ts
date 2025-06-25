@@ -6,6 +6,7 @@ import {Mutex} from 'async-mutex';
 import { OIStepper } from "../com/OIStepper";
 import { logger } from "../extension";
 import { ModuleInfo } from '../utils';
+import { setTimeout } from 'timers-promises';
 
 
 var currentPanel:vscode.WebviewPanel = undefined;
@@ -21,7 +22,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
     }
 
     // Otherwise, create a new panel.
-    const panel = vscode.window.createWebviewPanel(
+    const pannel = vscode.window.createWebviewPanel(
 		'OIStepperConfig',
 		'OIStepperConfig',
 		vscode.ViewColumn.One,
@@ -31,9 +32,9 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 		}
 	);
 
-    currentPanel = panel;
+    currentPanel = pannel;
 
-	const contentUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'resources', 'html', 'content'));
+	const contentUri = pannel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'resources', 'html', 'content'));
 
 	fs.readFile(path.join(context.extensionPath, 'resources', 'html', 'stepper.html'), (err,data) => {
 		if (err) {
@@ -41,7 +42,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 		} else {
 			let rawHTML = data.toString();
 			rawHTML = rawHTML.replaceAll('${content}', contentUri.toString());
-			panel.webview.html = rawHTML;
+			pannel.webview.html = rawHTML;
 		}
 	});
 
@@ -49,7 +50,170 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 	var lastCommand = '';
 	var normalDisconnect = false; // Set this var to true when the disconnection is wanted
 
-	panel.webview.onDidReceiveMessage( 
+	// Handler functions
+	async function handleConnect(message: any) {
+		if (stepper?.isOpen) {
+			pannel.webview.postMessage({command: message.command, response: "error: already connected"});
+			return;
+		}
+		// Recreate the object if data where given
+		if ((stepper === undefined) || (message?.portName !== undefined)) {
+			stepper = undefined;
+			stepper = new OIStepper(message.portName, message?.serialNum, message?.id, message?.onBus);
+		}
+		await stepper.connect().then((response) => {
+			normalDisconnect = false;
+			pannel.webview.postMessage({command: message.command, response: response});
+		}).catch((error) => {
+			vscode.window.showErrorMessage("Error while connecting to OIStepper (" + message.portName + "): " + error);
+		});
+	}
+
+	async function handleDisconnect(message: any) {
+		await stepper?.disconnect().then((response) => {
+			normalDisconnect = true;
+			pannel.webview.postMessage({command: message.command, response: response});
+		}).catch((error) => {
+			vscode.window.showErrorMessage("Error while disconnecting from OIStepper: " + error);
+			pannel.webview.postMessage({command: message.command, response: false});
+		});
+	}
+
+	async function handleList(message: any) {
+		await vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: `Getting OIStepper device list...`,
+			cancellable: false
+		}, async () => {
+			await OIStepper.listStepper().then((response) => {
+				pannel.webview.postMessage({command: message.command, response: response});
+			}).catch((error) => {
+				vscode.window.showErrorMessage("Cannot get list of connected device: " + error);
+			});
+		});
+	}
+
+	async function handleCmd(message: any) {
+		await stepper?.cmd(message.args).then((response) => {
+			pannel.webview.postMessage({command: message.command, response: response});
+		}).catch((error) => {
+			if (!normalDisconnect) {
+				vscode.window.showErrorMessage("Cannot send command (" + message.args.join(' ') + "): " + error);						
+				if (error.includes("disconnected")) {
+					pannel.webview.postMessage({command: 'disconnect', response: true});
+				}
+			}
+		});
+	}
+
+	async function handleGetParameters(message: any) {
+		await vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: `Getting OIStepper parameters...`,
+			cancellable: false
+		}, async () => {
+			await stepper?.getParam(message.args[0]).then((response) => {
+				pannel.webview.postMessage({ command: message.command, response: response }).then(() => {
+					vscode.window.showInformationMessage("Get parameter successfully on OIStepper.");
+				});
+			}).catch((error) => {
+				if (!normalDisconnect) {
+					vscode.window.showErrorMessage("Error while getting parameters on OIStepper: " + error);						
+					if (error.includes("disconnected")) {
+						pannel.webview.postMessage({command: 'disconnect', response: true});
+					}
+				}
+			});
+		});
+	}
+
+	async function handleSetParameters(message: any) {
+		await vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: `Setting OIStepper parameters...`,
+			cancellable: false
+		}, async () => {
+			await stepper?.setParam(message.args[0], message.args[1]).then(() => {
+				pannel.webview.postMessage({ command: message.command, response: true }).then(() => {
+					vscode.window.showInformationMessage("Parameters set successfully on OIStepper.");
+				});
+			}).catch((error) => {
+				if (!normalDisconnect) {
+					vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);						
+					if (error.includes("disconnected")) {
+						pannel.webview.postMessage({command: 'disconnect', response: true});
+					}
+				}
+			});
+		});
+	}
+
+	async function handleResetParameters(message: any) {
+		await vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: `Resetting OIStepper parameters...`,
+			cancellable: false
+		}, async () => {
+			await stepper?.resetParam(message.args[0]).then(() => {
+				pannel.webview.postMessage({ command: message.command, response: true }).then(() => {
+					vscode.window.showInformationMessage("Parameters where resetted successfully on OIStepper. Reading parameters again to get the default values.");
+				});
+			}).catch((error) => {
+				if (!normalDisconnect) {
+					vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);						
+					if (error.includes("disconnected")) {
+						pannel.webview.postMessage({command: 'disconnect', response: true});
+					}
+				}
+			});
+		});
+	}
+
+	async function handleSaveParameters(message: any) {
+		await vscode.window.showSaveDialog().then((fileUri) => {
+			if (fileUri.fsPath !== undefined) {
+				fs.writeFileSync(fileUri.fsPath, JSON.stringify(message.args[0], null, 2));
+			}
+		});
+	}
+
+	async function handleLoadParameters(message: any) {
+		await vscode.window.showOpenDialog().then((fileUri) => {
+			if (fileUri && fileUri[0]) {
+				const filePath = fileUri[0].fsPath;
+				fs.readFile(filePath, 'utf8', (err, data) => {
+					if (err) {
+						vscode.window.showErrorMessage("Error reading file: " + err.message);
+					} else {
+						try {
+							const parameters = JSON.parse(data);
+							pannel.webview.postMessage({ command: message.command, response: parameters }).then(() => {
+								vscode.window.showInformationMessage("Parameters where loaded successfully from " + filePath);
+							});
+						} catch (parseError) {
+							vscode.window.showErrorMessage("Error parsing JSON: " + parseError.message);
+						}
+					}
+				});
+			}
+		});
+	}
+
+	async function handleGetStatus(message: any) {
+		await stepper?.getStatus().then((response) => {
+			pannel.webview.postMessage({command: message.command, response: response});
+		}).catch((error) => {
+			if (!normalDisconnect) {
+				vscode.window.showErrorMessage("Cannot get status from OIStepper: " + error);
+				if (error.includes("disconnected")) {
+					pannel.webview.postMessage({command: 'disconnect', response: true});
+				}
+			}
+		});
+	}
+
+
+	pannel.webview.onDidReceiveMessage( 
 		async (message) => {
 			// If mutex is locked and message is a "get-status" or a message already sent (multiple user clicks), ignore the message
 			if (receivedMessageMutex.isLocked()) {
@@ -63,146 +227,34 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 			await receivedMessageMutex.acquire();
 			switch (message.command) {
 				case 'connect':
-					if (stepper?.isOpen) {
-						panel.webview.postMessage({command: message.command, response: "error: already connected"});
-						break;
-					}
-					stepper = new OIStepper(message.portName, message?.serialNum, message?.id, message?.onBus);
-					await stepper.connect().then((response) => {
-						normalDisconnect = false;
-						panel.webview.postMessage({command: message.command, response: response});
-					}).catch((error) => {
-						vscode.window.showErrorMessage("Error while connecting to OIStepper (" + message.portName + "): " + error);
-					});
+					await handleConnect(message);
 					break;
 				case 'disconnect':
-					await stepper?.disconnect().then((response) => {
-						stepper = undefined;
-						normalDisconnect = true;
-						panel.webview.postMessage({command: message.command, response: response});
-					}).catch((error) => {
-						vscode.window.showErrorMessage("Error while disconnecting  from OIStepper: " + error);
-						panel.webview.postMessage({command: message.command, response: false}); // Send a message to display "connect button again"	
-					});
+					await handleDisconnect(message);
 					break;
 				case 'list':
-					await OIStepper.listStepper().then((response) => {
-						panel.webview.postMessage({command: message.command, response: response});
-					}).catch((error) => {
-						vscode.window.showErrorMessage("Cannot get list of connected device: " + error);
-					});
+					await handleList(message);
 					break;
 				case 'cmd':
-					await stepper?.cmd(message.args).then((response) => {
-						panel.webview.postMessage({command: message.command, response: response});
-					}).catch((error) => {
-						if (!normalDisconnect) {
-							vscode.window.showErrorMessage("Cannot send command (" + message.args.join(' ') + "): " + error);						
-							if (error.includes("disconnected")) {
-								panel.webview.postMessage({command: 'disconnect', response: true});
-							}
-						}
-					});
+					await handleCmd(message);
 					break;
 				case 'get-parameters':
-					await vscode.window.withProgress({
-						location: vscode.ProgressLocation.Notification,
-						title: `Getting OIStepper parameters...`,
-						cancellable: false
-					}, async () => {
-						await stepper?.getParam(message.args[0]).then((response) => {
-							panel.webview.postMessage({ command: message.command, response: response }).then(() => {
-								vscode.window.showInformationMessage("Get parameter successfully on OIStepper.");
-							});
-						}).catch((error) => {
-							if (!normalDisconnect) {
-								vscode.window.showErrorMessage("Error while getting parameters on OIStepper: " + error);						
-								if (error.includes("disconnected")) {
-									panel.webview.postMessage({command: 'disconnect', response: true});
-								}
-							}
-						});
-					});
+					await handleGetParameters(message);
 					break;
 				case 'set-parameters':
-					await vscode.window.withProgress({
-						location: vscode.ProgressLocation.Notification,
-						title: `Setting OIStepper parameters...`,
-						cancellable: false
-					}, async () => {
-						await stepper?.setParam(message.args[0], message.args[1]).then(() => {
-							panel.webview.postMessage({ command: message.command, response: true }).then(() => {
-								vscode.window.showInformationMessage("Parameters set successfully on OIStepper.");
-							});
-						}).catch((error) => {
-							if (!normalDisconnect) {
-								vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);						
-								if (error.includes("disconnected")) {
-									panel.webview.postMessage({command: 'disconnect', response: true});
-								}
-							}
-						});
-					});
+					await handleSetParameters(message);
 					break;
 				case 'reset-parameters':
-					await vscode.window.withProgress({
-						location: vscode.ProgressLocation.Notification,
-						title: `Resetting OIStepper parameters...`,
-						cancellable: false
-					}, async () => {
-						await stepper?.resetParam(message.args[0]).then(() => {
-							panel.webview.postMessage({ command: message.command, response: true }).then(() => {
-								vscode.window.showInformationMessage("Parameters where resetted successfully on OIStepper. Reading parameters again to get the default values.");
-							});
-						}).catch((error) => {
-							if (!normalDisconnect) {
-								vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);						
-								if (error.includes("disconnected")) {
-									panel.webview.postMessage({command: 'disconnect', response: true});
-								}
-							}
-						});
-					});
+					await handleResetParameters(message);
 					break;
 				case 'save-parameters':
-					await vscode.window.showSaveDialog().then((fileUri) => {
-						if (fileUri.fsPath !== undefined) {
-							fs.writeFileSync(fileUri.fsPath, JSON.stringify(message.args[0], null, 2));
-						}
-					});
+					await handleSaveParameters(message);
 					break;
 				case 'load-parameters':
-					await vscode.window.showOpenDialog().then((fileUri) => {
-						if (fileUri && fileUri[0]) {
-							const filePath = fileUri[0].fsPath;
-							fs.readFile(filePath, 'utf8', (err, data) => {
-								if (err) {
-									vscode.window.showErrorMessage("Error reading file: " + err.message);
-								} else {
-									try {
-										const parameters = JSON.parse(data);
-										panel.webview.postMessage({ command: message.command, response: parameters }).then(() => {
-											vscode.window.showInformationMessage("Parameters where loaded successfully from " + filePath);
-										});
-									} catch (parseError) {
-										vscode.window.showErrorMessage("Error parsing JSON: " + parseError.message);
-									}
-								}
-							});
-						}
-					});
+					await handleLoadParameters(message);
 					break;
 				case 'get-status':
-					await stepper?.getStatus().then((response) => {
-						panel.webview.postMessage({command: message.command, response: response});
-					}).catch((error) => {
-						if (!normalDisconnect) {
-							vscode.window.showErrorMessage("Cannot get status from OIStepper: " + error);
-							if (error.includes("disconnected")) {
-								panel.webview.postMessage({command: 'disconnect', response: true});
-							}
-						}
-					});
+					await handleGetStatus(message);
 					break;
 				default:
 					break;
@@ -213,53 +265,31 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
         context.subscriptions
 	);
 
-	panel.onDidChangeViewState((e) => {
-		if (!panel.visible && stepper?.isOpen && currentPanel !== undefined) {
-			receivedMessageMutex.runExclusive(() => {
-				stepper.disconnect().then(() => {
-					logger.info("Stepper disconnecting because pannel is not visible anymore.");
-					panel.webview.postMessage({command: 'disconnect', response: true});
-					normalDisconnect = true;
-				}).catch((error) => {
-					logger.error("Error while disconnecting stepper: " + error);
-				});
-			});
-		} else if (panel.visible && stepper !== undefined) {
-			receivedMessageMutex.runExclusive(() => {
-				stepper.connect().then((response) => {
-					logger.info("Stepper reconnecting because pannel is visible.");
-					panel.webview.postMessage({command: 'connect', response: response});
-					normalDisconnect = false;
-				}).catch((error) => {
-					vscode.window.showErrorMessage("Error while reconnecting to OIStepper (" + stepper.port + "): " + error);
-				});
-			});
+	pannel.onDidChangeViewState((e) => {
+		if (!pannel.visible) {
+			handleDisconnect({command: 'disconnect'});
+		} else if (pannel.visible && stepper !== undefined) {
+			handleConnect({command: 'connect'});
 		}
 	});
 
-	panel.onDidDispose(() => {
-		receivedMessageMutex.runExclusive(() => {
-			currentPanel = undefined;
-			stepper?.disconnect();
-			stepper = undefined;
-			normalDisconnect = true;
-		});
+	pannel.onDidDispose(async () => {
+		await setTimeout(200); // Wait for last message to be sent
+		currentPanel = undefined;
+		stepper = undefined;
 	});
 
 	// If stepper info where given, create the stepper object
 	if (portName && stepperModuleInfo) {
-		stepper = new OIStepper(portName, stepperModuleInfo.serialNum, "0", false);
-		await stepper.connect().then((response) => {
-			panel.webview.postMessage({command: 'connect', response: response});
-		}).catch((error) => {
-			vscode.window.showErrorMessage("Error while connecting to OIStepper (" + portName + "): " + error);
+		handleConnect({
+			command: 'connect',
+			portName: portName,
+            serialNum: stepperModuleInfo.serialNum,
+            id: undefined,
+			onBus: false
 		});
 	} else {
 		// Do an automatic refresh
-		await OIStepper.listStepper().then((response) => {
-			panel.webview.postMessage({command: 'list', response: response});
-		}).catch((error) => {
-			vscode.window.showErrorMessage("Cannot get list of connected device: " + error);
-		});
+		handleList({command: 'list'});
 	}	
 }
