@@ -1,5 +1,15 @@
 # Change Log
 
+## [1.2.0]
+
+- Add online binaries download
+- Add stepper tool (beta)
+
+## [1.1.4]
+
+- Add 1.6.1 binaries
+- Add CMakeLists to created projects
+
 ## [1.1.3]
 
 - Add 1.4.0 binaries

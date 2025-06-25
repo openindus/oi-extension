@@ -2,9 +2,10 @@ import * as vscode from 'vscode';
 import { OIAccessTreeProvider } from './customTreeView';
 import { createProject } from './createProject';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
-import { getSystemInfo } from './getSystemInfo';
-import { ModuleInfo, execShell, getPlatformIOPythonPath } from './utils';
+import { getSystemInfo } from './panels/systemInfoPannel';
+import { ModuleInfo, execShell, getPlatformIOPythonPath, downloadNewFirmwareOnline } from './utils';
 import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
+import { startStepperPanelConfig } from './panels/stepperParamPannel';
 
 const pioNodeHelpers = require('platformio-node-helpers');
 
@@ -13,7 +14,12 @@ var commandReadyGetSystemInfo: Boolean = true;
 var commandReadyFlashDeviceFirmware: Boolean = true;
 var commandReadyFlashSlavesDevicesFirmware: Boolean = true;
 
+export var logger: vscode.LogOutputChannel;
+
 export async function activate(context: vscode.ExtensionContext) {
+
+    logger = vscode.window.createOutputChannel("OpenIndus Extension", {log: true});
+	logger.info("OpenIndus Extension Activated");
 
 	vscode.window.registerTreeDataProvider('openindus-treeview', new OIAccessTreeProvider());
 
@@ -53,6 +59,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.env.openExternal(vscode.Uri.parse('https://openindus.com'));
 	}));
 
+	context.subscriptions.push(vscode.commands.registerCommand('openindus.startStepperPanelConfig', async ( portName?: string, moduleInfo?: ModuleInfo) => {
+		await startStepperPanelConfig(context, portName, moduleInfo);
+	}));
+
 	// Check if .platformio path contains a space
 	if (pioNodeHelpers.core.getCoreDir().indexOf(' ') >= 0)
 	{
@@ -60,7 +70,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	// Install esptool if not already installed
-	console.log(await execShell(getPlatformIOPythonPath() + ' -m pip install esptool', './'));
+	logger.info(await execShell(getPlatformIOPythonPath() + ' -m pip install esptool', './'));
+
+	// Download the latets firmware from openindus server at each launch of application
+	await downloadNewFirmwareOnline(context);
 }
 
 // this method is called when your extension is deactivated

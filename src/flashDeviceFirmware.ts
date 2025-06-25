@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import { PythonShell } from 'python-shell';
-import { deviceTypeList, formatStringOI, getFormattedDeviceList, binAddress, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath } from './utils';
+import { PythonShell, PythonShellError } from 'python-shell';
+import { deviceTypeList, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath } from './utils';
 import * as fs from 'fs';
+import { logger } from './extension';
 
 export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string, inputModuleInfo?: ModuleInfo) {
 
     let moduleInfo: ModuleInfo | undefined;
-    let deviceType: string = "";
 
     // if device type and port are given; do not check again
     if (inputModuleInfo === undefined) {
@@ -20,14 +20,12 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     if (moduleInfo.port === undefined) { return; }
 
     // Check if device type is known
-    if (getFormattedDeviceList().includes(formatStringOI(moduleInfo.type))) {
-        deviceType = formatStringOI(moduleInfo.type);
-    } else {
+    if (!deviceTypeList.includes(moduleInfo.type)) {
         // TODO: if device type could be read by console, check with espefuse.py --> if firmware is wrong, it could still detect the right device name
         // else ask the user
         let deviceSelected = await vscode.window.showQuickPick(deviceTypeList, { placeHolder: 'Choose the device type', ignoreFocusOut: true});
         if (deviceSelected !== undefined) {
-            deviceType = formatStringOI(deviceSelected);
+            moduleInfo.type = deviceSelected;
         } else {
             return;
         }
@@ -35,7 +33,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
 
     // Choose the version
     // Get path to resource on disk
-    let onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'bin');
+    let onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'binaries');
     let firmwareVersionList = await vscode.workspace.fs.readDirectory(onDiskPath);
     let binVersions: vscode.QuickPickItem[] = [];
     firmwareVersionList.forEach((element) => {
@@ -54,15 +52,15 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     // Set the bin path and check it
     // Remove 'lite' in OICoreLite because there is no special firmware for this board
     onDiskPath = vscode.Uri.joinPath(onDiskPath, 'oi-firmware-' + version?.label);
-    let bootloader = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_bootloader-' + version?.label + '.bin');
-    let partitions = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_partitions-' + version?.label + '.bin');
-    let otaDataInitial = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_ota_data_initial-' + version?.label + '.bin');
-    let firmware = vscode.Uri.joinPath(onDiskPath, deviceType.toLowerCase().replace("lite", "") + '_firmware-' + version?.label + '.bin');
+    let bootloader = vscode.Uri.joinPath(onDiskPath, moduleInfo.type.replace("lite", "") + '_bootloader-' + version?.label + '.bin');
+    let partitions = vscode.Uri.joinPath(onDiskPath, moduleInfo.type.replace("lite", "") + '_partitions-' + version?.label + '.bin');
+    let otaDataInitial = vscode.Uri.joinPath(onDiskPath, moduleInfo.type.replace("lite", "") + '_ota_data_initial-' + version?.label + '.bin');
+    let firmware = vscode.Uri.joinPath(onDiskPath, moduleInfo.type.replace("lite", "") + '_firmware-' + version?.label + '.bin');
     
-    console.log(bootloader);
-    console.log(partitions);
-    console.log(otaDataInitial);
-    console.log(firmware);
+    logger.info(bootloader.toString());
+    logger.info(partitions.toString());
+    logger.info(otaDataInitial.toString());
+    logger.info(firmware.toString());
 
     if (fs.existsSync(bootloader.fsPath) === false) { return; }
     if (fs.existsSync(partitions.fsPath) === false) { return; }
@@ -72,7 +70,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     // Flash the Firmware
     let successFlash = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: "Flashing " + `OI${deviceType}` + " on " + `${moduleInfo.port}`,
+        title: "Flashing " + `OI${moduleInfo.type}` + " on " + `${moduleInfo.port}`,
         cancellable: true
     }, async (progress, cancellationToken) => {
         let successFlash = await new Promise( async (resolve) => {
@@ -81,7 +79,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
 
             let chip = 'esp32s3';
             // Hack for old modules
-            if (deviceType === "Stepperve") { chip = 'esp32s2'; }
+            if (moduleInfo.type === "stepperve") { chip = 'esp32s2'; }
 
             let options = {
                 mode: "text" as "text",
@@ -101,7 +99,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
             let lastIncrement = 0;
 
             pyshell.on('message', function (message) {
-                console.log(message);
+                logger.info(message);
                 if (message.includes('%') && (message.includes("100 %") === false)) { // do not increment for 100% on bootloader, ota and partition
                     progress.report({increment: Number(message.split('(')[1].substring(0, 2)) - lastIncrement});
                     lastIncrement = Number(message.split('(')[1].substring(0, 2));
@@ -113,9 +111,8 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                 resolve(false);
             });
 
-            pyshell.end(function (err: any, code: any) {
-                if (code === 0) {
-                    console.log(err);
+            pyshell.end((err: PythonShellError, exitCode: number, exitSignal: string) => {
+                if (exitCode === 0) {
                     resolve(true);
                 } else {
                     resolve(false);
