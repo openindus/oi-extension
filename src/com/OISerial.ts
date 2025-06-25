@@ -146,6 +146,11 @@ export class OISerial extends SerialPort {
     disconnect(): Promise<boolean> {
         logger.info("Disconnecting...");
         return new Promise((resolve, reject) => {
+            if (!super.isOpen) {
+                logger.info("Already closed !");
+                resolve(true);
+                return;
+            }
             super.close((error) => {
                 if (error) {
                     logger.error(error);
@@ -172,6 +177,16 @@ export class OISerial extends SerialPort {
             await this.serialMutex.runExclusive(async () => {
                 if (tryNumber > 5) {
                     reject("Failed to send message: too much unsuccessful attempts");
+                } else if (tryNumber > 3){
+                    logger.warn("Trying to reconnect...");
+                    await this.disconnect();
+                    await this.connect().then(() => {
+                        logger.info("Reconnected successfully");
+                    }).catch((error) => {
+                        reject("Failed to send message: cannot reconnect (" + error + ")");
+                    });
+                    // Retry sending the message after reconnecting
+                    this.sendMsg(args, tryNumber + 1).then(resolve).catch(reject);
                 } else if (!this.readyParser.ready || !super.isOpen) {
                     reject("Failed to send message: disconnected or not ready");
                 } else {
@@ -203,6 +218,16 @@ export class OISerial extends SerialPort {
             await this.serialMutex.runExclusive(async () => {
                 if (tryNumber > 5) {
                     reject("Failed to send message: too much unsuccessful attempts");
+                } else if (tryNumber > 3){
+                    logger.warn("Trying to reconnect...");
+                    await this.disconnect();
+                    await this.connect().then(() => {
+                        logger.info("Reconnected successfully");
+                    }).catch((error) => {
+                        reject("Failed to send message: cannot reconnect (" + error + ")");
+                    });
+                    // Retry sending the message after reconnecting
+                    this.sendMsgWithReturn(args, tryNumber + 1).then(resolve).catch(reject);
                 } else if (!this.readyParser.ready || !super.isOpen) {
                     reject("Failed to send message: disconnected or not ready");
                 } else {

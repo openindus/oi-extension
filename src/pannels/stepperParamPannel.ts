@@ -43,16 +43,11 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 			rawHTML = rawHTML.replaceAll('${content}', contentUri.toString());
 			panel.webview.html = rawHTML;
 		}
-	});		
-
-	panel.onDidDispose(async () => {
-		currentPanel = undefined;
-		await stepper?.disconnect();
-		stepper = undefined;
 	});
 
 	var receivedMessageMutex = new Mutex();
 	var lastCommand = '';
+	var normalDisconnect = false; // Set this var to true when the disconnection is wanted
 
 	panel.webview.onDidReceiveMessage( 
 		async (message) => {
@@ -74,6 +69,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 					}
 					stepper = new OIStepper(message.portName, message?.serialNum, message?.id, message?.onBus);
 					await stepper.connect().then((response) => {
+						normalDisconnect = false;
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
 						vscode.window.showErrorMessage("Error while connecting to OIStepper (" + message.portName + "): " + error);
@@ -82,6 +78,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 				case 'disconnect':
 					await stepper?.disconnect().then((response) => {
 						stepper = undefined;
+						normalDisconnect = true;
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
 						vscode.window.showErrorMessage("Error while disconnecting  from OIStepper: " + error);
@@ -99,9 +96,11 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 					await stepper?.cmd(message.args).then((response) => {
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
-						vscode.window.showErrorMessage("Cannot send command (" + message.args.join(' ') + "): " + error);						
-						if (error.includes("disconnected")) {
-							panel.webview.postMessage({command: 'disconnect', response: true});
+						if (!normalDisconnect) {
+							vscode.window.showErrorMessage("Cannot send command (" + message.args.join(' ') + "): " + error);						
+							if (error.includes("disconnected")) {
+								panel.webview.postMessage({command: 'disconnect', response: true});
+							}
 						}
 					});
 					break;
@@ -116,9 +115,11 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 								vscode.window.showInformationMessage("Get parameter successfully on OIStepper.");
 							});
 						}).catch((error) => {
-							vscode.window.showErrorMessage("Error while getting parameters on OIStepper: " + error);						
-							if (error.includes("disconnected")) {
-								panel.webview.postMessage({command: 'disconnect', response: true});
+							if (!normalDisconnect) {
+								vscode.window.showErrorMessage("Error while getting parameters on OIStepper: " + error);						
+								if (error.includes("disconnected")) {
+									panel.webview.postMessage({command: 'disconnect', response: true});
+								}
 							}
 						});
 					});
@@ -134,9 +135,11 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 								vscode.window.showInformationMessage("Parameters set successfully on OIStepper.");
 							});
 						}).catch((error) => {
-							vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);						
-							if (error.includes("disconnected")) {
-								panel.webview.postMessage({command: 'disconnect', response: true});
+							if (!normalDisconnect) {
+								vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);						
+								if (error.includes("disconnected")) {
+									panel.webview.postMessage({command: 'disconnect', response: true});
+								}
 							}
 						});
 					});
@@ -152,9 +155,11 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 								vscode.window.showInformationMessage("Parameters where resetted successfully on OIStepper. Reading parameters again to get the default values.");
 							});
 						}).catch((error) => {
-							vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);						
-							if (error.includes("disconnected")) {
-								panel.webview.postMessage({command: 'disconnect', response: true});
+							if (!normalDisconnect) {
+								vscode.window.showErrorMessage("Error while setting parameters on OIStepper: " + error);						
+								if (error.includes("disconnected")) {
+									panel.webview.postMessage({command: 'disconnect', response: true});
+								}
 							}
 						});
 					});
@@ -191,9 +196,11 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 					await stepper?.getStatus().then((response) => {
 						panel.webview.postMessage({command: message.command, response: response});
 					}).catch((error) => {
-						vscode.window.showErrorMessage("Cannot get status from OIStepper: " + error);
-						if (error.includes("disconnected")) {
-							panel.webview.postMessage({command: 'disconnect', response: true});
+						if (!normalDisconnect) {
+							vscode.window.showErrorMessage("Cannot get status from OIStepper: " + error);
+							if (error.includes("disconnected")) {
+								panel.webview.postMessage({command: 'disconnect', response: true});
+							}
 						}
 					});
 					break;
@@ -205,6 +212,39 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
         undefined,
         context.subscriptions
 	);
+
+	panel.onDidChangeViewState((e) => {
+		if (!panel.visible && stepper?.isOpen && currentPanel !== undefined) {
+			receivedMessageMutex.runExclusive(() => {
+				stepper.disconnect().then(() => {
+					logger.info("Stepper disconnecting because pannel is not visible anymore.");
+					panel.webview.postMessage({command: 'disconnect', response: true});
+					normalDisconnect = true;
+				}).catch((error) => {
+					logger.error("Error while disconnecting stepper: " + error);
+				});
+			});
+		} else if (panel.visible && stepper !== undefined) {
+			receivedMessageMutex.runExclusive(() => {
+				stepper.connect().then((response) => {
+					logger.info("Stepper reconnecting because pannel is visible.");
+					panel.webview.postMessage({command: 'connect', response: response});
+					normalDisconnect = false;
+				}).catch((error) => {
+					vscode.window.showErrorMessage("Error while reconnecting to OIStepper (" + stepper.port + "): " + error);
+				});
+			});
+		}
+	});
+
+	panel.onDidDispose(() => {
+		receivedMessageMutex.runExclusive(() => {
+			currentPanel = undefined;
+			stepper?.disconnect();
+			stepper = undefined;
+			normalDisconnect = true;
+		});
+	});
 
 	// If stepper info where given, create the stepper object
 	if (portName && stepperModuleInfo) {

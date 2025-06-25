@@ -2,10 +2,10 @@ import * as vscode from 'vscode';
 import { OIAccessTreeProvider } from './customTreeView';
 import { createProject } from './createProject';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
-import { getSystemInfo } from './panels/systemInfoPannel';
+import { getSystemInfo } from './pannels/systemInfoPannel';
 import { ModuleInfo, execShell, getPlatformIOPythonPath, downloadNewFirmwareOnline } from './utils';
 import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
-import { startStepperPanelConfig } from './panels/stepperParamPannel';
+import { startStepperPanelConfig } from './pannels/stepperParamPannel';
 
 const pioNodeHelpers = require('platformio-node-helpers');
 

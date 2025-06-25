@@ -123,18 +123,18 @@
 
                 <div class="flex-command">
                     <label for="max-speed">Max Speed (steps/s):</label>
-                    <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="992" step="15">
+                    <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="" step="15">
                     <p><i>Target speed for relative/absolute moves and max speed for run.</i></p>
                 </div>
 
                 <div class="flex-command">
                     <label for="acc">Acceleration (steps/s²):</label>
-                    <input id="acc" name="acc" type="number" min="0" max="59575" value="2008" step="15">
+                    <input id="acc" name="acc" type="number" min="0" max="59575" value="" step="15">
                 </div>
 
                 <div class="flex-command">
                     <label for="dec">Deceleration (steps/s²):</label>
-                    <input id="dec" name="dec" type="number" min="0" max="59590" value="2008" step="15">
+                    <input id="dec" name="dec" type="number" min="0" max="59590" value="" step="15">
                 </div>
 
                 <div class="flex-command">
@@ -153,28 +153,28 @@
 
                 <div class="flex-command">
                     <label for="kval-hold">Holding torque:</label>
-                    <input id="kval-hold" name="kval-hold" type="number" min="1" max="99" value="16" step="1">
+                    <input id="kval-hold" name="kval-hold" type="number" min="1" max="99" value="" step="1">
                     <p><i>Do not set a value too high to limit motor heating.</i></p>
                 </div>
 
                 <div class="flex-command">
                     <label for="kval-run">Running torque:</label>
-                    <input id="kval-run" name="kval-run" type="number" min="1" max="99" value="16" step="1">
+                    <input id="kval-run" name="kval-run" type="number" min="1" max="99" value="" step="1">
                 </div>
 
                 <div class="flex-command">
                     <label for="kval-acc">Acceleration torque:</label>
-                    <input id="kval-acc" name="kval-acc" type="number" min="1" max="99" value="16" step="1">
+                    <input id="kval-acc" name="kval-acc" type="number" min="1" max="99" value="" step="1">
                 </div>
 
                 <div class="flex-command">
                     <label for="kval-dec">Deceleration torque:</label>
-                    <input id="kval-dec" name="kval-dec" type="number" min="1" max="99" value="16" step="1">
+                    <input id="kval-dec" name="kval-dec" type="number" min="1" max="99" value="" step="1">
                 </div>
 
                 <div class="flex-command">
-                    <label for="f-slp-acc">Back-EMF Comp.:</label>
-                    <input id="f-slp-acc" name="f-slp-acc" type="number" min="0" max="40" value="6.256" step="0.15">
+                    <label for="fn-slp-acc">Back-EMF Comp.:</label>
+                    <input id="fn-slp-acc" name="fn-slp-acc" type="number" min="0" max="40" value="" step="0.15">
                     <p><i>Back EMF compensation in percent (between 0 and 40%)</i></p>
                 </div>
 
@@ -185,7 +185,7 @@
                         <option value="1">4</option>
                         <option value="2">6</option>
                         <option value="3">8</option>
-                        <option value="4" selected>10</option>
+                        <option value="4">10</option>
                         <option value="5">12</option>
                         <option value="6">14</option>
                         <option value="7">16</option>
@@ -216,7 +216,23 @@
                         <option value="11">8.1</option>
                         <option value="12">8.8</option>
                         <option value="13">9.5</option>
-                        <option value="14" selected>10.2</option>
+                        <option value="14">10.2</option>
+                        <option value="15">10.9</option>
+                        <option value="16">11.5</option>
+                        <option value="17">12.2</option>
+                        <option value="18">12.9</option>
+                        <option value="19">13.6</option>
+                        <option value="20">14.3</option>
+                        <option value="21">14.9</option>
+                        <option value="22">15.6</option>
+                        <option value="23">16.3</option>
+                        <option value="23">17</option>
+                        <option value="23">17.7</option>
+                        <option value="23">18.3</option>
+                        <option value="23">19</option>
+                        <option value="23">19.7</option>
+                        <option value="23">20.4</option>
+                        <option value="23">21</option>
                     </select>
                 </div>
             </div>
@@ -443,7 +459,7 @@
                     document.getElementById("kval-run").value = event.data.response['kval-run'].split('.')[0];
                     document.getElementById("kval-acc").value = event.data.response['kval-acc'].split('.')[0];
                     document.getElementById("kval-dec").value = event.data.response['kval-dec'].split('.')[0];
-                    document.getElementById("fn-slp-acc").value = event.data.response["fn-slp-acc"]*100;
+                    document.getElementById("fn-slp-acc").value = event.data.response['fn-slp-acc']*100;
                     document.getElementById("ocd-th").value = event.data.response['ocd-th']/31.25; // Convert from mV
                     document.getElementById("stall-th").value = event.data.response['stall-th']/31.25; // Convert from mV
                 }
@@ -555,10 +571,10 @@
         paramList['kval-run'] = document.getElementById("kval-run").value,
         paramList['kval-acc'] = document.getElementById("kval-acc").value,
         paramList['kval-dec'] = document.getElementById("kval-dec").value,
-        paramList['fn-slp-acc'] = document.getElementById("f-slp-acc").value/100,
-        paramList['fn-slp-dec'] = document.getElementById("f-slp-acc").value/100, // This a hidden parameter which depends on fn-slp-acc
-        paramList['st-slp'] = (document.getElementById("f-slp-acc").value/200).toString(), // This a hidden parameter which depends on fn-slp-acc
-        paramList['ocd-th'] = (document.getElementById("ocd-th").value*31.25*4).toString(), // Convert to mV
+        paramList['fn-slp-acc'] = document.getElementById("fn-slp-acc").value/100,
+        paramList['fn-slp-dec'] = document.getElementById("fn-slp-acc").value/100, // This a hidden parameter which depends on fn-slp-acc
+        paramList['st-slp'] = (document.getElementById("fn-slp-acc").value/200).toString(), // This a hidden parameter which depends on fn-slp-acc
+        paramList['ocd-th'] = (document.getElementById("ocd-th").value*31.25).toString(), // Convert to mV
         paramList['stall-th'] = (document.getElementById("stall-th").value*31.25).toString() // Convert to mV
 
         vscode.postMessage({
@@ -692,6 +708,7 @@
             command: 'cmd',
             args: ['stepper-clear-status', '2']
         });
+        getStatus();
     }
     
 </script>
