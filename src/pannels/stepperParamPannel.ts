@@ -71,6 +71,9 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 
 	async function handleDisconnect(message: any) {
 		await stepper?.disconnect().then((response) => {
+			if (message.doNotDelete === undefined) {
+				stepper = undefined;
+			}
 			normalDisconnect = true;
 			pannel.webview.postMessage({command: message.command, response: response});
 		}).catch((error) => {
@@ -266,17 +269,16 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 	);
 
 	pannel.onDidChangeViewState((e) => {
-		if (!pannel.visible) {
-			handleDisconnect({command: 'disconnect'});
+		if (!pannel.visible && stepper !== undefined) {
+			handleDisconnect({command: 'disconnect', doNotDelete: true});
 		} else if (pannel.visible && stepper !== undefined) {
 			handleConnect({command: 'connect'});
 		}
 	});
 
 	pannel.onDidDispose(async () => {
-		await setTimeout(200); // Wait for last message to be sent
+		handleDisconnect({command: 'disconnect'});
 		currentPanel = undefined;
-		stepper = undefined;
 	});
 
 	// If stepper info where given, create the stepper object

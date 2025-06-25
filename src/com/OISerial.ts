@@ -188,6 +188,7 @@ export class OISerial extends SerialPort {
                         return;
                     });
                     // Retry sending the message after reconnecting
+                    this.serialMutex.cancel();
                     this.sendMsg(args, tryNumber + 1).then(resolve).catch(reject);
                 } else if (!this.readyParser.ready || !super.isOpen) {
                     reject("Failed to send message: disconnected or not ready");
@@ -210,6 +211,7 @@ export class OISerial extends SerialPort {
                         txt = this.lastResponse.shift();
                     }
                     logger.warn("Failed to send message (" + tryNumber + "), retrying...");
+                    this.serialMutex.cancel();
                     this.sendMsg(args, tryNumber + 1).then(resolve).catch(reject);
                 }
             });
@@ -232,6 +234,7 @@ export class OISerial extends SerialPort {
                         return;
                     });
                     // Retry sending the message after reconnecting
+                    this.serialMutex.cancel();
                     this.sendMsgWithReturn(args, tryNumber + 1).then(resolve).catch(reject);
                 } else if (!this.readyParser.ready || !super.isOpen) {
                     reject("Failed to send message: disconnected or not ready");
@@ -266,6 +269,7 @@ export class OISerial extends SerialPort {
                         txt = this.lastResponse.shift();
                     }
                     logger.warn("Failed to send message (" + tryNumber + "), retrying...");
+                    this.serialMutex.cancel();
                     this.sendMsgWithReturn(args, tryNumber + 1).then(resolve).catch(reject);
                 }
             });
