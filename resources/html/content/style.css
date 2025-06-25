@@ -1,15 +1,15 @@
 /* OpenIndus Stepper Configuration Tool - Professional Theme - Updated for Step Layouts */
 
 body {
-    background-color: #181818;
-    color: #ccc;
+    background-color: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
     margin: 0;
     padding: 0 0 40px 0;
     min-height: 100vh;
 }
 
 .presentation-text {
-    background-color: #181818;
+    background-color: var(--vscode-editor-background);
     padding: 12px 48px;
 }
 
@@ -25,7 +25,7 @@ body {
 }
 
 .flex-col-big {
-   width: 900px;
+    width: 900px;
 }
 
 .side-nav {
@@ -33,7 +33,7 @@ body {
     top: 90px;
     right: 24px;
     width: 320px;
-    padding: 14px;
+    padding: var(--vscode-editor-fontSize);
 }
 
 #motor-status button {
@@ -42,7 +42,6 @@ body {
 }
 
 .flex-block {
-    /* border-top: 1px solid #37373D; */
     padding: 12px 24px 24px 24px;
 }
 
@@ -84,7 +83,8 @@ body {
 .h2notselect {
     font-weight: 300;
     font-size: 18px;
-    border-left: 4px solid #37373D;
+    border-left: 4px solid var(--vscode-button-secondaryBackground);
+    color: var(--vscode-editor-secondaryForeground);
     -webkit-transition: all 0.15s linear;
     -moz-transition: all 0.15s linear;
     -o-transition: all 0.15s linear;
@@ -94,7 +94,8 @@ body {
 .h2select {
     font-weight: 700;
     font-size: 26px;
-    border-left: 4px solid #0078D4;
+    border-left: 4px solid var(--vscode-button-background);
+    color: var(--vscode-editor-foreground);
     -webkit-transition: all 0.15s linear;
     -moz-transition: all 0.15s linear;
     -o-transition: all 0.15s linear;
@@ -102,7 +103,6 @@ body {
 }
 
 h1, h2, h3 {
-    color: #ccc;
     font-weight: 700;
     margin-top: 0;
 }
@@ -117,7 +117,8 @@ h1 {
 h2 {
     font-size: 26px;
     margin : 10px 0;
-    border-left: 4px solid #0078D4;
+    border-left: 4px solid var(--vscode-button-background);
+    color: var(--vscode-editor-foreground);
     padding-left: 12px;
     user-select: none;
 }
@@ -128,7 +129,7 @@ h3 {
 }
 
 label {
-    font-size: 14px;
+    font-size: var(--vscode-editor-fontSize);
     padding: 0 12px;
     min-width: 60px;
     text-align: right;
@@ -136,23 +137,28 @@ label {
 
 input[type="number"], select {
     min-width: 125px;
-    box-sizing:border-box;
+    box-sizing: border-box;
     padding: 6px;
     margin: 10px 8px 10px 0;
-    border: 1px solid #b3c6d6;
+    border: 1px solid var(--vscode-input-border);
     border-radius: 2px;
-    background: #fafdff;
-    font-size: 14px;
+    background: var(--vscode-input-background);
+    font-size: var(--vscode-editor-fontSize);
+    color: var(--vscode-editor-foreground)
+}
+
+input[type="radio"] {
+    background-color: var(--vscode-radio-background);;
 }
 
 /* Flat button design */
 button {
-    background: #0078D4;
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
     border: none;
-    color: #fff;
     border-radius: 2px;
     padding: 6px;
-    font-size: 14px;
+    font-size: var(--vscode-editor-fontSize);
     font-weight: 500;
     margin: 10px 8px 10px 0;
     cursor: pointer;
@@ -162,7 +168,7 @@ button {
 }
 
 button:hover, button:focus {
-    background: #1565c0;
+    background: var(--vscode-button-hoverBackground);
     box-shadow: 0 2px 8px rgba(30,136,229,0.10);
 }
 
@@ -199,15 +205,27 @@ input[type="checkbox"] {
     margin: 0 0 0 2px;
 }
 
+input[type="radio"] {
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--vscode-editor-foreground);
+    border-radius: 50%;
+    outline: none;
+    background-color: var(--vscode-editor-background);
+}
+
+input[type="radio"]:checked {
+    background-color: var(--vscode-button-background);;
+}
+
 p, i {
-    color: #aaa;
-    font-size: 14px;
+    font-size: var(--vscode-editor-fontSize);
     margin-bottom: 1em;
 }
 
 hr {
     border: none;
-    border-top: 1.5px solid #e3f0fa;
     margin: 2em 0;
 }
 
@@ -245,4 +263,43 @@ th {
     width: 100%;
     margin: auto;
     text-align: center;
+}
+
+
+
+.BOI23,.BOI13 {
+    max-width: 150px;
+    min-width: 150px;
+    background-color: none;
+}
+
+.BOI12 {
+    max-width: 100px;
+    min-width: 100px;
+    background-color: none;
+    margin: 0 25px;
+}
+
+.slave-container, .master-container {
+    display: flex;
+}
+
+.auto {
+    flex: auto;
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+}
+
+canvas {
+    max-width: 200px;
+}
+
+.flex-container {
+    display: flex;
+    width: auto;
+    align-items: center;
+    background-color: var(--vscode-editorWidget-border);
+    border-radius: 5px;
+    margin: 5px;
 }

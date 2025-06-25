@@ -119,6 +119,7 @@ export class OIStepper extends OISerial {
             if ((args[0] === 'stepper-restart') ||
                 (args[0] === 'stepper-homing') ||
                 (args[0] === 'stepper-attach-limit-switch') ||
+                (args[0] === 'stepper-detach-limit-switch') ||
                 (args[0] === 'stepper-set-speed') ||
                 (args[0] === 'stepper-move-absolute') ||
                 (args[0] === 'stepper-move-relative') ||

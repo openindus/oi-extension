@@ -75,6 +75,16 @@ export function getClassNameFromEnv(str: string): string {
             .replaceAll('lite', '');
 }
 
+export function getNiceNameFromEnv(str: string): string {
+    var envName = formatStringOItoEnvName(str);
+    return ("OI " + envName.charAt(0).toUpperCase() + envName.slice(1).toLowerCase())
+            .replaceAll('ls', ' LS')
+            .replaceAll('ve', ' VE')
+            .replaceAll('hp', ' HP')
+            .replaceAll('lp', ' LP')
+            .replaceAll('lite', ' Lite');
+}
+
 export const caseImg = [
     {moduleName: "core", imgName: "core.png", caseName: "BOI23"},
     {moduleName: "coreLite", imgName: "corelite.png", caseName: "BOI13"},

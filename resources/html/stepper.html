@@ -4,21 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System configuration</title>
+    <title>OIStepper Configurator</title>
     <link href="${content}/style.css" rel="stylesheet" />
 </head>
 
 <body>
-    <!-- <img src="${content}/openindus_logo.png" alt="OpenIndus Logo" class="logo"> -->
     <div class="presentation-text">
-        <h1>OIStepper configuration tool</h1>
+        <h1>OIStepper Configurator</h1>
         <p>
-            This interface allow you to configure and test paramters of OIStepper module. 
-            You can control an OIStepper by connecting an USB cable directly to it or by connecting the USB cable to a master module which is on the same rail. 
-            Keep in mind that the OIStepper must be powerer on by it termminal block to function normally. 
-            Parameters in the section "configure motor" are same in the NVS (non-valative memory) of the module. 
-            Limit switches can be configured for testing purpose but are not persistant accros reboot. 
-            So be sure to set them into your application code.
+            Use this tool to configure and test your OIStepper module. 
+            You can connect the module directly via USB or through a master module on the same rail. 
+            Make sure the OIStepper is powered using its terminal block for normal operation.
+            Motor parameters you set here are saved in the module's non-volatile memory and will persist after power cycles. 
+            Limit switches configured in this interface are for testing only and will be reset when the module restarts.
         </p>
     </div>
     <div class="main-flex">
@@ -26,11 +24,11 @@
         <div class="flex-col flex-col-big">
 
             <div class="flex-block toggle-view" onclick="changeView(this)">
-                <h2 class="h2select">Connexion</h2>
+                <h2 class="h2select">Connection</h2>
             </div>
 
             <div class="flex-block" id="connexion">
-                <label for="port">Port :</label>
+                <label for="port">Port:</label>
                 <select id="port" name="port"></select>
                 <button id="connect" onclick="connect()">Connect</button>
                 <button id="disconnect" onclick="disconnect()">Disconnect</button>
@@ -40,54 +38,55 @@
             </div>
 
             <div class="flex-block toggle-view" id="motor-move-title" onclick="changeView(this)">
-                <h2 class="h2select">Test motor</h2>
+                <h2 class="h2select">Test Motor</h2>
             </div>
 
             <div class="flex-block" id="motor-move">
                 
-                <p><i>In this mode, you can try your motor with several commands. It will help you to tune motor parameters. 
-                    You can move the two motors at the sem time or move them one by one.
-                    before issuing a "homing" command, you must set a limit-switch for the motor</i></p>
+                <p>Test your motors with the commands below. 
+                    You can move both motors together or separately. 
+                    Set a limit switch before using "Homing".
+                </p>
                 
                 <div>
                     <label><input type="radio" name="motor-move-selection" value="1" checked>Motor 1</label>
                     <label><input type="radio" name="motor-move-selection" value="2">Motor 2</label>
-                    <label><input type="radio" name="motor-move-selection" value="3">Motor 1+2</label>
+                    <label><input type="radio" name="motor-move-selection" value="3">Both</label>
                 </div>
 
                 <div class="flex-command">
                     <button onclick="cmdRun()">Run</button>
-                    <label for="run-speed">Speed :</label>
+                    <label for="run-speed">Speed:</label>
                     <input id="run-speed" name="run-speed" type="number" min="0" max="10000" value="200">
-                    <label for="run-direction">Direction :</label>
-                    <select id="run-direction" name="run-direction" list="direction" value="forward">
+                    <label for="run-direction">Direction:</label>
+                    <select id="run-direction" name="run-direction" value="forward">
                         <option value="forward">Forward</option>
                         <option value="backward">Backward</option>
                     </select>
                 </div>
                 
                 <div class="flex-command">
-                    <button onclick="cmdMoveRelative()">Move relative</button>
-                    <label for="move-relative-step">Steps :</label>
+                    <button onclick="cmdMoveRelative()">Move Relative</button>
+                    <label for="move-relative-step">Steps:</label>
                     <input id="move-relative-step" name="move-relative-step" type="number" min="-100000" max="100000" value="0">
                 </div>
                 
                 <div class="flex-command">
-                    <button onclick="cmdMoveAbsolute()">Move absolute</button>
-                    <label for="move-absolute-step">Steps :</label>
+                    <button onclick="cmdMoveAbsolute()">Move Absolute</button>
+                    <label for="move-absolute-step">Steps:</label>
                     <input id="move-absolute-step" name="move-absolute-step" type="number" min="0" max="100000" value="0">
                 </div>
                 
                 <div class="flex-command">
                     <button onclick="cmdHoming()">Homing</button>
-                    <label for="homing-speed">Speed :</label>
+                    <label for="homing-speed">Speed:</label>
                     <input id="homing-speed" name="homing-speed" type="number" min="0" max="10000" value="200">
                 </div>
                 
                 <div class="flex-command">
                     <button onclick="cmdStop()" class="red-button">Stop</button>
-                    <label for="stop-mode">Mode :</label>
-                    <select id="stop-mode" name="stop-mode" list="mode" value="soft-hiz">
+                    <label for="stop-mode">Mode:</label>
+                    <select id="stop-mode" name="stop-mode" value="soft-hiz">
                         <option value="soft-hiz">Soft Hiz</option>
                         <option value="soft-stop">Soft Stop</option>
                         <option value="hard-hiz">Hard Hiz</option>
@@ -97,17 +96,16 @@
             </div>
 
             <div class="flex-block toggle-view" id="motor-configuration-title" onclick="changeView(this)">
-                <h2 class="h2select">Configure motor</h2>
+                <h2 class="h2select">Motor Settings</h2>
             </div>
 
             <div class="flex-block"  id="motor-configuration">
 
                 <p>
-                    <i>Configure your motor with the parameters below.
-                    Your motor have to be in HiZ (see flags) toconfigure motor parameters.
-                    The first time you configure a motor, we recommend to click the "Reset parameters" button to set all parameters to their default values.
-                    If you want to change a parameter, you can change it and click the "Set parameters" button.
-                    Before modifiyng a paramter, click the "Get parameters" button to get the current values.</i>
+                    Set motor parameters below. The motor must be in HiZ (see status) to change settings. 
+                    Click "Reset" to restore defaults. 
+                    Click "Get" to load current values. 
+                    After setting, values are read back for confirmation. Small differences are normal due to internal rounding.
                 </p>
 
                 <div>
@@ -117,32 +115,32 @@
 
                 <div class="flex-command">
                     <button onclick="getParameters()">Get</button>
-                    <button onclick="resetParameters()">Reset</button>
                     <button onclick="setParameters()">Set</button>
+                    <button onclick="resetParameters()">Reset</button>
                     <button onclick="saveParameters()">Save to file</button>
                     <button onclick="loadParameters()">Load from file</button>
                 </div>
 
                 <div class="flex-command">
-                    <label for="max-speed">Maximum Speed (step/s) :</label>
+                    <label for="max-speed">Max Speed (steps/s):</label>
                     <input id="max-speed" name="max-speed" type="number" min="15" max="15610" value="992" step="15">
-                    <p><i>This is the target speed for relative and absolute move command. This is the maximum speed for run command</i></p>
+                    <p><i>Target speed for relative/absolute moves and max speed for run.</i></p>
                 </div>
 
                 <div class="flex-command">
-                    <label for="acc">Acceleration Speed (step/s²) :</label>
+                    <label for="acc">Acceleration (steps/s²):</label>
                     <input id="acc" name="acc" type="number" min="0" max="59575" value="2008" step="15">
                 </div>
 
                 <div class="flex-command">
-                    <label for="dec">Deceleration Speed (step/s²) :</label>
+                    <label for="dec">Deceleration (steps/s²):</label>
                     <input id="dec" name="dec" type="number" min="0" max="59590" value="2008" step="15">
                 </div>
 
                 <div class="flex-command">
-                    <label for="step-mode-step-sel">Step mode :</label>
+                    <label for="step-mode-step-sel">Step Mode:</label>
                     <select id="step-mode-step-sel" name="step-mode-step-sel">
-                        <option value="0">FULL</option>
+                        <option value="0">Full</option>
                         <option value="1">1/2</option>
                         <option value="2">1/4</option>
                         <option value="3">1/8</option>
@@ -154,32 +152,34 @@
                 </div>
 
                 <div class="flex-command">
-                    <label for="kval-hold">Kval hold :</label>
+                    <label for="kval-hold">Holding torque:</label>
                     <input id="kval-hold" name="kval-hold" type="number" min="1" max="99" value="16" step="1">
+                    <p><i>DO not set a value too high to limit motor heating.</i></p>
                 </div>
 
                 <div class="flex-command">
-                    <label for="kval-run">Kval run :</label>
+                    <label for="kval-run">Running torque:</label>
                     <input id="kval-run" name="kval-run" type="number" min="1" max="99" value="16" step="1">
                 </div>
 
                 <div class="flex-command">
-                    <label for="kval-acc">Kval acceleration :</label>
+                    <label for="kval-acc">Acceleration torque:</label>
                     <input id="kval-acc" name="kval-acc" type="number" min="1" max="99" value="16" step="1">
                 </div>
 
                 <div class="flex-command">
-                    <label for="kval-dec">Kval deceleration :</label>
+                    <label for="kval-dec">Deceleration torque:</label>
                     <input id="kval-dec" name="kval-dec" type="number" min="1" max="99" value="16" step="1">
                 </div>
 
                 <div class="flex-command">
-                    <label for="f-slp-acc">Back-EMF compensation :</label>
-                    <input id="f-slp-acc" name="f-slp-acc" type="number" min="0" max="0.4" value="0.06256" step="0.0015">
+                    <label for="f-slp-acc">Back-EMF Comp.:</label>
+                    <input id="f-slp-acc" name="f-slp-acc" type="number" min="0" max="40" value="6.256" step="0.15">
+                    <p><i>Back EMF compensation in percent (between 0 and 40%)</i></p>
                 </div>
 
                 <div class="flex-command">
-                    <label for="ocd-th">Over-current threshold (A) :</label>
+                    <label for="ocd-th">Overcurrent (A):</label>
                     <select id="ocd-th" name="ocd-th">
                         <option value="0">2</option>
                         <option value="1">4</option>
@@ -200,7 +200,7 @@
                 </div>
 
                 <div class="flex-command">
-                    <label for="stall-th">Stall threshold (A) :</label>
+                    <label for="stall-th">Stall (A):</label>
                     <select id="stall-th" name="stall-th">
                         <option value="0">0.7</option>
                         <option value="1">1.3</option>
@@ -222,20 +222,19 @@
             </div>
 
             <div class="flex-block toggle-view" id="motor-switches-title" onclick="changeView(this)">
-                <h2 class="h2select">Configure limit-switch</h2>
+                <h2 class="h2select">Limit Switches</h2>
             </div>
 
             <div class="flex-block" id="motor-switches">
-                <p><i>Configure limit swicthes below for testing purposer. Limit switches are resetted when the program restart.<br>
-                Limit switches have to be configured in the init sequence of our main program.</i></p>
+                <p><i>Set limit switches for testing. These settings reset on restart. For permanent use, configure them in your main program.</i></p>
                 <div>
                     <div class="flex-command">
-                        <label for="limit-switch-motor">Motor :</label>
+                        <label for="limit-switch-motor">Motor:</label>
                         <select id="limit-switch-motor" name="limit-switch-motor">
                             <option value="1">Motor 1</option>
                             <option value="2">Motor 2</option>
                         </select>
-                        <label for="limit-switch-input">Input :</label>
+                        <label for="limit-switch-input">Input:</label>
                         <select id="limit-switch-input" name="limit-switch-input">
                             <option value="0" selected>---</option>
                             <option value="1">DIN 1</option>
@@ -243,7 +242,7 @@
                             <option value="3">DIN 3</option>
                             <option value="4">DIN 4</option>
                         </select>
-                        <label for="limit-switch-logic">Logic :</label>
+                        <label for="limit-switch-logic">Logic:</label>
                         <select id="limit-switch-logic" name="limit-switch-logic">
                             <option value="1" selected>Active HIGH</option>
                             <option value="0">Active LOW</option>
@@ -251,7 +250,7 @@
                     </div>
                     <div class="flex-command"></div>
                         <button id="attach-limit-switch" onclick="setLimitSwitch(1)">Attach</button>
-                        <button id="dettach-limit-switch" onclick="setLimitSwitch(0)">Dettach</button>
+                        <button id="dettach-limit-switch" onclick="setLimitSwitch(0)">Detach</button>
                     </div>
                 </div>
             </div>
@@ -260,12 +259,12 @@
 
     <div class="side-nav">
         <div class="flex-block" id="motor-status">
-            <h2>Motors status</h2>
-            <button onclick="getStatus()">Get status</button>
-            <button onclick="clearStatus()">Clear status</button>
+            <h2>Motor Status</h2>
+            <button onclick="getStatus()">Refresh</button>
+            <button onclick="clearStatus()">Clear</button>
             <div class="large-width">
                 <input type="checkbox" id="autoPoolStatus" name="autoPoolStatus" checked>
-                <label for="autoPoolStatus">Auto pool status</label>
+                <label for="autoPoolStatus">Auto-refresh</label>
             </div>
             <div id="statusList">
                 <table>
@@ -286,7 +285,7 @@
                     </tr>
                     <tr>
                         <td><img id="alarm-thermal-shutdown-1" src="${content}/circle_empty.png"></td>
-                        <td>Thermal Shutdown</td>
+                        <td>Thermal shutdown</td>
                         <td><img id="alarm-thermal-shutdown-2" src="${content}/circle_empty.png"></td>
                     </tr>
                     <tr>
@@ -306,7 +305,7 @@
                     </tr>
                     <tr>
                         <td><img id="alarm-motor-running-1" src="${content}/circle_empty.png"></td>
-                        <td>Motor runnning</td>
+                        <td>Running</td>
                         <td><img id="alarm-motor-running-2" src="${content}/circle_empty.png"></td>
                     </tr>
                     <tr>
@@ -444,7 +443,7 @@
                     document.getElementById("kval-run").value = event.data.response['kval-run'].split('.')[0];
                     document.getElementById("kval-acc").value = event.data.response['kval-acc'].split('.')[0];
                     document.getElementById("kval-dec").value = event.data.response['kval-dec'].split('.')[0];
-                    document.getElementById("fn-slp-acc").value = event.data.response["fn-slp-acc"];
+                    document.getElementById("fn-slp-acc").value = event.data.response["fn-slp-acc"]*100;
                     document.getElementById("ocd-th").value = event.data.response['ocd-th']/31.25; // Convert from mV
                     document.getElementById("stall-th").value = event.data.response['stall-th']/31.25; // Convert from mV
                 }
@@ -537,7 +536,7 @@
     }
 
     function getParameters() {
-        let motor = document.getElementsByName('motor-configuration-selection')[0].value
+        let motor = document.querySelector('input[name=motor-configuration-selection]:checked').value
         vscode.postMessage({
             command: 'get-parameters',
             args: [motor]
@@ -545,7 +544,7 @@
     }
 
     function setParameters() {
-        let motor = document.getElementsByName('motor-configuration-selection')[0].value
+        let motor = document.querySelector('input[name=motor-configuration-selection]:checked').value
 
         paramList['max-speed'] = document.getElementById("max-speed").value,
         paramList['fs-spd'] = document.getElementById("max-speed").value, // This a hidden parameter which depends on max-speed
@@ -556,9 +555,9 @@
         paramList['kval-run'] = document.getElementById("kval-run").value,
         paramList['kval-acc'] = document.getElementById("kval-acc").value,
         paramList['kval-dec'] = document.getElementById("kval-dec").value,
-        paramList['fn-slp-acc'] = document.getElementById("f-slp-acc").value,
-        paramList['fn-slp-dec'] = document.getElementById("f-slp-acc").value, // This a hidden parameter which depends on fn-slp-acc
-        paramList['st-slp'] = (document.getElementById("f-slp-acc").value/2).toString(), // This a hidden parameter which depends on fn-slp-acc
+        paramList['fn-slp-acc'] = document.getElementById("f-slp-acc").value/100,
+        paramList['fn-slp-dec'] = document.getElementById("f-slp-acc").value/100, // This a hidden parameter which depends on fn-slp-acc
+        paramList['st-slp'] = (document.getElementById("f-slp-acc").value/200).toString(), // This a hidden parameter which depends on fn-slp-acc
         paramList['ocd-th'] = (document.getElementById("ocd-th").value*31.25*4).toString(), // Convert to mV
         paramList['stall-th'] = (document.getElementById("stall-th").value*31.25).toString() // Convert to mV
 
@@ -569,7 +568,7 @@
     }
 
     function resetParameters() {
-        let motor = document.getElementsByName('motor-configuration-selection')[0].value
+        let motor = document.querySelector('input[name=motor-configuration-selection]:checked').value
         vscode.postMessage({
             command: 'reset-parameters',
             args: [motor]
@@ -591,9 +590,10 @@
     }
     
     function cmdRun() {
-        let motor = document.getElementsByName('motor-move-selection')[0].value
+        let motor = document.querySelector('input[name=motor-move-selection]:checked').value
         let direction = document.getElementById('run-direction').value;
         let speed = document.getElementById('run-speed').value;
+        console.log(motor);
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
                 command: 'cmd',
@@ -609,7 +609,7 @@
     }
     
     function cmdMoveRelative() {
-        let motor = document.getElementsByName('motor-move-selection')[0].value
+        let motor = document.querySelector('input[name=motor-move-selection]:checked').value
         let steps = document.getElementById('move-relative-step').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
@@ -626,7 +626,7 @@
     }
     
     function cmdMoveAbsolute() {
-        let motor = document.getElementsByName('motor-move-selection')[0].value
+        let motor = document.querySelector('input[name=motor-move-selection]:checked').value
         let steps = document.getElementById('move-absolute-step').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
@@ -643,7 +643,7 @@
     }
 
     function cmdHoming() {
-        let motor = document.getElementsByName('motor-move-selection')[0].value
+        let motor = document.querySelector('input[name=motor-move-selection]:checked').value
         let speed = document.getElementById('homing-speed').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
@@ -660,7 +660,7 @@
     }
     
     function cmdStop() {
-        let motor = document.getElementsByName('motor-move-selection')[0].value
+        let motor = document.querySelector('input[name=motor-move-selection]:checked').value
         let mode = document.getElementById('stop-mode').value;
         if (motor === '1' || motor === '3') {
             vscode.postMessage({
@@ -695,4 +695,5 @@
     }
     
 </script>
+
 </html>
