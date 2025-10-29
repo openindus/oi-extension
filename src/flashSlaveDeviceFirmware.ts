@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
-import { PythonShell } from 'python-shell';
-import { ModuleInfo, getPlatformIOPythonPath, getEsptoolPath, nameToType, deviceTypeList } from './utils';
+import { ModuleInfo, getEsptoolPath, nameToType, deviceTypeList } from './utils';
 import * as fs from 'fs';
 import { logger } from './extension';
 import { OISerial } from './com/OISerial';
@@ -69,59 +68,59 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
                 continue;
             }
             
-            let successFlash = await new Promise( async (resolve) => {
+            // let successFlash = await new Promise( async (resolve) => {
 
-                let options = {
-                    mode: "text" as "text",
-                    pythonPath: getPlatformIOPythonPath(),
-                    args: [ '--port', masterPortName,
-                            '--baud', '921600',
-                            '--before', 'no_reset',
-                            '--no-stub',
-                            'write_flash',
-                            '0x110000', firmware.fsPath
-                    ] as string[]
-                };
+                // let options = {
+                //     mode: "text" as "text",
+                //     pythonPath: getPlatformIOPythonPath(),
+                //     args: [ '--port', masterPortName,
+                //             '--baud', '921600',
+                //             '--before', 'no_reset',
+                //             '--no-stub',
+                //             'write_flash',
+                //             '0x110000', firmware.fsPath
+                //     ] as string[]
+                // };
 
-                let pyshell = new PythonShell(getEsptoolPath(), options);
-                let lastIncrement = 0;
+                // let pyshell = new PythonShell(getEsptoolPath(), options);
+                // let lastIncrement = 0;
 
-                pyshell.on('message', function (message) {
-                    logger.info(message);
-                    if (message.includes('%') && (message.includes("100 %") === false)) { // do not increment for 100% on bootloader, ota and partition
-                        progress.report({
-                            increment: (Number(message.split('(')[1].substring(0, 2)) - lastIncrement)/slavesModuleInfo.length,
-                            message: `OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`
-                        });
-                        lastIncrement = Number(message.split('(')[1].substring(0, 2));
-                    }
-                });
+                // pyshell.on('message', function (message) {
+                //     logger.info(message);
+                //     if (message.includes('%') && (message.includes("100 %") === false)) { // do not increment for 100% on bootloader, ota and partition
+                //         progress.report({
+                //             increment: (Number(message.split('(')[1].substring(0, 2)) - lastIncrement)/slavesModuleInfo.length,
+                //             message: `OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`
+                //         });
+                //         lastIncrement = Number(message.split('(')[1].substring(0, 2));
+                //     }
+                // });
 
-                cancellationToken.onCancellationRequested(() => {
-                    pyshell.kill();
-                    resolve(false);
-                });
+                // cancellationToken.onCancellationRequested(() => {
+                //     pyshell.kill();
+                //     resolve(false);
+                // });
 
-                pyshell.end(function (err: any, code: any) {
-                    if (code === 0) {
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
-                });
-            });
+                // pyshell.end(function (err: any, code: any) {
+                //     if (code === 0) {
+                //         resolve(true);
+                //     } else {
+                //         resolve(false);
+                //     }
+                // });
+            // });
 
-            if (cancellationToken.isCancellationRequested) {
-                break;
-            }
+            // if (cancellationToken.isCancellationRequested) {
+            //     break;
+            // }
 
-            if (successFlash === false) {
-                vscode.window.showErrorMessage(`Unexpected error while flashing device OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) !`);
-                flashErrorList.push(`OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum})`);
-                continue;
-            } else {
-                numberFlashedSuccessfully++;
-            }
+            // if (successFlash === false) {
+            //     vscode.window.showErrorMessage(`Unexpected error while flashing device OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) !`);
+            //     flashErrorList.push(`OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum})`);
+            //     continue;
+            // } else {
+            //     numberFlashedSuccessfully++;
+            // }
 
         };
     });

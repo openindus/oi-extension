@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
-import { PythonShell, PythonShellError } from 'python-shell';
-import { deviceTypeList, pickDevice, ModuleInfo, getPlatformIOPythonPath, getEsptoolPath } from './utils';
 import * as fs from 'fs';
+
+import { CustomReset, ESPLoader, FlashOptions, LoaderOptions, Transport } from 'esptool-js';
+
+import { NodeTransport } from './com/NodeTransport';
+import { deviceTypeList, pickDevice, ModuleInfo } from './utils';
 import { logger } from './extension';
 
 export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string, inputModuleInfo?: ModuleInfo) {
@@ -75,49 +78,51 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     }, async (progress, cancellationToken) => {
         let successFlash = await new Promise( async (resolve) => {
 
-            if (moduleInfo === undefined) { return; }
+            // let chip = 'esp32s3';
+            // // Hack for old modules
+            // if (moduleInfo.type === "stepperve") { chip = 'esp32s2'; }
 
-            let chip = 'esp32s3';
-            // Hack for old modules
-            if (moduleInfo.type === "stepperve") { chip = 'esp32s2'; }
+            const transport = new NodeTransport(moduleInfo.port, true);
 
-            let options = {
-                mode: "text" as "text",
-                pythonPath: getPlatformIOPythonPath(),
-                args: ['--chip', chip,
-                        '--port', moduleInfo.port,
-                        '--baud', '921600',
-                        'write_flash',
-                        '0x0000', bootloader.fsPath,
-                        '0x8000', partitions.fsPath,
-                        '0xd000', otaDataInitial.fsPath, 
-                        '0x10000', firmware.fsPath
-                ] as string[]
+            const loaderOptions: LoaderOptions = {
+                transport: transport as unknown as any,
+                baudrate: 921600,
+                romBaudrate: 115200
             };
 
-            let pyshell = new PythonShell(getEsptoolPath(), options);
-            let lastIncrement = 0;
+            let lastWritten: number = 0;
+            const flashOptions: FlashOptions = {
+                fileArray: [{address: 0x0000, data: bootloader.fsPath},
+                            {address: 0x8000, data: partitions.fsPath},
+                            {address: 0xd000, data: otaDataInitial.fsPath},
+                            {address: 0x10000, data: firmware.fsPath}],
+                eraseAll: false,
+                compress: true,
+                flashSize: "8MB",
+                reportProgress: (fileIndex, written, total) => {
+                    if (fileIndex === 3) {
+                        progress.report({increment: written/total-lastWritten});
+                        lastWritten = written/total;
+                    }
+                },
+            } as FlashOptions;
 
-            pyshell.on('message', function (message) {
-                logger.info(message);
-                if (message.includes('%') && (message.includes("100 %") === false)) { // do not increment for 100% on bootloader, ota and partition
-                    progress.report({increment: Number(message.split('(')[1].substring(0, 2)) - lastIncrement});
-                    lastIncrement = Number(message.split('(')[1].substring(0, 2));
-                }
-            });
+            let esploader = new ESPLoader(loaderOptions);
+            await esploader.main();
+            await esploader.writeFlash(flashOptions);
 
-            cancellationToken.onCancellationRequested(() => {
-                pyshell.kill();
-                resolve(false);
-            });
+            // cancellationToken.onCancellationRequested(() => {
+            //     pyshell.kill();
+            //     resolve(false);
+            // });
 
-            pyshell.end((err: PythonShellError, exitCode: number, exitSignal: string) => {
-                if (exitCode === 0) {
-                    resolve(true);
-                } else {
-                    resolve(false);
-                }
-            });
+            // pyshell.end((err: PythonShellError, exitCode: number, exitSignal: string) => {
+            //     if (exitCode === 0) {
+            //         resolve(true);
+            //     } else {
+            //         resolve(false);
+            //     }
+            // });
         });
         return successFlash;
     });

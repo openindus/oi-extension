@@ -3,11 +3,9 @@ import { OIAccessTreeProvider } from './customTreeView';
 import { createProject } from './createProject';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
 import { getSystemInfo } from './pannels/systemInfoPannel';
-import { ModuleInfo, execShell, getPlatformIOPythonPath, downloadNewFirmwareOnline } from './utils';
+import { ModuleInfo, execShell, downloadNewFirmwareOnline } from './utils';
 import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
 import { startStepperPanelConfig } from './pannels/stepperParamPannel';
-
-const pioNodeHelpers = require('platformio-node-helpers');
 
 var commandReadyCreateProject: Boolean = true;
 var commandReadyGetSystemInfo: Boolean = true;
@@ -62,15 +60,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('openindus.startStepperPanelConfig', async ( portName?: string, moduleInfo?: ModuleInfo) => {
 		await startStepperPanelConfig(context, portName, moduleInfo);
 	}));
-
-	// Check if .platformio path contains a space
-	if (pioNodeHelpers.core.getCoreDir().indexOf(' ') >= 0)
-	{
-		vscode.window.showErrorMessage("We detected that you platformio path contains a white space, this will cause an error. Please check for available solutions on our website's FAQ");
-	}
-
-	// Install esptool if not already installed
-	logger.info(await execShell(getPlatformIOPythonPath() + ' -m pip install esptool', './'));
 
 	// Download the latets firmware from openindus server at each launch of application
 	await downloadNewFirmwareOnline(context);

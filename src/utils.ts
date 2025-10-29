@@ -3,7 +3,8 @@ import * as cp from "child_process";
 import { OISerial } from './com/OISerial';
 import { logger } from './extension';
 import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
-const pioNodeHelpers = require('platformio-node-helpers');
+import { Path } from 'typescript';
+import { join } from 'path';
 var path = require('path');
 const https = require('https');
 const fs = require('fs');
@@ -121,8 +122,26 @@ export const execShell = (cmd: string, path: string) =>
     });
 
 export const IS_WINDOWS = process.platform.startsWith('win');
-export function getPlatformIOPythonPath() : string { return path.join(pioNodeHelpers.core.getEnvBinDir(), IS_WINDOWS ? 'python.exe': 'python'); }
-export function getEsptoolPath() : string { return path.join(pioNodeHelpers.core.getEnvBinDir(), IS_WINDOWS ? 'esptool.exe': 'esptool.py'); }
+
+export function getEsptoolPath() : string {
+    let flashScriptPath = join(
+      getEspIdfPath(),
+      "components",
+      "esptool_py",
+      "esptool",
+      "esptool.py"
+    );
+    return flashScriptPath;
+}
+
+export function getEspIdfPath() : string {
+    let a = vscode.workspace.getConfiguration("idf");
+    if (IS_WINDOWS) {
+        return a.get("espIdfPathWin");
+    } else {
+        return a.get("espIdfPath");
+    }
+}
 
 export async function getDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken): Promise<ModuleInfo[]> {
 
