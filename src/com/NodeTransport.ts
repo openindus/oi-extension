@@ -2,11 +2,6 @@ import { SerialPort } from 'serialport';
 import { EventEmitter } from 'events';
 import { logger } from '../extension';
 
-
-function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 /**
  * NodeTransport - adapter implementing the same API surface as esptool-js Transport
  * but backed by node-serialport for use in a VS Code extension (Node).
@@ -116,12 +111,22 @@ export class NodeTransport {
     // --- Core IO --------------------------------------------------------
     async connect(baud = 115200, _serialOptions?: any): Promise<void> {
         this.baudrate = baud;
-    if (this.port && this.port.isOpen) { return; }
+        if (this.port && this.port.isOpen) { return; }
 
+        // Use more robust serial port configuration for ESP chips
         this.port = new SerialPort({
             path: this.device,
             baudRate: this.baudrate,
-            autoOpen: false
+            autoOpen: false,
+            // ESP chips typically require these settings
+            dataBits: 8,
+            parity: 'none',
+            stopBits: 1,
+            rtscts: false,      // Add this
+            xon: false,         // Add this
+            xoff: false,        // Add this
+            hupcl: true,        // Add this
+            lock: false         // Add this
         });
 
         this.port.on('data', (chunk: Buffer) => {
@@ -136,9 +141,16 @@ export class NodeTransport {
         });
 
         await new Promise<void>((resolve, reject) => {
-            this.port!.open((err?: Error | null) => err ? reject(err) : resolve());
+            this.port!.open((err?: Error | null) => {
+                if (err) {
+                    this.trace('Serial port open error: ' + String(err));
+                    reject(err);
+                } else {
+                    this.trace(`Connected ${this.device} @ ${this.baudrate}`);
+                    resolve();
+                }
+            });
         });
-        this.trace(`Connected ${this.device} @ ${this.baudrate}`);
     }
 
     private pushToBuffer(chunk: Uint8Array) {
@@ -167,10 +179,13 @@ export class NodeTransport {
     }
 
     async flushInput(): Promise<void> {
-    if (!this.port) { return; }
-        this.buffer = new Uint8Array(0);
-        await new Promise<void>((resolve, reject) => {
-            this.port!.flush((err?: Error | null) => err ? reject(err) : resolve());
+        if (!this.port) { return; }
+            this.buffer = new Uint8Array(0);
+            return new Promise<void>((resolve) => {
+                this.port?.flush((err) => {
+                    if (err) { logger.error(err); }
+                    resolve();
+                });
         });
     }
 
@@ -192,76 +207,69 @@ export class NodeTransport {
 
     // --- SLIP read generator -------------------------------------------
     async *read(timeout = 1000): AsyncGenerator<Uint8Array> {
-        // Wait for data or timeout, returning true if data arrived, false on timeout
-        const waitForDataOrTimeout = (ms: number) => new Promise<boolean>(res => {
-            let timer: NodeJS.Timeout | undefined;
-            const onData = () => {
-                if (timer) { clearTimeout(timer); }
-                this.emitter.off('data', onData);
-                res(true);
-            };
-            this.emitter.once('data', onData);
-            timer = setTimeout(() => {
-                this.emitter.off('data', onData);
-                res(false);
-            }, ms);
-        });
+        let partialPacket: Uint8Array | null = null;
+        let isEscaping = false;
+        let successfulSlip = false;
 
         while (this.port && this.port.isOpen) {
-            // If buffer contains a SLIP_END already we can proceed immediately
-            let endIdx = this.buffer.indexOf(this.slipEnd);
-            if (endIdx === -1) {
-                // wait for either data or timeout
-                const arrived = await waitForDataOrTimeout(timeout);
-                if (!arrived) {
-                    // timeout elapsed and still no SLIP_END -> return to caller (stop generator)
-                    return;
-                }
-                // Data arrived; check again for SLIP_END
-                endIdx = this.buffer.indexOf(this.slipEnd);
-                if (endIdx === -1) {
-                    // Data arrived but no SLIP_END found; continue loop and wait again
-                    continue;
-                }
+            const waitingBytes = this.inWaiting();
+            const readBytes = await this.newRead(waitingBytes > 0 ? waitingBytes : 1, timeout);
+            if (!readBytes || readBytes.length === 0) {
+                const msg = partialPacket === null
+                    ? successfulSlip
+                        ? "Serial data stream stopped: Possible serial noise or corruption."
+                        : "No serial data received."
+                    : `Packet content transfer stopped`;
+                this.trace(msg);
+                throw new Error(msg);
             }
-
-            // extract up to endIdx (may be 0-length packet)
-            const packetRaw = this.popBytes(endIdx + 1); // includes END
-            // remove leading/trailing ENDs and unescape
-            const payload = this.decodeSlip(packetRaw);
-            if (payload.length > 0) {
-                this.detectPanicHandler(payload);
-                yield payload;
+            this.trace(`Read ${readBytes.length} bytes: ${this.hexConvert(readBytes)}`);
+            let i = 0; // Track position in readBytes
+            while (i < readBytes.length) {
+                const byte = readBytes[i++];
+                if (partialPacket === null) {
+                    if (byte === this.slipEnd) {
+                        partialPacket = new Uint8Array(0); // Start of a new packet
+                    }
+                    else {
+                        this.trace(`Read invalid data: ${this.hexConvert(readBytes)}`);
+                        const remainingData = await this.newRead(this.inWaiting(), timeout);
+                        this.trace(`Remaining data in serial buffer: ${this.hexConvert(remainingData)}`);
+                        this.detectPanicHandler(new Uint8Array([...readBytes, ...(remainingData || [])]));
+                        throw new Error(`Invalid head of packet (0x${byte.toString(16)}): Possible serial noise or corruption.`);
+                    }
+                }
+                else if (isEscaping) {
+                    isEscaping = false;
+                    if (byte === this.slipEscEnd) {
+                        partialPacket = this.appendArray(partialPacket, new Uint8Array([this.slipEnd]));
+                    }
+                    else if (byte === this.slipEscEsc) {
+                        partialPacket = this.appendArray(partialPacket, new Uint8Array([this.slipEsc]));
+                    }
+                    else {
+                        this.trace(`Read invalid data: ${this.hexConvert(readBytes)}`);
+                        const remainingData = await this.newRead(this.inWaiting(), timeout);
+                        this.trace(`Remaining data in serial buffer: ${this.hexConvert(remainingData)}`);
+                        this.detectPanicHandler(new Uint8Array([...readBytes, ...(remainingData || [])]));
+                        throw new Error(`Invalid SLIP escape (0xdb, 0x${byte.toString(16)})`);
+                    }
+                }
+                else if (byte === this.slipEsc) {
+                    isEscaping = true;
+                }
+                else if (byte === this.slipEnd) {
+                    this.trace(`Received full packet: ${this.hexConvert(partialPacket)}`);
+                    this.buffer = this.appendArray(this.buffer, readBytes.slice(i));
+                    yield partialPacket;
+                    partialPacket = null;
+                    successfulSlip = true;
+                }
+                else {
+                    partialPacket = this.appendArray(partialPacket, new Uint8Array([byte]));
+                }
             }
         }
-    }
-
-    private decodeSlip(packetWithEnd: Uint8Array): Uint8Array {
-        // packetWithEnd contains bytes up to and including a SLIP_END;
-        // remove starting/ending SLIP_END bytes (some send leading ENDs)
-        let inner = packetWithEnd;
-    // strip all leading ENDs
-    let start = 0;
-    while (start < inner.length && inner[start] === this.slipEnd) { start++; }
-    // strip trailing ENDs
-    let end = inner.length - 1;
-    while (end >= start && inner[end] === this.slipEnd) { end--; }
-    if (end < start) { return new Uint8Array(0); }
-        const raw = inner.slice(start, end + 1);
-
-        const out: number[] = [];
-        for (let i = 0; i < raw.length; i++) {
-            const b = raw[i];
-            if (b === this.slipEsc) {
-                const next = raw[++i];
-                if (next === this.slipEscEnd) { out.push(this.slipEnd); }
-                else if (next === this.slipEscEsc) { out.push(this.slipEsc); }
-                // else ignore malformed
-            } else {
-                out.push(b);
-            }
-        }
-        return new Uint8Array(out);
     }
 
     // --- rawRead generator ---------------------------------------------
@@ -285,28 +293,20 @@ export class NodeTransport {
 
     // --- Control lines -------------------------------------------------
     async setRTS(state: boolean) {
-        this.port.set({rts: true, dtr: false});
-        await sleep(100);
-        this.port.set({rts: false, dtr: true});
-        await sleep(100);
-        this.port.set({rts: true, dtr: false});
-        await sleep(100);
-        
-        // this.port.set({ rts: state }, (err) => {
-        //     if (err) {
-        //         logger.error(err);
-        //     } else {
-        //         // logger.info("rts:"+state);
-        //     }
-        // });
+        // Match WebSerial implementation for better compatibility
+        // This matches the working pattern from webserial.js
+        this.port.set({ rts: state, dtr: this.dtrState }, (err) => {
+            if (err) {
+                logger.error(err);
+            }
+        });
     }
-
+    
     async setDTR(state: boolean) {
+        this.dtrState = state;
         this.port.set({ dtr: state }, (err) => {
             if (err) {
                 logger.error(err);
-            } else {
-                // logger.info("dtr:"+state);
             }
         });
     }
@@ -330,11 +330,6 @@ export class NodeTransport {
         }
         const available = Math.min(numBytes, this.buffer.length);
         return this.popBytes(available);
-    }
-
-    // --- Utilities -----------------------------------------------------
-    async sleep(ms: number): Promise<unknown> {
-        return new Promise(res => setTimeout(res, ms));
     }
 
     async waitForUnlock(_timeout: number): Promise<void> {
