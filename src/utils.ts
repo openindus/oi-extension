@@ -123,26 +123,6 @@ export const execShell = (cmd: string, path: string) =>
 
 export const IS_WINDOWS = process.platform.startsWith('win');
 
-export function getEsptoolPath() : string {
-    let flashScriptPath = join(
-      getEspIdfPath(),
-      "components",
-      "esptool_py",
-      "esptool",
-      "esptool.py"
-    );
-    return flashScriptPath;
-}
-
-export function getEspIdfPath() : string {
-    let a = vscode.workspace.getConfiguration("idf");
-    if (IS_WINDOWS) {
-        return a.get("espIdfPathWin");
-    } else {
-        return a.get("espIdfPath");
-    }
-}
-
 export async function getDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken): Promise<ModuleInfo[]> {
 
 	// Retrieve available devices with getConnectedBoards.py
