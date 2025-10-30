@@ -4,10 +4,14 @@
 		"target": "es2022",
 		"outDir": "out",
 		"lib": [
-			"es2021"
+			"es2021",
+			"dom"
 		],
 		"sourceMap": true,
 		"rootDir": "src",
+		"types": [
+			"node"
+		],
 		// "strict": true   /* enable all strict type-checking options */
 		/* Additional Checks */
 		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */

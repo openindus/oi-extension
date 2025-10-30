@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as CryptoJS from 'crypto-js';
 
-import { CustomReset, ESPLoader, FlashOptions, LoaderOptions, Transport } from 'esptool-js';
-
-import { NodeTransport } from './com/NodeTransport';
+import { FlashOptions, LoaderOptions } from 'esptool-js';
+import { CustomESPLoader } from './esptool-js-fix/CustomESPLoader';
+import { NodeTransport } from './esptool-js-fix/NodeTransport';
 import { deviceTypeList, pickDevice, ModuleInfo } from './utils';
 import { logger } from './extension';
 
@@ -70,6 +71,11 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     if (fs.existsSync(otaDataInitial.fsPath) === false) { return; }
     if (fs.existsSync(firmware.fsPath) === false) { return; }
 
+    const bootloaderData: string = fs.readFileSync(bootloader.fsPath).toString('binary');
+    const partitionsData: string = fs.readFileSync(partitions.fsPath).toString('binary');
+    const otaDataInitialData: string = fs.readFileSync(otaDataInitial.fsPath).toString('binary');
+    const firmwareData: string = fs.readFileSync(firmware.fsPath).toString('binary');
+
     // Flash the Firmware
     let successFlash = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -78,51 +84,46 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     }, async (progress, cancellationToken) => {
         let successFlash = await new Promise( async (resolve) => {
 
-            // let chip = 'esp32s3';
-            // // Hack for old modules
-            // if (moduleInfo.type === "stepperve") { chip = 'esp32s2'; }
+            try {
+                const transport = new NodeTransport(moduleInfo.port);
 
-            const transport = new NodeTransport(moduleInfo.port, true);
+                const loaderOptions: LoaderOptions = {
+                    transport: transport as unknown as any,
+                    baudrate: 921600,
+                    romBaudrate: 115200
+                };
 
-            const loaderOptions: LoaderOptions = {
-                transport: transport as unknown as any,
-                baudrate: 921600,
-                romBaudrate: 115200
-            };
+                let lastWritten: number = 0;
+                const flashOptions: FlashOptions = {
+                    fileArray: [{address: 0x0000, data: bootloaderData},
+                                {address: 0x8000, data: partitionsData},
+                                {address: 0xd000, data: otaDataInitialData},
+                                {address: 0x10000, data: firmwareData}],
+                    eraseAll: false,
+                    compress: true,
+                    flashSize: "8MB",
+                    flashMode: "qio",
+                    flashFreq: "80m",
+                    reportProgress: (fileIndex, written, total) => {
+                        if (fileIndex === 3) {
+                            progress.report({increment: written/total-lastWritten});
+                            lastWritten = written/total;
+                        }
+                    },
+                    calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image)),
+                } as FlashOptions;
 
-            let lastWritten: number = 0;
-            const flashOptions: FlashOptions = {
-                fileArray: [{address: 0x0000, data: bootloader.fsPath},
-                            {address: 0x8000, data: partitions.fsPath},
-                            {address: 0xd000, data: otaDataInitial.fsPath},
-                            {address: 0x10000, data: firmware.fsPath}],
-                eraseAll: false,
-                compress: true,
-                flashSize: "8MB",
-                reportProgress: (fileIndex, written, total) => {
-                    if (fileIndex === 3) {
-                        progress.report({increment: written/total-lastWritten});
-                        lastWritten = written/total;
-                    }
-                },
-            } as FlashOptions;
-
-            let esploader = new ESPLoader(loaderOptions);
-            await esploader.main();
-            await esploader.writeFlash(flashOptions);
-
-            // cancellationToken.onCancellationRequested(() => {
-            //     pyshell.kill();
-            //     resolve(false);
-            // });
-
-            // pyshell.end((err: PythonShellError, exitCode: number, exitSignal: string) => {
-            //     if (exitCode === 0) {
-            //         resolve(true);
-            //     } else {
-            //         resolve(false);
-            //     }
-            // });
+                // let esploader = new CustomESPLoader(loaderOptions);
+                let esploader = new CustomESPLoader(loaderOptions);
+                await esploader.main();
+                await esploader.writeFlash(flashOptions);
+                await esploader.after();
+                resolve(true);
+            } 
+            catch (error) {
+                logger.error(error);
+                resolve(false);
+            }
         });
         return successFlash;
     });
