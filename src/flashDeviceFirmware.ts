@@ -99,7 +99,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                                 {address: 0x8000, data: partitionsData},
                                 {address: 0xd000, data: otaDataInitialData},
                                 {address: 0x10000, data: firmwareData}],
-                    eraseAll: false,
+                    eraseAll: true,
                     compress: true,
                     flashSize: "8MB",
                     flashMode: "qio",
@@ -118,12 +118,15 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                 await esploader.main();
                 await esploader.writeFlash(flashOptions);
                 await esploader.after();
+                await new Promise((resolve) => setTimeout(resolve, 100));
+                await transport.disconnect();
                 resolve(true);
             } 
             catch (error) {
                 logger.error(error);
                 resolve(false);
             }
+
         });
         return successFlash;
     });
