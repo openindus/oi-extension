@@ -106,8 +106,8 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                     flashFreq: "80m",
                     reportProgress: (fileIndex, written, total) => {
                         if (fileIndex === 3) {
-                            progress.report({increment: written/total-lastWritten});
-                            lastWritten = written/total;
+                            progress.report({increment: (written/total)*100-lastWritten});
+                            lastWritten = (written/total)*100;
                         }
                     },
                     calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image)),
