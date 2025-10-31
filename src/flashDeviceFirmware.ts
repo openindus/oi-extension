@@ -114,6 +114,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     const firmwareData = fs.readFileSync(firmwareFilePath.fsPath).toString('binary');
 
     const transport = new NodeTransport(moduleInfo.port);
+    const esploader = new CustomESPLoader(transport);
 
     // Flash the firmware with progress reporting
     const successFlash = await vscode.window.withProgress({
@@ -123,11 +124,6 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     }, async (progress, cancellationToken) => {
         return new Promise<boolean>(async (resolve) => {
             try {
-                const loaderOptions: LoaderOptions = {
-                    transport: transport as unknown as any,
-                    baudrate: 921600,
-                    romBaudrate: 115200
-                };
 
                 const flashOptions: FlashOptions = {
                     fileArray: [
@@ -153,17 +149,19 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                 };
 
                 let lastWritten = 0;
-                const esploader = new CustomESPLoader(loaderOptions);
-                await esploader.main();
+
+                // Connect
+                await esploader.connectAndSync();
                 await esploader.writeFlash(flashOptions);
-                await esploader.after();
-                await new Promise(resolve => setTimeout(resolve, 100));
                 resolve(true);
+                
             } catch (error) {
                 logger.error('Error during flashing process:', error);
                 resolve(false);
             }
             finally {
+                await transport.resetToMainApp();
+                await new Promise(resolve => setTimeout(resolve, 200));
                 await transport.disconnect();
             }
         });

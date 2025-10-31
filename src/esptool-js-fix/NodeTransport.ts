@@ -109,7 +109,7 @@ export class NodeTransport {
     }
 
     // --- Core IO --------------------------------------------------------
-    async connect(baud = 115200, _serialOptions?: any): Promise<void> {
+    async connect(baud = 115200): Promise<void> {
         this.baudrate = baud;
         if (this.port && this.port.isOpen) { return; }
 
@@ -349,6 +349,19 @@ export class NodeTransport {
     async waitForUnlock(_timeout: number): Promise<void> {
         // Node side: nothing to unlock, keep as stub for compatibility
         return;
+    }
+
+    async resetToBootloader() {
+        await this.setDTR(false);
+        await this.setRTS(true);
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        await this.setDTR(true);
+        await this.setRTS(false);
+    }
+
+    async resetToMainApp() {
+        await this.setDTR(true);
+        await this.setRTS(true);
     }
 
     async disconnect(): Promise<void> {

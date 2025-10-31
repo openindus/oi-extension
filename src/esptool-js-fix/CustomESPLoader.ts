@@ -2,14 +2,25 @@ import * as esptool from 'esptool-js';
 import { getStubJsonByChipName } from './stubLoader';
 import { ESPError } from 'esptool-js/lib/types/error.js';
 import { logger } from '../extension';
+import { NodeTransport } from './NodeTransport';
+import { After, LoaderOptions } from 'esptool-js';
+import { ESP32S3ROM } from 'esptool-js/lib/targets/esp32s3.js';
 
 // Import the original ESPLoader class
 const { ESPLoader } = esptool;
 
 // Create a custom ESPLoader that uses our custom stub loader
 export class CustomESPLoader extends ESPLoader {
-    constructor(options: esptool.LoaderOptions) {
-        super(options);
+    nodeTransport: NodeTransport;
+    
+    constructor(transport: NodeTransport) {
+        const loaderOptions: LoaderOptions = {
+            transport: transport as unknown as any,
+            baudrate: 921600,
+            romBaudrate: 115200
+        };
+        super(loaderOptions);
+        this.nodeTransport = transport;
     }
 
     // Override the write method to log to VS Code terminal if available
@@ -61,5 +72,43 @@ export class CustomESPLoader extends ESPLoader {
         this.info("Stub running...");
         this.IS_STUB = true;
         return this.chip;
+    }
+
+
+    async connectAndSync(attempts = 7, detecting = true) {
+        let resp: string;
+        await this.nodeTransport.connect();
+        for (let i = 0; i < attempts; i++) {
+            await this.nodeTransport.resetToBootloader();
+            resp = await this._connectAttempt("no_reset", null);
+            if (resp === "success") {
+                break;
+            }
+        }
+        if (resp !== "success") {
+            throw new ESPError("Failed to connect with the device");
+        }
+        this.debug("Connect attempt successful.");
+        this.info("\n\r", false);
+        if (detecting) {
+            const chipMagicValue = (await this.readReg(this.CHIP_DETECT_MAGIC_REG_ADDR)) >>> 0;
+            this.debug("Chip Magic " + chipMagicValue.toString(16));
+            if (chipMagicValue === 0x09) {
+                this.chip = new ESP32S3ROM();
+            }
+            else {
+                throw new ESPError(`Unexpected CHIP magic value ${chipMagicValue}. Failed to autodetect chip type.`);
+            }
+        }
+        const chip = await this.chip.getChipDescription(this);
+        this.info("Chip is " + chip);
+        this.info("Features: " + (await this.chip.getChipFeatures(this)));
+        this.info("Crystal is " + (await this.chip.getCrystalFreq(this)) + "MHz");
+        this.info("MAC: " + (await this.chip.readMac(this)));
+        if (typeof this.chip.postConnect !== "undefined") {
+            await this.chip.postConnect(this);
+        }
+        await this.runStub();
+        await this.changeBaud();
     }
 }
