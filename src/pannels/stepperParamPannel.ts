@@ -6,8 +6,6 @@ import {Mutex} from 'async-mutex';
 import { OIStepper } from "../com/OIStepper";
 import { logger } from "../extension";
 import { ModuleInfo } from '../utils';
-import { setTimeout } from 'timers-promises';
-
 
 var currentPanel:vscode.WebviewPanel = undefined;
 var stepper:OIStepper = undefined;

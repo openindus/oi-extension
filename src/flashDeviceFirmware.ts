@@ -113,6 +113,8 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     const otaDataInitialData = fs.readFileSync(otaDataInitialPath.fsPath).toString('binary');
     const firmwareData = fs.readFileSync(firmwareFilePath.fsPath).toString('binary');
 
+    const transport = new NodeTransport(moduleInfo.port);
+
     // Flash the firmware with progress reporting
     const successFlash = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -121,7 +123,6 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     }, async (progress, cancellationToken) => {
         return new Promise<boolean>(async (resolve) => {
             try {
-                const transport = new NodeTransport(moduleInfo.port);
                 const loaderOptions: LoaderOptions = {
                     transport: transport as unknown as any,
                     baudrate: 921600,
@@ -157,11 +158,13 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                 await esploader.writeFlash(flashOptions);
                 await esploader.after();
                 await new Promise(resolve => setTimeout(resolve, 100));
-                await transport.disconnect();
                 resolve(true);
             } catch (error) {
                 logger.error('Error during flashing process:', error);
                 resolve(false);
+            }
+            finally {
+                await transport.disconnect();
             }
         });
     });
