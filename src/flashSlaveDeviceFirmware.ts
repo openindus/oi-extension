@@ -1,11 +1,13 @@
 import * as vscode from 'vscode';
-import { ModuleInfo, nameToType, deviceTypeList } from './utils';
 import * as fs from 'fs';
+import * as CryptoJS from 'crypto-js';
+
+import { ModuleInfo, nameToType, deviceTypeList } from './utils';
 import { logger } from './extension';
 import { OISerial } from './com/OISerial';
-import { FlashOptions, LoaderOptions } from 'esptool-js';
-import { CustomESPLoader } from './esptool-js-fix/CustomESPLoader';
-import { NodeTransport } from './esptool-js-fix/NodeTransport';
+import { FlashOptions } from 'esptool-js';
+import { CustomESPLoader } from './loader-fix/CustomESPLoader';
+import { NodeTransport } from './loader-fix/NodeTransport';
 
 export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext, masterPortName: string, slavesModuleInfo: ModuleInfo[], version?: string) {
 
@@ -78,15 +80,11 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
             }
             
             const transport = new NodeTransport(masterPortName);
+            const esploader = new CustomESPLoader(transport);
 
             // Now use CustomESPLoader to flash the firmware
             let successFlash = await new Promise<boolean>(async (resolve) => {
                 try {
-                    const loaderOptions: LoaderOptions = {
-                        transport: transport as unknown as any,
-                        baudrate: 921600,
-                        romBaudrate: 115200
-                    };
 
                     const firmwareData = fs.readFileSync(firmware.fsPath).toString('binary');
 
@@ -94,8 +92,8 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
                         fileArray: [
                             { address: 0x110000, data: firmwareData }
                         ],
-                        eraseAll: false, // We don't want to erase everything, just the firmware section
-                        compress: true,
+                        eraseAll: false,
+                        compress: false,
                         flashSize: "8MB",
                         flashMode: "qio",
                         flashFreq: "80m",
@@ -104,24 +102,29 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
                             if (total > 0) {
                                 const progressPercent = (written / total) * 100;
                                 progress.report({
-                                    increment: progressPercent / slavesModuleInfo.length,
+                                    increment: progressPercent / slavesModuleInfo.length - lastProgressWritten,
                                     message: `OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`
                                 });
+                                lastProgressWritten = progressPercent / slavesModuleInfo.length;
                             }
-                        }
+                        },
+                        calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image))
                     };
 
-                    const esploader = new CustomESPLoader(loaderOptions);
-                    await esploader.main();
+                    let lastProgressWritten = 0;
+
+                    await esploader.connectAndSync(false, true); // Do not reset and don't use stub
                     await esploader.writeFlash(flashOptions);
-                    await esploader.after();
                     await new Promise(resolve => setTimeout(resolve, 100));
                     resolve(true);
-                } catch (error) {
+                } 
+                catch (error) {
                     logger.error('Error during flashing process:', error);
                     resolve(false);
                 }
                 finally {
+                    await transport.resetToMainApp();
+                    await new Promise(resolve => setTimeout(resolve, 200));
                     await transport.disconnect();
                 }
             });

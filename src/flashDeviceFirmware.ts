@@ -3,8 +3,8 @@ import * as fs from 'fs';
 import * as CryptoJS from 'crypto-js';
 
 import { FlashOptions, LoaderOptions } from 'esptool-js';
-import { CustomESPLoader } from './esptool-js-fix/CustomESPLoader';
-import { NodeTransport } from './esptool-js-fix/NodeTransport';
+import { CustomESPLoader } from './loader-fix/CustomESPLoader';
+import { NodeTransport } from './loader-fix/NodeTransport';
 import { deviceTypeList, pickDevice, ModuleInfo } from './utils';
 import { logger } from './extension';
 
@@ -141,21 +141,22 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                         // Only report progress for the last file (firmware)
                         if (fileIndex === 3 && total > 0) {
                             const progressPercent = (written / total) * 100;
-                            progress.report({ increment: progressPercent - (progressPercent > 0 ? lastWritten : 0) });
-                            lastWritten = progressPercent;
+                            progress.report({ increment: progressPercent - (progressPercent > 0 ? lastProgressWritten : 0) });
+                            lastProgressWritten = progressPercent;
                         }
                     },
                     calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image))
                 };
 
-                let lastWritten = 0;
+                let lastProgressWritten = 0;
 
                 // Connect
                 await esploader.connectAndSync();
                 await esploader.writeFlash(flashOptions);
                 resolve(true);
                 
-            } catch (error) {
+            } 
+            catch (error) {
                 logger.error('Error during flashing process:', error);
                 resolve(false);
             }

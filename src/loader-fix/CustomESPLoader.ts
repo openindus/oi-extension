@@ -1,10 +1,11 @@
 import * as esptool from 'esptool-js';
-import { getStubJsonByChipName } from './stubLoader';
 import { ESPError } from 'esptool-js/lib/types/error.js';
-import { logger } from '../extension';
-import { NodeTransport } from './NodeTransport';
-import { After, LoaderOptions } from 'esptool-js';
 import { ESP32S3ROM } from 'esptool-js/lib/targets/esp32s3.js';
+import { LoaderOptions } from 'esptool-js';
+
+import { getStubJsonByChipName } from './stubLoader';
+import { NodeTransport } from './NodeTransport';
+import { logger } from '../extension';
 
 // Import the original ESPLoader class
 const { ESPLoader } = esptool;
@@ -17,7 +18,8 @@ export class CustomESPLoader extends ESPLoader {
         const loaderOptions: LoaderOptions = {
             transport: transport as unknown as any,
             baudrate: 921600,
-            romBaudrate: 115200
+            romBaudrate: 115200,
+            enableTracing: true
         };
         super(loaderOptions);
         this.nodeTransport = transport;
@@ -75,11 +77,13 @@ export class CustomESPLoader extends ESPLoader {
     }
 
 
-    async connectAndSync(attempts = 7, detecting = true) {
+    async connectAndSync(resetToBootloader = true, noStub = false, attempts = 7, detecting = true) {
         let resp: string;
         await this.nodeTransport.connect();
         for (let i = 0; i < attempts; i++) {
-            await this.nodeTransport.resetToBootloader();
+            if (resetToBootloader) {
+                await this.nodeTransport.resetToBootloader();
+            }
             resp = await this._connectAttempt("no_reset", null);
             if (resp === "success") {
                 break;
@@ -108,7 +112,9 @@ export class CustomESPLoader extends ESPLoader {
         if (typeof this.chip.postConnect !== "undefined") {
             await this.chip.postConnect(this);
         }
-        await this.runStub();
+        if (!noStub) {
+            await this.runStub();
+        }
         await this.changeBaud();
     }
 }
