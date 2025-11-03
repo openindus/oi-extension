@@ -1368,6 +1368,10 @@ export class ESPLoader {
             case "no_reset_stub":
                 this.info("Staying in flasher stub.");
                 break;
+            case "custom_reset":
+                this.info("Hard resetting via RTS pin...");
+                const hardReset = this.resetConstructors.customReset(this.transport);
+                await hardReset.reset();
             default:
                 this.info("Staying in bootloader.");
                 if (this.IS_STUB) {

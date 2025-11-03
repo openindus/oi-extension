@@ -2,9 +2,10 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as CryptoJS from 'crypto-js';
 
-import { FlashOptions, LoaderOptions } from 'esptool-js';
-import { CustomESPLoader } from './loader-fix/CustomESPLoader';
-import { NodeTransport } from './loader-fix/NodeTransport';
+// import { FlashOptions, LoaderOptions } from 'esptool-js';
+// import { CustomESPLoader } from './loader-fix/CustomESPLoader';
+// import { NodeTransport } from './loader-fix/NodeTransport';
+import { ESPLoader } from './loader';
 import { deviceTypeList, pickDevice, ModuleInfo } from './utils';
 import { logger } from './extension';
 
