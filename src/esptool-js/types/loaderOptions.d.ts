@@ -40,4 +40,8 @@ export interface LoaderOptions {
      * Indicate if trace messages should be enabled or not.
      */
     enableTracing?: boolean;
+    /**
+     * Indicate is Stub musn't be used.
+     */
+    noStub?: boolean;
 }

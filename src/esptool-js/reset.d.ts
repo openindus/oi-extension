@@ -1,4 +1,4 @@
-import { Transport } from "./webserial.js";
+import { NodeTransport } from "./nodeTransport";
 /**
  * Set of reset functions for ESP Loader connection.
  * @interface ResetConstructors
@@ -6,33 +6,33 @@ import { Transport } from "./webserial.js";
 export interface ResetConstructors {
     /**
      * Execute a classic set of commands that will reset the chip.
-     * @param transport Transport class to perform serial communication.
+     * @param transport NodeTransport class to perform serial communication.
      * @param resetDelay Delay in milliseconds for reset.
      */
-    classicReset?: (transport: Transport, resetDelay: number) => ClassicReset;
+    classicReset?: (transport: NodeTransport, resetDelay: number) => ClassicReset;
     /**
      * Execute a set of commands for USB JTAG serial reset.
-     * @param transport Transport class to perform serial communication.
+     * @param transport NodeTransport class to perform serial communication.
      */
-    usbJTAGSerialReset?: (transport: Transport) => UsbJtagSerialReset;
+    usbJTAGSerialReset?: (transport: NodeTransport) => UsbJtagSerialReset;
     /**
      * Execute a classic set of commands that will reset the chip.
-     * @param transport Transport class to perform serial communication.
+     * @param transport NodeTransport class to perform serial communication.
      * @param {boolean} usingUsbOtg is it using USB-OTG ?
      */
-    hardReset?: (transport: Transport, usingUsbOtg?: boolean) => HardReset;
+    hardReset?: (transport: NodeTransport, usingUsbOtg?: boolean) => HardReset;
     /**
      * Execute a custom set of commands that will reset the chip.
-     * @param transport Transport class to perform serial communication.
+     * @param transport NodeTransport class to perform serial communication.
      * @param {string} sequenceString Custom string sequence for reset strategy
      */
-    customReset?: (transport: Transport, sequenceString: string) => CustomReset;
+    customReset?: (transport: NodeTransport, sequenceString: string) => CustomReset;
 }
 /**
  * Reset strategy class
  */
 export interface ResetStrategy {
-    transport: Transport;
+    transport: NodeTransport;
     reset(): Promise<void>;
 }
 /**
@@ -49,13 +49,13 @@ export interface ResetStrategy {
  * W: Wait (time delay) - positive integer number (miliseconds)
  *
  * "D0|R1|W100|D1|R0|W50|D0" represents the classic reset strategy
- * @param {Transport} transport Transport class to perform serial communication.
+ * @param {NodeTransport} transport NodeTransport class to perform serial communication.
  * @param {number} resetDelay Delay in milliseconds for reset.
  */
 export declare class ClassicReset implements ResetStrategy {
     resetDelay: number;
-    transport: Transport;
-    constructor(transport: Transport, resetDelay: number);
+    transport: NodeTransport;
+    constructor(transport: NodeTransport, resetDelay: number);
     reset(): Promise<void>;
 }
 /**
@@ -70,11 +70,11 @@ export declare class ClassicReset implements ResetStrategy {
  * R: setRTS - 1=True / 0=False
  *
  * W: Wait (time delay) - positive integer number (miliseconds)
- * @param {Transport} transport Transport class to perform serial communication.
+ * @param {NodeTransport} transport NodeTransport class to perform serial communication.
  */
 export declare class UsbJtagSerialReset implements ResetStrategy {
-    transport: Transport;
-    constructor(transport: Transport);
+    transport: NodeTransport;
+    constructor(transport: NodeTransport);
     reset(): Promise<void>;
 }
 /**
@@ -89,13 +89,13 @@ export declare class UsbJtagSerialReset implements ResetStrategy {
  * R: setRTS - 1=True / 0=False
  *
  * W: Wait (time delay) - positive integer number (miliseconds)
- * @param {Transport} transport Transport class to perform serial communication.
+ * @param {NodeTransport} transport NodeTransport class to perform serial communication.
  * @param {boolean} usingUsbOtg is it using USB-OTG ?
  */
 export declare class HardReset implements ResetStrategy {
-    transport: Transport;
+    transport: NodeTransport;
     private usingUsbOtg;
-    constructor(transport: Transport, usingUsbOtg?: boolean);
+    constructor(transport: NodeTransport, usingUsbOtg?: boolean);
     reset(): Promise<void>;
 }
 /**
@@ -130,13 +130,13 @@ export declare function validateCustomResetStringSequence(seqStr: string): boole
  * W: Wait (time delay) - positive integer number (miliseconds)
  *
  * "D0|R1|W100|D1|R0|W50|D0" represents the classic reset strategy
- * @param {Transport} transport Transport class to perform serial communication.
+ * @param {NodeTransport} transport NodeTransport class to perform serial communication.
  * @param {string} sequenceString Custom string sequence for reset strategy
  */
 export declare class CustomReset implements ResetStrategy {
-    transport: Transport;
+    transport: NodeTransport;
     private sequenceString;
-    constructor(transport: Transport, sequenceString: string);
+    constructor(transport: NodeTransport, sequenceString: string);
     reset(): Promise<void>;
 }
 declare const _default: {

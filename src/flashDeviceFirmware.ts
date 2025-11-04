@@ -2,10 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as CryptoJS from 'crypto-js';
 
-// import { FlashOptions, LoaderOptions } from 'esptool-js';
-// import { CustomESPLoader } from './loader-fix/CustomESPLoader';
-// import { NodeTransport } from './loader-fix/NodeTransport';
-import { ESPLoader } from './loader';
+import { NodeTransport, ESPLoader, LoaderOptions, CustomReset, FlashOptions } from './esptool-js/index';
 import { deviceTypeList, pickDevice, ModuleInfo } from './utils';
 import { logger } from './extension';
 
@@ -115,7 +112,17 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     const firmwareData = fs.readFileSync(firmwareFilePath.fsPath).toString('binary');
 
     const transport = new NodeTransport(moduleInfo.port);
-    const esploader = new CustomESPLoader(transport);
+    const loaderOptions: LoaderOptions = {
+        transport: transport,
+        baudrate: 115200,
+        romBaudrate: 115200,
+        debugLogging: true,
+        resetConstructors: {
+            // override only the constructor you need; others will fall back to defaults
+            customReset: (transport, sequenceString) => new CustomReset(transport, 'D0|R1|W50|D1|R0')
+        }
+    };
+    const esploader = new ESPLoader(loaderOptions);
 
     // Flash the firmware with progress reporting
     const successFlash = await vscode.window.withProgress({
@@ -152,7 +159,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                 let lastProgressWritten = 0;
 
                 // Connect
-                await esploader.connectAndSync();
+                await esploader.main("custom_reset");
                 await esploader.writeFlash(flashOptions);
                 resolve(true);
                 

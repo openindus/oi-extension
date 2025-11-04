@@ -1,4 +1,4 @@
-import { Transport } from "./webserial.js";
+import { NodeTransport } from "./nodeTransport";
 import { ROM } from "./targets/rom.js";
 import { ResetStrategy } from "./reset.js";
 import { LoaderOptions } from "./types/loaderOptions.js";
@@ -46,7 +46,7 @@ export declare class ESPLoader {
     chip: ROM;
     IS_STUB: boolean;
     FLASH_WRITE_SIZE: number;
-    transport: Transport;
+    transport: NodeTransport;
     private baudrate;
     private serialOptions?;
     private terminal?;

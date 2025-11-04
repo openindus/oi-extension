@@ -10,7 +10,7 @@
     },
     "icon": "resources/logo_blanc.png",
     "engines": {
-            "vscode": "^1.87.0"
+        "vscode": "^1.87.0"
     },
     "categories": [
         "Other"
@@ -33,7 +33,7 @@
             },
             {
                 "command": "openindus.openinduswebsite",
-                    "title": "Visit OpenIndus Website"
+                "title": "Visit OpenIndus Website"
             },
             {
                 "command": "openindus.startStepperPanelConfig",
@@ -42,22 +42,22 @@
         ],
         "viewsContainers": {
             "activitybar": [
-            {
-                "id": "openindus-treeviewcontainer",
-                "title": "OpenIndus",
-                "icon": "resources/logoMenu.png"
-            }
-        ]
+                {
+                    "id": "openindus-treeviewcontainer",
+                    "title": "OpenIndus",
+                    "icon": "resources/logoMenu.png"
+                }
+            ]
         },
         "views": {
             "openindus-treeviewcontainer": [
-            {
-                "id": "openindus-treeview",
-                "name": "OpenIndus",
-                "contextualTitle": "OpenIndus",
-                "icon": "resources/logoMenu.png"
-            }
-        ]
+                {
+                    "id": "openindus-treeview",
+                    "name": "OpenIndus",
+                    "contextualTitle": "OpenIndus",
+                    "icon": "resources/logoMenu.png"
+                }
+            ]
         }
     },
     "scripts": {
@@ -80,10 +80,11 @@
         "@vscode/vsce": "^3.2.2",
         "@vscode/webview-ui-toolkit": "^1.4.0",
         "async-mutex": "^0.5.0",
-        "esptool-js": "^0.5.7",
+        "crypto-js": "4.2.0",
+        "pako": "^2.1.0",
         "serialport": "^10.4.0",
         "timers-promises": "^1.0.1",
-        "crypto-js": "4.2.0"
+        "atob-lite": "^2.0.0"
     },
     "keywords": [
         "openindus",

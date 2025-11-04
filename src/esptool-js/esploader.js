@@ -1,6 +1,6 @@
 import { ESPError } from "./types/error.js";
 import { deflate, Inflate } from "pako";
-import { Transport } from "./nodeTransport.js";
+import { NodeTransport } from "./nodeTransport";
 import { ClassicReset, CustomReset, HardReset, UsbJtagSerialReset } from "./reset.js";
 import { getStubJsonByChipName } from "./stubFlasher.js";
 import { padTo } from "./util.js";
@@ -136,6 +136,7 @@ export class ESPLoader {
         this.romBaudrate = 115200;
         this.debugLogging = false;
         this.syncStubDetected = false;
+        this.noStub = false;
         /**
          * Get flash size bytes from flash size string.
          * @param {string} flashSize Flash Size string
@@ -175,10 +176,13 @@ export class ESPLoader {
             this.debugLogging = options.debugLogging;
         }
         if (options.port) {
-            this.transport = new Transport(options.port);
+            this.transport = new NodeTransport(options.port);
         }
         if (typeof options.enableTracing !== "undefined") {
             this.transport.tracing = options.enableTracing;
+        }
+        if (typeof options.noStub !== "undefined") {
+            this.noStub = options.noStub;
         }
         if ((_a = options.resetConstructors) === null || _a === void 0 ? void 0 : _a.classicReset) {
             this.resetConstructors.classicReset = (_b = options.resetConstructors) === null || _b === void 0 ? void 0 : _b.classicReset;
@@ -539,7 +543,7 @@ export class ESPLoader {
             }
             else if (mode === "custom_reset") {
                 if (this.resetConstructors.customReset) {
-                    return [this.resetConstructors.customReset(this.transport)];
+                    return [this.resetConstructors.customReset(this.transport, '')];
                 }
             }
             else {
@@ -1078,10 +1082,12 @@ export class ESPLoader {
         this.info("Crystal is " + (await this.chip.getCrystalFreq(this)) + "MHz");
         this.info("MAC: " + (await this.chip.readMac(this)));
         await this.chip.readMac(this);
-        if (typeof this.chip.postConnect != "undefined") {
+        if (typeof this.chip.postConnect !== "undefined") {
             await this.chip.postConnect(this);
         }
-        await this.runStub();
+        if (!this.noStub) {
+            await this.runStub();
+        }
         if (this.romBaudrate !== this.baudrate) {
             await this.changeBaud();
         }

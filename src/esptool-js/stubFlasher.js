@@ -1,21 +1,18 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as vscode from 'vscode';
-import { logger } from '../extension';
-
+import atob from "atob-lite";
 /**
- * Custom stub loader that loads JSON files from extension resources
- * instead of node_modules to avoid dynamic import issues in VS Code extensions
+ * Import flash stub json for the given chip name.
+ * @param {string} chipName Name of chip to obtain flasher stub
+ * @returns {Stub} Stub information and decoded text and data
  */
-export function getStubJsonByChipName(chipName: string): any {
-    // Get the extension path
+export async function getStubJsonByChipName(chipName) {
+// Get the extension path
     const extensionUri = vscode.extensions.getExtension('openindus.oi-extension')?.extensionUri;
     if (!extensionUri) {
         throw new Error('Could not find extension path');
     }
     
     // Construct path to stub JSON files in extension resources
-    const stubPath = vscode.Uri.joinPath(extensionUri, 'src',  'esptool-js-fix', 'stub_flasher');
+    const stubPath = vscode.Uri.joinPath(extensionUri, 'src',  'esptool-js', 'targets', 'stub_flasher');
     const jsonPath = vscode.Uri.joinPath(stubPath, `stub_flasher_${chipName.toLowerCase().replace('esp', '').replace('-', '')}.json`);
     
     try {
@@ -39,19 +36,15 @@ export function getStubJsonByChipName(chipName: string): any {
         return null;
     }
 }
-
 /**
- * Decode base64 data to Uint8Array
+ * Convert a base 64 string to Uint8Array.
+ * @param {string} dataStr Base64 String to decode
+ * @returns {Uint8Array} Decoded Uint8Array
  */
-function decodeBase64Data(dataStr: string): Uint8Array {
-    // Use atob-lite for base64 decoding
+export function decodeBase64Data(dataStr) {
     const decoded = atob(dataStr);
     const chardata = decoded.split("").map(function (x) {
         return x.charCodeAt(0);
     });
     return new Uint8Array(chardata);
 }
-
-// Import atob-lite for base64 decoding
-// This will be available in the extension context
-declare function atob(str: string): string;
