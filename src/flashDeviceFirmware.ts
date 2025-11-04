@@ -114,9 +114,10 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     const transport = new NodeTransport(moduleInfo.port);
     const loaderOptions: LoaderOptions = {
         transport: transport,
-        baudrate: 115200,
+        baudrate: 921600,
         romBaudrate: 115200,
-        debugLogging: true,
+        debugLogging: false,
+        enableTracing: false,
         resetConstructors: {
             // override only the constructor you need; others will fall back to defaults
             customReset: (transport, sequenceString) => new CustomReset(transport, 'D0|R1|W50|D1|R0')

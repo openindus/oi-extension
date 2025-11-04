@@ -11,10 +11,12 @@
 		"rootDir": "src",
 		"types": [
 			"node"
-		]
+		],
+		"allowJs": true
 	},
 	"exclude": [
 		"node_modules",
-		".vscode-test"
+		".vscode-test",
+		"out"
 	]
 }

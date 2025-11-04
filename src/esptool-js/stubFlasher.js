@@ -1,4 +1,7 @@
-import atob from "atob-lite";
+import * as fs from 'fs';
+import * as vscode from 'vscode';
+import { logger } from '../extension';
+
 /**
  * Import flash stub json for the given chip name.
  * @param {string} chipName Name of chip to obtain flasher stub
@@ -37,14 +40,14 @@ export async function getStubJsonByChipName(chipName) {
     }
 }
 /**
- * Convert a base 64 string to Uint8Array.
- * @param {string} dataStr Base64 String to decode
- * @returns {Uint8Array} Decoded Uint8Array
+ * Decode base64 data to Uint8Array
  */
-export function decodeBase64Data(dataStr) {
+function decodeBase64Data(dataStr) {
+    // Use atob-lite for base64 decoding
     const decoded = atob(dataStr);
     const chardata = decoded.split("").map(function (x) {
         return x.charCodeAt(0);
     });
     return new Uint8Array(chardata);
 }
+

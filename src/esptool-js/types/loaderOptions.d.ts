@@ -1,6 +1,5 @@
 import { ResetConstructors } from "../reset";
 import { NodeTransport } from "../nodeTransport";
-import { IEspLoaderTerminal } from "./loaderTerminal";
 /**
  * Options to configure ESPLoader.
  * @interface LoaderOptions
@@ -16,11 +15,6 @@ export interface LoaderOptions {
      * @type {number}
      */
     baudrate: number;
-    /**
-     * An optional terminal interface to interact with the loader during the process.
-     * @type {IEspLoaderTerminal}
-     */
-    terminal?: IEspLoaderTerminal;
     /**
      * The baud rate to be used during the initial ROM communication with the device.
      * @type {number}
