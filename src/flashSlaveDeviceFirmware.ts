@@ -3,9 +3,9 @@ import * as fs from 'fs';
 import * as CryptoJS from 'crypto-js';
 
 import { ModuleInfo, nameToType, deviceTypeList } from './utils';
+import { NodeTransport, ESPLoader, LoaderOptions, CustomReset, FlashOptions } from './esptool-js/index';
 import { logger } from './extension';
 import { OISerial } from './com/OISerial';
-import { ESPLoader, NodeTransport, FlashOptions } from './esptool-js/index';
 
 export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext, masterPortName: string, slavesModuleInfo: ModuleInfo[], version?: string) {
 
@@ -77,67 +77,77 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
                 continue;
             }
             
-            // const transport = new NodeTransport(masterPortName);
-            // const esploader = new ESPLoader(transport);
+            const transport = new NodeTransport(masterPortName);
+            const loaderOptions: LoaderOptions = {
+                transport: transport,
+                baudrate: 921600,
+                romBaudrate: 115200,
+                debugLogging: false,
+                enableTracing: false,
+                noStub: true
+            };
+            const esploader = new ESPLoader(loaderOptions);
 
-            // // Now use CustomESPLoader to flash the firmware
-            // let successFlash = await new Promise<boolean>(async (resolve) => {
-            //     try {
+            // Now use CustomESPLoader to flash the firmware
+            let successFlash = await new Promise<boolean>(async (resolve) => {
+                let result = true;
+                try {
 
-            //         const firmwareData = fs.readFileSync(firmware.fsPath).toString('binary');
+                    const firmwareData = fs.readFileSync(firmware.fsPath).toString('binary');
 
-            //         const flashOptions: FlashOptions = {
-            //             fileArray: [
-            //                 { address: 0x110000, data: firmwareData }
-            //             ],
-            //             eraseAll: false,
-            //             compress: false,
-            //             flashSize: "8MB",
-            //             flashMode: "qio",
-            //             flashFreq: "80m",
-            //             reportProgress: (fileIndex, written, total) => {
-            //                 // Report progress for the firmware file
-            //                 if (total > 0) {
-            //                     const progressPercent = (written / total) * 100;
-            //                     progress.report({
-            //                         increment: progressPercent / slavesModuleInfo.length - lastProgressWritten,
-            //                         message: `OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`
-            //                     });
-            //                     lastProgressWritten = progressPercent / slavesModuleInfo.length;
-            //                 }
-            //             },
-            //             calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image))
-            //         };
+                    const flashOptions: FlashOptions = {
+                        fileArray: [
+                            { address: 0x110000, data: firmwareData }
+                        ],
+                        eraseAll: false,
+                        compress: false,
+                        flashSize: "8MB",
+                        flashMode: "qio",
+                        flashFreq: "80m",
+                        reportProgress: (fileIndex, written, total) => {
+                            // Report progress for the firmware file
+                            if (total > 0) {
+                                const progressPercent = (written / total) * 100;
+                                progress.report({
+                                    increment: progressPercent / slavesModuleInfo.length - lastProgressWritten,
+                                    message: `OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`
+                                });
+                                lastProgressWritten = progressPercent / slavesModuleInfo.length;
+                            }
+                        },
+                        calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image))
+                    };
 
-            //         let lastProgressWritten = 0;
+                    let lastProgressWritten = 0;
 
-            //         await esploader.connectAndSync(false, true); // Do not reset and don't use stub
-            //         await esploader.writeFlash(flashOptions);
-            //         await new Promise(resolve => setTimeout(resolve, 100));
-            //         resolve(true);
-            //     } 
-            //     catch (error) {
-            //         logger.error('Error during flashing process:', error);
-            //         resolve(false);
-            //     }
-            //     finally {
-            //         await transport.resetToMainApp();
-            //         await new Promise(resolve => setTimeout(resolve, 200));
-            //         await transport.disconnect();
-            //     }
-            // });
+                    await esploader.main("no_reset"); // Do not reset and don't use stub
+                    await esploader.writeFlash(flashOptions);
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    result = true;
+                } 
+                catch (error) {
+                    logger.error('Error during flashing process:', error);
+                    result = false;
+                }
+                finally {
+                    await transport.resetToMainApp();
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    await transport.disconnect();
+                    resolve(result);
+                }
+            });
 
-            // if (cancellationToken.isCancellationRequested) {
-            //     break;
-            // }
+            if (cancellationToken.isCancellationRequested) {
+                break;
+            }
 
-            // if (successFlash === false) {
-            //     vscode.window.showErrorMessage(`Unexpected error while flashing device OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) !`);
-            //     flashErrorList.push(`OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum})`);
-            //     continue;
-            // } else {
-            //     numberFlashedSuccessfully++;
-            // }
+            if (successFlash === false) {
+                vscode.window.showErrorMessage(`Unexpected error while flashing device OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) !`);
+                flashErrorList.push(`OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum})`);
+                continue;
+            } else {
+                numberFlashedSuccessfully++;
+            }
 
         };
     });

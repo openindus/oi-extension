@@ -132,6 +132,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
         cancellable: true
     }, async (progress, cancellationToken) => {
         return new Promise<boolean>(async (resolve) => {
+            let result = true;
             try {
 
                 const flashOptions: FlashOptions = {
@@ -162,17 +163,18 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                 // Connect
                 await esploader.main("custom_reset");
                 await esploader.writeFlash(flashOptions);
-                resolve(true);
+                result = true;
                 
             } 
             catch (error) {
                 logger.error('Error during flashing process:', error);
-                resolve(false);
+                result = true;
             }
             finally {
                 await transport.resetToMainApp();
                 await new Promise(resolve => setTimeout(resolve, 200));
                 await transport.disconnect();
+                resolve(result);
             }
         });
     });
