@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
+
 import { OIAccessTreeProvider } from './customTreeView';
 import { createProject } from './createProject';
+import { ModuleInfo, downloadNewFirmwareOnline } from './utils';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
-import { getSystemInfo } from './pannels/systemInfoPannel';
-import { ModuleInfo, execShell, downloadNewFirmwareOnline } from './utils';
 import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
+import { getSystemInfo } from './pannels/systemInfoPannel';
 import { startStepperPanelConfig } from './pannels/stepperParamPannel';
 
 var commandReadyCreateProject: Boolean = true;

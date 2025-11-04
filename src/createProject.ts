@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { ModuleInfo, deviceTypeList, execShell, formatStringOItoEnvName, pioProjects, IS_WINDOWS, getClassNameFromEnv } from './utils';
+import { ModuleInfo, deviceTypeList, formatStringOItoEnvName, IS_WINDOWS, getClassNameFromEnv } from './utils';
 
 export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
     

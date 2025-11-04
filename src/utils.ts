@@ -1,14 +1,13 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as https from 'https';
 import * as cp from "child_process";
+
+import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
+
 import { OISerial } from './com/OISerial';
 import { logger } from './extension';
-import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
-import { Path } from 'typescript';
-import { join } from 'path';
-var path = require('path');
-const https = require('https');
-const fs = require('fs');
-export const pioProjects = require('os').homedir() + '/Documents/PlatformIO/Projects';
+
 export const webSiteAddress = "https://openindus.com/";
 
 export const deviceTypeList: string[] = 
@@ -111,23 +110,12 @@ export type ModuleInfo = {
     caseName: string;
 };
 
-export const execShell = (cmd: string, path: string) =>
-    new Promise<string>((resolve, reject) => {
-        cp.exec(cmd, {cwd: path}, (err, out) => {
-            if (err) {
-                return reject(err);
-            }
-            return resolve(out);
-        });
-    });
-
 export const IS_WINDOWS = process.platform.startsWith('win');
 
 export async function getDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken): Promise<ModuleInfo[]> {
 
 	// Retrieve available devices with getConnectedBoards.py
 	let moduleInfoList: ModuleInfo[] = [];
-
     let targetVid = '10C4';
     let ports = await OISerial.list();
     for await (const port of ports) {
@@ -153,7 +141,6 @@ export async function getDeviceInfoList(context: vscode.ExtensionContext, token:
             }
         }
     }
-
     return moduleInfoList;
 }
 
@@ -161,9 +148,7 @@ export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, t
 
 	// Retrieve available devices with getConnectedBoards.py
 	let moduleInfoList: ModuleInfo[] = [];
-
     var serial = new OISerial(port);
-
     try {
         await serial.connect();
         await serial.getSlaves().then((data: { port: string; type: string; serialNum: string; hardwareVar: string; versionSw: string }[]) => {
@@ -186,14 +171,12 @@ export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, t
         await serial.disconnect();
         return undefined;
     }
-
     return moduleInfoList;
 }
 
 export async function pickDevice(context: vscode.ExtensionContext, portName?: string): Promise<ModuleInfo | undefined> {
     
     let moduleInfoList: ModuleInfo[] | undefined;
-
     // Progress notification with option to cancel while getting device list
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -203,10 +186,7 @@ export async function pickDevice(context: vscode.ExtensionContext, portName?: st
         moduleInfoList = await getDeviceInfoList(context, token);
     });
 
-
-    if (moduleInfoList === undefined) {
-        return;
-    }
+    if (moduleInfoList === undefined) { return; }
     if (moduleInfoList.length === 0) {
         vscode.window.showWarningMessage("No device connected, please check connection between device and computer");
         return;
