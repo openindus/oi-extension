@@ -17,10 +17,12 @@ export const deviceTypeList: string[] =
     'discreteve',
     'stepper',
     'stepperve',
-    'mixed',  
+    'mixed',
+    'mixedve',
     'analogls',
     'relaylp',
     'relayhp',
+    'brushless',
     'dc'
 ];
 
@@ -36,6 +38,8 @@ export function typeToName(input: string): string {
         '11': 'stepper',
         '12': 'stepperve',
         '13': 'analogls',
+        '14': 'mixedve',
+        '18': 'brushless',
         '21': 'dc'
     };
     return typeMap[input] || 'Unknown';
@@ -53,6 +57,8 @@ export function nameToType(input: string): string {
         'stepper': '11',
         'stepperve': '12',
         'analogls': '13',
+        'mixedve': '14',
+        'brushless': '18',
         'dc': '21'
     };
     return nameMap[input] || 'Unknown';
@@ -92,9 +98,11 @@ export const caseImg = [
     {moduleName: "stepper", imgName: "stepper.png", caseName: "BOI13"},
     {moduleName: "stepperve", imgName: "stepper.png", caseName: "BOI13"},
     {moduleName: "mixed", imgName: "discrete.png", caseName: "BOI12"},
+    {moduleName: "mixedve", imgName: "discrete.png", caseName: "BOI12"},
     {moduleName: "analogls", imgName: "discrete.png", caseName: "BOI12"},
     {moduleName: "relaylp", imgName: "stepper.png", caseName: "BOI13"},
     {moduleName: "relayhp", imgName: "stepper.png", caseName: "BOI13"},
+    {moduleName: "brushless", imgName: "stepper.png", caseName: "BOI13"},
     {moduleName: "dc", imgName: "stepper.png", caseName: "BOI13"}
 ];
 
@@ -352,10 +360,10 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
                         );
                         // Copy the downloaded file to the destination path
                         vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
-                        logger.info(`Downloaded ${sourceFileUrl}/${lib}-v${librarySourceVersion}.tar.gz to ${destinationPath}`);
+                        logger.info(`Downloaded ${sourceFileUrl} to ${destinationPath}`);
 
                     } catch (error) {
-                        logger.error(`Failed to download ${sourceFileUrl}/${lib}-v${librarySourceVersion}.tar.gz: ${error}`);
+                        logger.error(`Failed to download ${sourceFileUrl}: ${error}`);
                         continue;
                     }
                 }

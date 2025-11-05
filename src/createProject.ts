@@ -118,19 +118,43 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     }, async () => {
 
         try {
-            // Create src directory
-            await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/src'));
 
-            // Add default files to project
+            // Create src directory
+            await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/main'));
+
+            // sdkconfig.defaults
             await vscode.workspace.fs.copy(
                 vscode.Uri.file(context.asAbsolutePath('/resources/project_files/sdkconfig.defaults')),
-                vscode.Uri.file(state.path + '/' + state.name + 'sdkconfig.defaults')
-            );
+                vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults')
+            );            
+            // Modify sdkconfig.defaults to add right module type
+            let sdkconfigFile = fs.readFileSync(state.path + '/' + state.name + '/sdkconfig.defaults', 'utf8');
+            let configString = `\n# Module type configuration\nCONFIG_OI_MODULE_${state.mode.label!.toUpperCase()}=y`;
+            if (state.mode.label !== 'Standalone') {
+                configString += `\r\nCONFIG_MODULE_${state.mode.label!.toUpperCase()}`;
+            }
+            if (state.useArduinoLib.label !== 'Use Arduino Library') {
+                configString += `\r\nCONFIG_FORCE_CONSOLE=y`;
+            }
+            sdkconfigFile = sdkconfigFile.replace("%CONFIG_OI%", configString);
+            fs.writeFileSync(state.path + '/' + state.name + '/sdkconfig.defaults', sdkconfigFile, 'utf8');
+            // Copy sdkconfig.defaults to sdkconfig so that configuration is taken into account at first build
             await vscode.workspace.fs.copy(
-                vscode.Uri.file(context.asAbsolutePath('/resources/project_files/CMakeLists.txt')),
-                vscode.Uri.file(state.path + '/' + state.name + 'CMakeLists.txt')
+                vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'),
+                vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig')
             );
 
+            // CMakeLists.txt
+            await vscode.workspace.fs.copy(
+                vscode.Uri.file(context.asAbsolutePath('/resources/project_files/CMakeLists.txt')),
+                vscode.Uri.file(state.path + '/' + state.name + '/CMakeLists.txt')
+            );
+            // Replace %PROJECT% in CMakeLists.txt
+            let cmakelistsFile = fs.readFileSync(state.path + '/' + state.name + '/CMakeLists.txt', 'utf8');
+            cmakelistsFile = cmakelistsFile.replace("%PROJECT%", state.name!);
+            fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
+
+            // main.cpp and CMakeLists.txt in /main
             let mainFolder = state.useArduinoLib.label === 'Use Arduino Library' ? 'main_arduino' : 'main_espidf';
             await vscode.workspace.fs.copy(
                 vscode.Uri.file(context.asAbsolutePath('/resources/project_files/' + mainFolder + '/CMakeLists.txt')),
@@ -150,7 +174,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             // Master module init
             mainInitText += '\r\n// First, init the master device\r\n'; // empty line + master comment
             mainInitText += className + " " + envName + ";\r\n";  // master instance line
-            mainInitText += "\r\// Then add slaves devices here :\r\n";
+            mainInitText += "\r\n// Then add slaves devices here :\r\n";
             // Slave modules init
             if (slaves !== undefined) {
                 let i = 1;
@@ -170,51 +194,64 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             fs.writeFileSync(state.path + '/' + state.name + '/main/main.cpp', mainFile, 'utf8');
             
             // Create component directory
-            await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/components'));
+            await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/components/openindus'));
+            
+            // Check last lib version available in resources/libraries
+            const librariesDir = context.asAbsolutePath('/resources/libraries');
+            const libraryFiles = fs.readdirSync(librariesDir);
+            
+            // Function to extract version from filename (works for both openindus and arduino)
+            const extractVersion = (filename: string) => {
+                const match = filename.match(/v(\d+\.\d+\.\d+)\.tar\.gz$/);
+                return match ? match[1] : null;
+            };
+            
+            // Find all library files and extract versions
+            const libraryFilesWithVersions = libraryFiles
+                .filter(f => (f.startsWith('openindus-v') || f.startsWith('arduino-v')) && f.endsWith('.tar.gz'))
+                .map(extractVersion)
+                .filter(v => v !== null);
+            
+            // Get latest version (highest semantic version)
+            const latestVersion = libraryFilesWithVersions.length > 0 
+                ? libraryFilesWithVersions.sort((a, b) => {
+                    const aParts = a.split('.').map(Number);
+                    const bParts = b.split('.').map(Number);
+                    for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+                        const aVal = aParts[i] || 0;
+                        const bVal = bParts[i] || 0;
+                        if (aVal !== bVal) {
+                            return aVal - bVal;
+                        }
+                    }
+                    return 0;
+                })[libraryFilesWithVersions.length - 1]
+                : '2.0.0';
             
             // Extract OpenIndus component to project
             await tar.extract({
-                file: context.asAbsolutePath('/resources/libraries/openindus-v2.0.0.tar.gz'),
+                file: context.asAbsolutePath(`/resources/libraries/openindus-v${latestVersion}.tar.gz`),
                 cwd: state.path + '/' + state.name + '/components/openindus/'
             });
 
             // Extract Arduino component to project if needed
             if (state.useArduinoLib.label === 'Use Arduino Library') {
+                await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/components/arduino'));
                 await tar.extract({
-                    file: context.asAbsolutePath('/resources/libraries/arduino-v2.0.0.tar.gz'),
+                    file: context.asAbsolutePath(`/resources/libraries/arduino-v${latestVersion}.tar.gz`),
                     cwd: state.path + '/' + state.name + '/components/arduino/'
                 });
             }
-            
-            // // Copy CMakeLists.txt and replace %VAR% by the user selection
-            // await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/CMakeLists.txt')), vscode.Uri.file(state.path + '/' + state.name + '/CMakeLists.txt'));
-            // let cmakelistsFile = fs.readFileSync(state.path + '/' + state.name + '/CMakeLists.txt', 'utf8');
-            // cmakelistsFile = cmakelistsFile.replaceAll("%ENV%", envName);
-            // cmakelistsFile = cmakelistsFile.replace("%PROJECT%", state.name!);
-            // fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
 
-            // // Copy versionFile.txt and replace %LIB_VERSION%
-            // await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/version.txt')), vscode.Uri.file(state.path + '/' + state.name + '/version.txt'));
-            // let versionFile = fs.readFileSync(state.path + '/' + state.name + '/version.txt', 'utf8');
-            // if (libVersionResults !== null) {
-            //     versionFile = versionFile.replace("%LIB_VERSION%", libVersionResults[0]);
-            // } else {
-            //     versionFile = versionFile.replace("%LIB_VERSION%", "1.0.0");
-            // }
-            // fs.writeFileSync(state.path + '/' + state.name + '/version.txt', versionFile, 'utf8');
-
-            // // Copy platformio.ini and replace %VAR% by the user selection
-            // await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/platformio.ini')), vscode.Uri.file(state.path + '/' + state.name + '/platformio.ini'));
-            // let pioFile = fs.readFileSync(state.path + '/' + state.name + '/platformio.ini', 'utf8');
-            // pioFile = pioFile.replaceAll("%ENV%", envName);
-            // pioFile = pioFile.replace("%LIB_VERSION%", libVersion);
-            // pioFile = pioFile.replace("%MODULE%", envName.toUpperCase());
-            // pioFile = pioFile.replace("%MODE%", state.mode.label.toUpperCase());
-            // if (IS_WINDOWS === false) {
-            //     pioFile = pioFile.replace("monitor_rts = 1", "monitor_rts = 0");
-            //     pioFile = pioFile.replace("monitor_dtr = 1", "monitor_dtr = 0");
-            // }
-            // fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', pioFile, 'utf8');
+            // Copy versionFile.txt and replace %LIB_VERSION%
+            await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/version.txt')), vscode.Uri.file(state.path + '/' + state.name + '/version.txt'));
+            let versionFile = fs.readFileSync(state.path + '/' + state.name + '/version.txt', 'utf8');
+            if (latestVersion !== null) {
+                versionFile = versionFile.replace("%LIB_VERSION%", latestVersion);
+            } else {
+                versionFile = versionFile.replace("%LIB_VERSION%", "1.0.0");
+            }
+            fs.writeFileSync(state.path + '/' + state.name + '/version.txt', versionFile, 'utf8');
         }
         catch (error) {
             logger.error("Error while creating project: " + error);
