@@ -244,7 +244,7 @@ export async function downloadNewFirmwaresOnline(context: vscode.ExtensionContex
                 res.on('error', reject);
             });
         });
-        
+
         // Parse the html file to detect all firmware version available
         const firmwareSourceVersionList =  Array.from(new Set((response as string).match(/oi-firmware-\d+\.\d+\.\d+/g))) || [];
         logger.info("Firmware files found: " + firmwareSourceVersionList);
@@ -268,7 +268,6 @@ export async function downloadNewFirmwaresOnline(context: vscode.ExtensionContex
                                 fileName,
                                 context
                             );
-                           
                             // Copy the downloaded file to the destination path
                             vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
                             logger.info(`Downloaded ${sourceFileUrl} to ${destinationPath}`);
@@ -311,7 +310,7 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
                 res.on('error', reject);
             });
         });
-        
+
         // Parse the html file to detect all openindus libraries version available
         const openindusLibrariesDirectories = Array.from(new Set((response as string).match(/openindus-v\d+\.\d+\.\d+/g))) || [];
         logger.info("OpenIndus libraries files found: " + openindusLibrariesDirectories);
@@ -351,7 +350,6 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
                             fileName,
                             context
                         );
-                        
                         // Copy the downloaded file to the destination path
                         vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
                         logger.info(`Downloaded ${sourceFileUrl}/${lib}-v${librarySourceVersion}.tar.gz to ${destinationPath}`);

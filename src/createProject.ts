@@ -6,10 +6,15 @@ import { ModuleInfo, deviceTypeList, formatStringOItoEnvName, IS_WINDOWS, getCla
 export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
     
     const boardsNames: vscode.QuickPickItem[] = deviceTypeList.map(label => ({ label }));
-    const modeNames: vscode.QuickPickItem[] = [ {label: 'Master', detail:'Choose "master" if the module you are programming on is used to control other modules'},
-                                                {label: 'Standalone', detail: 'Choose "standalone" if the module you are programming on is use alone'},
-                                                {label: 'Slave', detail: 'Choose "slave" if the module is controlled by a "master" module (not recommended)'}];
-    const yesNoQuickPick: vscode.QuickPickItem[] = ['yes', 'no'].map(label => ({ label }));
+    const modeNames: vscode.QuickPickItem[] = [ 
+        {label: 'Master', detail:'Choose "master" if the module you are programming on is used to control other modules'},
+        {label: 'Standalone', detail: 'Choose "standalone" if the module you are programming on is use alone'},
+        {label: 'Slave', detail: 'Choose "slave" if the module is controlled by a "master" module (not recommended)'}
+    ];
+    const useArduinoQuickPick: vscode.QuickPickItem[] = [
+        {label: 'Use Arduino Library', detail: 'Recommended: Allow use of Arduino functions and libraries'},
+        {label: 'Do Not Use Arduino Library', detail: 'Advanced users: ESP-IDF framework functions directly - faster project setup and shorter build times'}
+    ];
 
 	const optionsSelectFolder: vscode.OpenDialogOptions = {
 		canSelectMany: false,
@@ -20,11 +25,11 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
 	};
 
 	interface State {
-		title: string;
 		board: vscode.QuickPickItem;
 		name: string;
         path: string;
         mode: vscode.QuickPickItem;
+        useArduinoLib: vscode.QuickPickItem;
 	}
 
     let state = {} as Partial<State>;
@@ -92,9 +97,16 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         });
     }
 
-    // Fith STEP: check available librairie version
-    
+    if (state.mode === undefined) { return; }
 
+    // Fifth STEP: select if use arduino library or not
+    state.useArduinoLib = await vscode.window.showQuickPick(useArduinoQuickPick, {
+        title: "Choose Library Option",
+        placeHolder: "Do you want to use Arduino library in your project ?",
+        ignoreFocusOut: true // to prevent closing when clicking outside at this step
+    });
+
+    if (state.useArduinoLib === undefined) { return; }
 
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
