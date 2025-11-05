@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as https from 'https';
-import * as cp from "child_process";
 
 import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
 
@@ -98,7 +97,6 @@ export const caseImg = [
     {moduleName: "relayhp", imgName: "stepper.png", caseName: "BOI13"},
     {moduleName: "dc", imgName: "stepper.png", caseName: "BOI13"}
 ];
-
 
 export type ModuleInfo = {
     port: string;
@@ -226,10 +224,10 @@ export async function pickDevice(context: vscode.ExtensionContext, portName?: st
     return moduleInfo;
 }
 
-export async function downloadNewFirmwareOnline(context: vscode.ExtensionContext) : Promise<void> {
+export async function downloadNewFirmwaresOnline(context: vscode.ExtensionContext) : Promise<void> {
 
     const fileDownloader: FileDownloader = await getApi();
-    const destinationDirectory = vscode.Uri.joinPath(context.extensionUri, 'resources');
+    const destinationDirectory = vscode.Uri.joinPath(context.extensionUri, 'resources', 'binaries');
 
     // Create directory "resources" if it doesn't exist
     if (!fs.existsSync(destinationDirectory.fsPath)) {
@@ -248,26 +246,26 @@ export async function downloadNewFirmwareOnline(context: vscode.ExtensionContext
         });
         
         // Parse the html file to detect all firmware version available
-        const sourceDirectories = (response as string).match(/binaries\/oi-firmware-\d+\.\d+\.\d+\//g) || [];
-        logger.info("Firmware files found: " + sourceDirectories);
+        const firmwareSourceVersionList =  Array.from(new Set((response as string).match(/oi-firmware-\d+\.\d+\.\d+/g))) || [];
+        logger.info("Firmware files found: " + firmwareSourceVersionList);
 
         // For all versions found, if the directory does not exist, download the files
-        for (const sourceVersion of sourceDirectories) {
-            if (fs.existsSync(vscode.Uri.joinPath(destinationDirectory, sourceVersion).fsPath)) {
-                logger.info("Directory already exists: " + sourceVersion);
+        for (const firmwareSourceVersion of firmwareSourceVersionList) {
+            if (fs.existsSync(vscode.Uri.joinPath(destinationDirectory, firmwareSourceVersion).fsPath)) {
+                logger.info("Directory already exists: " + firmwareSourceVersion);
                 continue; // Skip if the directory already exists
             } else {
-                logger.info("Downloading firmware files from: " + sourceVersion);
+                logger.info("Downloading firmware files from: " + firmwareSourceVersion);
                 for (const deviceType of deviceTypeList) {
                     for (const file of ['bootloader', 'partitions', 'ota_data_initial', 'firmware']) {
-                        const binaryName = `${deviceType.toLowerCase()}_${file}-${sourceVersion.split('-')[2].split('/')[0]}.bin`;
-                        const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), sourceVersion, binaryName);
-                        const destinationPath = vscode.Uri.joinPath(destinationDirectory, sourceVersion, binaryName);
+                        const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "binaries", firmwareSourceVersion);
+                        const fileName = `${deviceType.toLowerCase()}_${file}-${firmwareSourceVersion.split('-')[2].split('/')[0]}.bin`;
+                        const destinationPath = vscode.Uri.joinPath(destinationDirectory, firmwareSourceVersion, fileName);
                         // download source file to destination path via https
                         try {
                             const downloadedFileUri: vscode.Uri = await fileDownloader.downloadFile(
                                 sourceFileUrl,
-                                binaryName,
+                                fileName,
                                 context
                             );
                            
@@ -288,6 +286,88 @@ export async function downloadNewFirmwareOnline(context: vscode.ExtensionContext
 
     } catch (error) {
         vscode.window.showErrorMessage('Failed to fetch firmware files');
+        throw error;
+    }
+}
+
+export async function downloadNewLibrariesOnline(context: vscode.ExtensionContext) : Promise<void> {
+
+    const fileDownloader: FileDownloader = await getApi();
+    const destinationDirectory = vscode.Uri.joinPath(context.extensionUri, 'resources', 'libraries');
+
+    // Create directory "resources" if it doesn't exist
+    if (!fs.existsSync(destinationDirectory.fsPath)) {
+        fs.mkdirSync(destinationDirectory.fsPath, { recursive: true });
+    }
+
+    // Get list of files from server
+    try {
+        const response = await new Promise((resolve, reject) => {
+            https.get(`${webSiteAddress}binaries/test/
+                `, res => {
+                let data = '';
+                res.on('data', chunk => { data += chunk; });
+                res.on('end', () => resolve(data));
+                res.on('error', reject);
+            });
+        });
+        
+        // Parse the html file to detect all openindus libraries version available
+        const openindusLibrariesDirectories = Array.from(new Set((response as string).match(/openindus-v\d+\.\d+\.\d+/g))) || [];
+        logger.info("OpenIndus libraries files found: " + openindusLibrariesDirectories);
+
+        // Parse the html file to detect all libraries version available
+        const arduinoLibrariesDirectories = Array.from(new Set((response as string).match(/arduino-v\d+\.\d+\.\d+/g))) || [];
+        logger.info("Arduino libraries files found: " + arduinoLibrariesDirectories);
+
+        // Check that both openindus and arduino libraries are found with same version and make a version common list
+        const librariesSourceVersionList: string[] = [];
+        openindusLibrariesDirectories.forEach((openindusVersion) => {
+            arduinoLibrariesDirectories.forEach((arduinoVersion) => {
+                if (openindusVersion.split('-v')[1] === arduinoVersion.split('-v')[1]) {
+                        librariesSourceVersionList.push(openindusVersion.split('-v')[1]);
+                }
+            });
+        });
+        logger.info("Common libraries versions found: v" + librariesSourceVersionList);
+
+        // For all versions found, if the directory does not exist, download the files
+        for (const librarySourceVersion of librariesSourceVersionList) {
+            // Download openindus and arduino libraries
+            for (const lib of ["openindus", "arduino"]) {
+                // OpenIndus libraries
+                if (fs.existsSync(vscode.Uri.joinPath(destinationDirectory, lib + "-v" + librarySourceVersion + ".tar.gz").fsPath)) {
+                    logger.info("Library already exists: " + lib + "-v" + librarySourceVersion + ".tar.gz");
+                    continue; // Skip if the directory already exists
+                } else {
+                    logger.info("Downloading library " + lib + "-v" + librarySourceVersion + ".tar.gz");
+                    const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "binaries", "test");
+                    const fileName = lib + "-v" + librarySourceVersion + ".tar.gz";
+                    const destinationPath = vscode.Uri.joinPath(destinationDirectory, lib + "-v" + librarySourceVersion + ".tar.gz");
+                    // download source file to destination path via https
+                    try {
+                        const downloadedFileUri: vscode.Uri = await fileDownloader.downloadFile(
+                            sourceFileUrl,
+                            fileName,
+                            context
+                        );
+                        
+                        // Copy the downloaded file to the destination path
+                        vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
+                        logger.info(`Downloaded ${sourceFileUrl}/${lib}-v${librarySourceVersion}.tar.gz to ${destinationPath}`);
+
+                    } catch (error) {
+                        logger.error(`Failed to download ${sourceFileUrl}/${lib}-v${librarySourceVersion}.tar.gz: ${error}`);
+                        continue;
+                    }
+                }
+            }
+        }
+        // Clear all files in fildeDownloader
+        fileDownloader.deleteAllItems(context);
+
+    } catch (error) {
+        vscode.window.showErrorMessage('Failed to fetch libraries files');
         throw error;
     }
 }

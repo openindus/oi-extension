@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { OIAccessTreeProvider } from './customTreeView';
 import { createProject } from './createProject';
-import { ModuleInfo, downloadNewFirmwareOnline } from './utils';
+import { ModuleInfo, downloadNewFirmwaresOnline, downloadNewLibrariesOnline } from './utils';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
 import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
 import { getSystemInfo } from './pannels/systemInfoPannel';
@@ -63,7 +63,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Download the latets firmware from openindus server at each launch of application
-	await downloadNewFirmwareOnline(context);
+	await downloadNewFirmwaresOnline(context);
+	await downloadNewLibrariesOnline(context);
 }
 
 // this method is called when your extension is deactivated

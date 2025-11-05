@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as path from 'path';
 import { ModuleInfo, deviceTypeList, formatStringOItoEnvName, IS_WINDOWS, getClassNameFromEnv } from './utils';
 
 export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
@@ -8,9 +9,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     const modeNames: vscode.QuickPickItem[] = [ {label: 'Master', detail:'Choose "master" if the module you are programming on is used to control other modules'},
                                                 {label: 'Standalone', detail: 'Choose "standalone" if the module you are programming on is use alone'},
                                                 {label: 'Slave', detail: 'Choose "slave" if the module is controlled by a "master" module (not recommended)'}];
-	const yesNoList: string[] = ['yes', 'no'];
-    const yesNoQuickPick: vscode.QuickPickItem[] = yesNoList.map(label => ({ label }));
-    const path = require('path');
+    const yesNoQuickPick: vscode.QuickPickItem[] = ['yes', 'no'].map(label => ({ label }));
 
 	const optionsSelectFolder: vscode.OpenDialogOptions = {
 		canSelectMany: false,
@@ -41,32 +40,21 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         state.board = await vscode.window.showQuickPick(boardsNames, {
             title: "Create a Project",
             placeHolder: "Select the name of the board you will program on",
-            ignoreFocusOut: true,
+            ignoreFocusOut: false
         });
     }
 
     if (state.board === undefined) { return; }
 
     // Second STEP: select folder
-    const customPath = await vscode.window.showQuickPick(yesNoQuickPick, {
-        title: "Create a Project",
-        placeHolder: "Do you want to use default location ? (Documents/PlatformIO/Projects)",
-        ignoreFocusOut: true,
+    state.path = await vscode.window.showOpenDialog(optionsSelectFolder).then(fileUri => {
+        if (fileUri && fileUri[0]) {
+            return fileUri[0].fsPath;
+        }
+        else {
+            return undefined;
+        }
     });
-
-    if (customPath?.label === "no") {
-        state.path = await vscode.window.showOpenDialog(optionsSelectFolder).then(fileUri => {
-            if (fileUri && fileUri[0]) {
-                return fileUri[0].fsPath;
-            }
-            else {
-                return undefined;
-            }
-        });
-    }
-    else {
-        state.path = pioProjects;
-    }
     
     if (state.path === undefined) { return; }
 
@@ -100,10 +88,13 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         state.mode = await vscode.window.showQuickPick(modeNames, {
             title: "Choose your configuration",
             placeHolder: "Which configuration do you want to use ?",
-            ignoreFocusOut: true,
-            
+            ignoreFocusOut: true // to prevent closing when clicking outside at this step
         });
     }
+
+    // Fith STEP: check available librairie version
+    
+
 
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
