@@ -129,7 +129,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             );            
             // Modify sdkconfig.defaults to add right module type
             let sdkconfigFile = fs.readFileSync(state.path + '/' + state.name + '/sdkconfig.defaults', 'utf8');
-            let configString = `\n# Module type configuration\nCONFIG_OI_MODULE_${state.mode.label!.toUpperCase()}=y`;
+            let configString = `\n# Module type configuration\nCONFIG_OI_${state.board.label!.toUpperCase()}=y`;
             if (state.mode.label !== 'Standalone') {
                 configString += `\r\nCONFIG_MODULE_${state.mode.label!.toUpperCase()}`;
             }
