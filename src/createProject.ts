@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as tar from 'tar';
 import { ModuleInfo, deviceTypeList, formatStringOItoEnvName, IS_WINDOWS, getClassNameFromEnv } from './utils';
+import { logger } from './extension';
 
 export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
     
@@ -108,101 +110,116 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
 
     if (state.useArduinoLib === undefined) { return; }
 
+    // Sixth STEP: Create project with progress bar
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: `Creating project ${state.name}`,
         cancellable: false
     }, async () => {
 
-        if (state.mode === undefined) { return; }
-        if (state.board === undefined) { return; }
+        try {
+            // Create src directory
+            await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/src'));
 
-        // Fith STEP: check last version of openindus library in pio registry
-        // let data = await execShell(getPlatformIOPythonPath() + " -m platformio pkg show \"openindus/OpenIndus\"", "./");
-        // let libVersionResults = data?.match(/\d+.\d+.\d+/);
-        // let libVersion = "";
-        // if (libVersionResults !== null) {
-        //     libVersion = "@^" + libVersionResults[0];
-        // }
-        // libVersion = "openindus/OpenIndus" + libVersion;
-        // let envName = formatStringOItoEnvName(state.board.label).replaceAll('lite', ''); // Todo find a better way to remove 'lite
-        // let className = getClassNameFromEnv(state.board.label);
+            // Add default files to project
+            await vscode.workspace.fs.copy(
+                vscode.Uri.file(context.asAbsolutePath('/resources/project_files/sdkconfig.defaults')),
+                vscode.Uri.file(state.path + '/' + state.name + 'sdkconfig.defaults')
+            );
+            await vscode.workspace.fs.copy(
+                vscode.Uri.file(context.asAbsolutePath('/resources/project_files/CMakeLists.txt')),
+                vscode.Uri.file(state.path + '/' + state.name + 'CMakeLists.txt')
+            );
 
-        // // Sixth STEP: create the project directory and copy item
-        // // Create src directory and copy main.cpp
-        // await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/src'));
-        // await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/main.cpp')), vscode.Uri.file(state.path + '/' + state.name + '/src/main.cpp'));
-        
-        // // Add modules instance to main.cpp
-        // let mainSetupText: string = "%MODULE_INIT%";
-        // var mainInitText: string = "";
-        
-        // mainInitText += '\r\n// First, init the master device\r\n'; // empty line + master comment
-        // mainInitText += className + " " + envName + ";\r\n";  // master instance line
-        // mainInitText += "\r\// Then add slaves devices here :\r\n";
-        // if (slaves !== undefined) {
-        //     let i = 1;
-        //     slaves.forEach((slave: ModuleInfo) => {
-        //         // /!\ OIStepperVE = OIStepper ? Really ??
-        //         mainInitText += getClassNameFromEnv(slave.type) + " " + formatStringOItoEnvName(slave.type) + String(i) + ";\r\n"; // slave instance line
-        //         i++;
-        //     });
-        // } else {
-        //     // Put examples in comment
-        //     mainInitText += "// OIDiscrete discrete1;\r\n// OIDiscrete discrete2;\r\n// ...\r\n";
-        // }
-        // mainInitText += '\r\n'; // empty line
+            let mainFolder = state.useArduinoLib.label === 'Use Arduino Library' ? 'main_arduino' : 'main_espidf';
+            await vscode.workspace.fs.copy(
+                vscode.Uri.file(context.asAbsolutePath('/resources/project_files/' + mainFolder + '/CMakeLists.txt')),
+                vscode.Uri.file(state.path + '/' + state.name + '/main/CMakeLists.txt')
+            );
+            await vscode.workspace.fs.copy(
+                vscode.Uri.file(context.asAbsolutePath('/resources/project_files/' + mainFolder + '/main.cpp')),
+                vscode.Uri.file(state.path + '/' + state.name + '/main/main.cpp')
+            );
+
+            // Add modules instance to main.cpp
+            let envName = formatStringOItoEnvName(state.board.label).replaceAll('lite', ''); // Todo find a better way to remove 'lite
+            let className = getClassNameFromEnv(state.board.label);
+            let mainSetupText: string = "%MODULE_INIT%";
+            var mainInitText: string = "";
             
-        // // Replace text in main.cpp
-        // let mainFile = fs.readFileSync(state.path + '/' + state.name + '/src/main.cpp', 'utf8');
-        // mainFile = mainFile.replaceAll(mainSetupText, mainInitText);
-        // fs.writeFileSync(state.path + '/' + state.name + '/src/main.cpp', mainFile, 'utf8');
-        
-        // // Create lib directory
-        // await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/lib/' + envName));
-        
-        // // Copy sdkconfig.defaults
-        // await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/sdkconfig.defaults')), vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'));
-        
-        // Install lib manually (by doing this, pio can find board and scripts before making initialization)
-        // await execShell(getPlatformIOPythonPath() + " -m platformio pkg install --library \"" + libVersion + "\"  --storage-dir ./lib/" + envName, state.path + '/' + state.name);
-        
-        // if (envName === "core") {
-        //     libVersion = "\r\n\t" + libVersion;
-        //     libVersion += "\r\n\tlib/core/OpenIndus/external_components/Arduino";
-        //     libVersion += "\r\n\tpaulstoffregen/Ethernet@^2.0.0";
-        //     libVersion += "\r\n\tfelis/USB-Host-Shield-20@^1.6.0";
-        // }
-        
-        // // Copy CMakeLists.txt and replace %VAR% by the user selection
-        // await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/CMakeLists.txt')), vscode.Uri.file(state.path + '/' + state.name + '/CMakeLists.txt'));
-        // let cmakelistsFile = fs.readFileSync(state.path + '/' + state.name + '/CMakeLists.txt', 'utf8');
-        // cmakelistsFile = cmakelistsFile.replaceAll("%ENV%", envName);
-        // cmakelistsFile = cmakelistsFile.replace("%PROJECT%", state.name!);
-        // fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
+            // Master module init
+            mainInitText += '\r\n// First, init the master device\r\n'; // empty line + master comment
+            mainInitText += className + " " + envName + ";\r\n";  // master instance line
+            mainInitText += "\r\// Then add slaves devices here :\r\n";
+            // Slave modules init
+            if (slaves !== undefined) {
+                let i = 1;
+                slaves.forEach((slave: ModuleInfo) => {
+                    // /!\ OIStepperVE = OIStepper ? Really ??
+                    mainInitText += getClassNameFromEnv(slave.type) + " " + formatStringOItoEnvName(slave.type) + String(i) + ";\r\n"; // slave instance line
+                    i++;
+                });
+            } else {
+                // Put examples in comment
+                mainInitText += "// OIDiscrete discrete1;\r\n// OIDiscrete discrete2;\r\n// ...\r\n";
+            }
+            mainInitText += '\r\n'; // empty line
+            // Replace text in main.cpp
+            let mainFile = fs.readFileSync(state.path + '/' + state.name + '/main/main.cpp', 'utf8');
+            mainFile = mainFile.replaceAll(mainSetupText, mainInitText);
+            fs.writeFileSync(state.path + '/' + state.name + '/main/main.cpp', mainFile, 'utf8');
+            
+            // Create component directory
+            await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/components'));
+            
+            // Extract OpenIndus component to project
+            await tar.extract({
+                file: context.asAbsolutePath('/resources/libraries/openindus-v2.0.0.tar.gz'),
+                cwd: state.path + '/' + state.name + '/components/openindus/'
+            });
 
-        // // Copy versionFile.txt and replace %LIB_VERSION%
-        // await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/version.txt')), vscode.Uri.file(state.path + '/' + state.name + '/version.txt'));
-        // let versionFile = fs.readFileSync(state.path + '/' + state.name + '/version.txt', 'utf8');
-        // if (libVersionResults !== null) {
-        //     versionFile = versionFile.replace("%LIB_VERSION%", libVersionResults[0]);
-        // } else {
-        //     versionFile = versionFile.replace("%LIB_VERSION%", "1.0.0");
-        // }
-        // fs.writeFileSync(state.path + '/' + state.name + '/version.txt', versionFile, 'utf8');
+            // Extract Arduino component to project if needed
+            if (state.useArduinoLib.label === 'Use Arduino Library') {
+                await tar.extract({
+                    file: context.asAbsolutePath('/resources/libraries/arduino-v2.0.0.tar.gz'),
+                    cwd: state.path + '/' + state.name + '/components/arduino/'
+                });
+            }
+            
+            // // Copy CMakeLists.txt and replace %VAR% by the user selection
+            // await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/CMakeLists.txt')), vscode.Uri.file(state.path + '/' + state.name + '/CMakeLists.txt'));
+            // let cmakelistsFile = fs.readFileSync(state.path + '/' + state.name + '/CMakeLists.txt', 'utf8');
+            // cmakelistsFile = cmakelistsFile.replaceAll("%ENV%", envName);
+            // cmakelistsFile = cmakelistsFile.replace("%PROJECT%", state.name!);
+            // fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
 
-        // // Copy platformio.ini and replace %VAR% by the user selection
-        // await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/platformio.ini')), vscode.Uri.file(state.path + '/' + state.name + '/platformio.ini'));
-        // let pioFile = fs.readFileSync(state.path + '/' + state.name + '/platformio.ini', 'utf8');
-        // pioFile = pioFile.replaceAll("%ENV%", envName);
-        // pioFile = pioFile.replace("%LIB_VERSION%", libVersion);
-        // pioFile = pioFile.replace("%MODULE%", envName.toUpperCase());
-        // pioFile = pioFile.replace("%MODE%", state.mode.label.toUpperCase());
-        // if (IS_WINDOWS === false) {
-        //     pioFile = pioFile.replace("monitor_rts = 1", "monitor_rts = 0");
-        //     pioFile = pioFile.replace("monitor_dtr = 1", "monitor_dtr = 0");
-        // }
-        // fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', pioFile, 'utf8');
+            // // Copy versionFile.txt and replace %LIB_VERSION%
+            // await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/version.txt')), vscode.Uri.file(state.path + '/' + state.name + '/version.txt'));
+            // let versionFile = fs.readFileSync(state.path + '/' + state.name + '/version.txt', 'utf8');
+            // if (libVersionResults !== null) {
+            //     versionFile = versionFile.replace("%LIB_VERSION%", libVersionResults[0]);
+            // } else {
+            //     versionFile = versionFile.replace("%LIB_VERSION%", "1.0.0");
+            // }
+            // fs.writeFileSync(state.path + '/' + state.name + '/version.txt', versionFile, 'utf8');
+
+            // // Copy platformio.ini and replace %VAR% by the user selection
+            // await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/platformio.ini')), vscode.Uri.file(state.path + '/' + state.name + '/platformio.ini'));
+            // let pioFile = fs.readFileSync(state.path + '/' + state.name + '/platformio.ini', 'utf8');
+            // pioFile = pioFile.replaceAll("%ENV%", envName);
+            // pioFile = pioFile.replace("%LIB_VERSION%", libVersion);
+            // pioFile = pioFile.replace("%MODULE%", envName.toUpperCase());
+            // pioFile = pioFile.replace("%MODE%", state.mode.label.toUpperCase());
+            // if (IS_WINDOWS === false) {
+            //     pioFile = pioFile.replace("monitor_rts = 1", "monitor_rts = 0");
+            //     pioFile = pioFile.replace("monitor_dtr = 1", "monitor_dtr = 0");
+            // }
+            // fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', pioFile, 'utf8');
+        }
+        catch (error) {
+            logger.error("Error while creating project: " + error);
+            vscode.window.showErrorMessage("Error while creating project: " + error);
+        }
     });
 
     // Last STEP: Open folfer

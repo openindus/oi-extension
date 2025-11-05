@@ -258,8 +258,8 @@ export async function downloadNewFirmwaresOnline(context: vscode.ExtensionContex
                 logger.info("Downloading firmware files from: " + firmwareSourceVersion);
                 for (const deviceType of deviceTypeList) {
                     for (const file of ['bootloader', 'partitions', 'ota_data_initial', 'firmware']) {
-                        const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "binaries", firmwareSourceVersion);
                         const fileName = `${deviceType.toLowerCase()}_${file}-${firmwareSourceVersion.split('-')[2].split('/')[0]}.bin`;
+                        const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "binaries", firmwareSourceVersion, fileName);
                         const destinationPath = vscode.Uri.joinPath(destinationDirectory, firmwareSourceVersion, fileName);
                         // download source file to destination path via https
                         try {
@@ -340,8 +340,8 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
                     continue; // Skip if the directory already exists
                 } else {
                     logger.info("Downloading library " + lib + "-v" + librarySourceVersion + ".tar.gz");
-                    const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "binaries", "test");
                     const fileName = lib + "-v" + librarySourceVersion + ".tar.gz";
+                    const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "binaries", "test", fileName);
                     const destinationPath = vscode.Uri.joinPath(destinationDirectory, lib + "-v" + librarySourceVersion + ".tar.gz");
                     // download source file to destination path via https
                     try {
