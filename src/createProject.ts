@@ -2,20 +2,22 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as tar from 'tar';
-import { ModuleInfo, deviceTypeList, formatStringOItoEnvName, IS_WINDOWS, getClassNameFromEnv } from './utils';
+import { ModuleInfo, deviceTypeList, getClassName, getDefineName, getSimpleName} from './utils';
 import { logger } from './extension';
 
 export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
     
-    const boardsNames: vscode.QuickPickItem[] = deviceTypeList.map(label => ({ label }));
+    const boardsNames: vscode.QuickPickItem[] = deviceTypeList.map(element => ({ label:getClassName(element) }));
+
     const modeNames: vscode.QuickPickItem[] = [ 
         {label: 'Master', detail:'Choose "master" if the module you are programming on is used to control other modules'},
         {label: 'Standalone', detail: 'Choose "standalone" if the module you are programming on is use alone'},
         {label: 'Slave', detail: 'Choose "slave" if the module is controlled by a "master" module (not recommended)'}
     ];
+
     const useArduinoQuickPick: vscode.QuickPickItem[] = [
         {label: 'Use Arduino Library', detail: 'Recommended: Allow use of Arduino functions and libraries'},
-        {label: 'Do Not Use Arduino Library', detail: 'Advanced users: ESP-IDF framework functions directly - faster project setup and shorter build times'}
+        {label: 'Do Not Use Arduino Library', detail: 'For Advanced users: ESP-IDF framework functions directly - faster project setup and shorter build times'}
     ];
 
 	const optionsSelectFolder: vscode.OpenDialogOptions = {
@@ -36,10 +38,12 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
 
     let state = {} as Partial<State>;
 
+    // --------------------------------------------------------------------------------------------
     // First STEP: select board
+    // --------------------------------------------------------------------------------------------
     if (master !== undefined) {
         boardsNames.forEach((boardsName: vscode.QuickPickItem) => {
-            if (boardsName.label === master.type) { // TODO check if master type need formatting
+            if (getSimpleName(boardsName.label) === getSimpleName(master.type)) { // TODO check if master type need formatting
                 state.board = boardsName;
             }
         });
@@ -53,7 +57,9 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
 
     if (state.board === undefined) { return; }
 
+    // --------------------------------------------------------------------------------------------
     // Second STEP: select folder
+    // --------------------------------------------------------------------------------------------
     state.path = await vscode.window.showOpenDialog(optionsSelectFolder).then(fileUri => {
         if (fileUri && fileUri[0]) {
             return fileUri[0].fsPath;
@@ -65,7 +71,9 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     
     if (state.path === undefined) { return; }
 
+    // --------------------------------------------------------------------------------------------
     // Third STEP: select project name
+    // --------------------------------------------------------------------------------------------
     state.name = await vscode.window.showInputBox({
         title: "Create a Project",
         value: "my_project",
@@ -88,7 +96,9 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     
     if (state.name === undefined) { return; }
 
+    // --------------------------------------------------------------------------------------------
     // Fourth STEP: select project mode: master, standalone or slave
+    // --------------------------------------------------------------------------------------------
     if (master !== undefined) {
         state.mode = modeNames[0]; // If master infos are given; select "master" mode without asking
     } else {
@@ -101,7 +111,9 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
 
     if (state.mode === undefined) { return; }
 
+    // --------------------------------------------------------------------------------------------
     // Fifth STEP: select if use arduino library or not
+    // --------------------------------------------------------------------------------------------
     state.useArduinoLib = await vscode.window.showQuickPick(useArduinoQuickPick, {
         title: "Choose Library Option",
         placeHolder: "Do you want to use Arduino library in your project ?",
@@ -110,7 +122,48 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
 
     if (state.useArduinoLib === undefined) { return; }
 
-    // Sixth STEP: Create project with progress bar
+    // --------------------------------------------------------------------------------------------
+    // Sixth STEP: select library version
+    // --------------------------------------------------------------------------------------------
+
+    // Get library versions from resources directory
+    const librariesPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'libraries');
+    const librariesVersions = await vscode.workspace.fs.readDirectory(librariesPath);
+    
+    // Filter valid firmware versions (must be directories and have version format like oi-firmware-x.x.x)
+    const validVersions = librariesVersions
+        .filter(([name, type]) => type === vscode.FileType.File && name.startsWith('openindus'))
+        .map(([name]) => name.substring('openindus-v'.length).replace('.tar.gz', ''))
+        .filter(version => version.length >= 5) // Ensure version format is at least x.x.x
+        .map(label => ({ label } as vscode.QuickPickItem))
+        .reverse(); // Show latest versions first
+
+    // If no valid versions found, show error
+    if (validVersions.length === 0) {
+        vscode.window.showErrorMessage('No libraries versions found in resources/libraries');
+        logger.error('No valid libraries versions found in resources/libraries');
+        return;
+    }
+
+    // Add a (recommended) flag to last version
+    validVersions[0].description = "(Recommended)";
+
+    // Prompt user to select firmware version
+    const selectedVersion = await vscode.window.showQuickPick(validVersions, {
+        placeHolder: 'Select the version',
+        ignoreFocusOut: true
+    });
+
+    if (!selectedVersion?.label) {
+        logger.info('Firmware version selection cancelled');
+        return;
+    }
+
+    const libraryVersion = selectedVersion.label;
+
+    // --------------------------------------------------------------------------------------------
+    // Seventh STEP: Create project with progress bar
+    // --------------------------------------------------------------------------------------------
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: `Creating project ${state.name}`,
@@ -129,13 +182,9 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             );            
             // Modify sdkconfig.defaults to add right module type
             let sdkconfigFile = fs.readFileSync(state.path + '/' + state.name + '/sdkconfig.defaults', 'utf8');
-            let configString = `\n# Module type configuration\nCONFIG_OI_${state.board.label!.toUpperCase()}=y`;
-            if (state.mode.label !== 'Standalone') {
-                configString += `\r\nCONFIG_MODULE_${state.mode.label!.toUpperCase()}`;
-            }
-            if (state.useArduinoLib.label !== 'Use Arduino Library') {
-                configString += `\r\nCONFIG_FORCE_CONSOLE=y`;
-            }
+            let configString = `\r\n# Module type configuration`;
+            configString += `\r\nCONFIG_${getDefineName(state.board.label!)}=y`;
+            if (state.mode.label !== 'Standalone') { configString += `\r\nCONFIG_MODULE_${state.mode.label!.toUpperCase()}=y`; }
             sdkconfigFile = sdkconfigFile.replace("%CONFIG_OI%", configString);
             fs.writeFileSync(state.path + '/' + state.name + '/sdkconfig.defaults', sdkconfigFile, 'utf8');
             // Copy sdkconfig.defaults to sdkconfig so that configuration is taken into account at first build
@@ -166,8 +215,8 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             );
 
             // Add modules instance to main.cpp
-            let envName = formatStringOItoEnvName(state.board.label).replaceAll('lite', ''); // Todo find a better way to remove 'lite
-            let className = getClassNameFromEnv(state.board.label);
+            let envName = getSimpleName(state.board.label);
+            let className = getClassName(state.board.label);
             let mainSetupText: string = "%MODULE_INIT%";
             var mainInitText: string = "";
             
@@ -180,7 +229,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
                 let i = 1;
                 slaves.forEach((slave: ModuleInfo) => {
                     // /!\ OIStepperVE = OIStepper ? Really ??
-                    mainInitText += getClassNameFromEnv(slave.type) + " " + formatStringOItoEnvName(slave.type) + String(i) + ";\r\n"; // slave instance line
+                    mainInitText += getClassName(slave.type) + " " + getSimpleName(slave.type) + String(i) + ";\r\n"; // slave instance line
                     i++;
                 });
             } else {
@@ -196,41 +245,9 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             // Create component directory
             await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/components/openindus'));
             
-            // Check last lib version available in resources/libraries
-            const librariesDir = context.asAbsolutePath('/resources/libraries');
-            const libraryFiles = fs.readdirSync(librariesDir);
-            
-            // Function to extract version from filename (works for both openindus and arduino)
-            const extractVersion = (filename: string) => {
-                const match = filename.match(/v(\d+\.\d+\.\d+)\.tar\.gz$/);
-                return match ? match[1] : null;
-            };
-            
-            // Find all library files and extract versions
-            const libraryFilesWithVersions = libraryFiles
-                .filter(f => (f.startsWith('openindus-v') || f.startsWith('arduino-v')) && f.endsWith('.tar.gz'))
-                .map(extractVersion)
-                .filter(v => v !== null);
-            
-            // Get latest version (highest semantic version)
-            const latestVersion = libraryFilesWithVersions.length > 0 
-                ? libraryFilesWithVersions.sort((a, b) => {
-                    const aParts = a.split('.').map(Number);
-                    const bParts = b.split('.').map(Number);
-                    for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
-                        const aVal = aParts[i] || 0;
-                        const bVal = bParts[i] || 0;
-                        if (aVal !== bVal) {
-                            return aVal - bVal;
-                        }
-                    }
-                    return 0;
-                })[libraryFilesWithVersions.length - 1]
-                : '2.0.0';
-            
             // Extract OpenIndus component to project
             await tar.extract({
-                file: context.asAbsolutePath(`/resources/libraries/openindus-v${latestVersion}.tar.gz`),
+                file: context.asAbsolutePath(`/resources/libraries/openindus-v${libraryVersion}.tar.gz`),
                 cwd: state.path + '/' + state.name + '/components/openindus/'
             });
 
@@ -238,7 +255,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             if (state.useArduinoLib.label === 'Use Arduino Library') {
                 await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/components/arduino'));
                 await tar.extract({
-                    file: context.asAbsolutePath(`/resources/libraries/arduino-v${latestVersion}.tar.gz`),
+                    file: context.asAbsolutePath(`/resources/libraries/arduino-v${libraryVersion}.tar.gz`),
                     cwd: state.path + '/' + state.name + '/components/arduino/'
                 });
             }
@@ -246,8 +263,8 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             // Copy versionFile.txt and replace %LIB_VERSION%
             await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/version.txt')), vscode.Uri.file(state.path + '/' + state.name + '/version.txt'));
             let versionFile = fs.readFileSync(state.path + '/' + state.name + '/version.txt', 'utf8');
-            if (latestVersion !== null) {
-                versionFile = versionFile.replace("%LIB_VERSION%", latestVersion);
+            if (libraryVersion !== null) {
+                versionFile = versionFile.replace("%LIB_VERSION%", libraryVersion);
             } else {
                 versionFile = versionFile.replace("%LIB_VERSION%", "1.0.0");
             }

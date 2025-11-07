@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { ModuleInfo, caseImg, getNiceNameFromEnv, getSlaveDeviceInfoList, pickDevice } from '../utils';
+import { ModuleInfo, caseImg, getClassName, getSlaveDeviceInfoList, pickDevice } from '../utils';
 import { logger } from "../extension";
 import {Mutex} from 'async-mutex';
 
@@ -78,7 +78,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
                         <div class="flex-container slave">
                             <div class="item auto ${slave.caseName}"><img src="${contentUri}/${slave.imgName}"></div>
                             <div class="item auto">
-                                <h3>${getNiceNameFromEnv(slave.type)}</h3>
+                                <h3>${getClassName(slave.type)}</h3>
                                 <div style="border:1px solid #1F1F1F;"></div>
                                 <p>
                                     Connected on Bus<br>
@@ -103,7 +103,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
         } else {
             let rawHTML = data.toString();
             rawHTML = rawHTML.replaceAll('${content}', contentUri)
-                .replace('${moduleType}', getNiceNameFromEnv(moduleInfo.type))
+                .replace('${moduleType}', getClassName(moduleInfo.type))
                 .replace('${modulePort}', moduleInfo.port)
                 .replace('${moduleSerialNum}', moduleInfo.serialNum)
                 .replace('${moduleHardwareVar}', moduleInfo.hardwareVar)

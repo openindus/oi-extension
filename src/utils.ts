@@ -11,19 +11,19 @@ export const webSiteAddress = "https://openindus.com/";
 
 export const deviceTypeList: string[] = 
 [
-    'core',
-    'corelite',
-    'discrete',
-    'discreteve',
-    'stepper',
-    'stepperve',
-    'mixed',
-    'mixedve',
-    'analogls',
-    'relaylp',
-    'relayhp',
-    'brushless',
-    'dc'
+    'OICore',
+    'OICorelite',
+    'OIDiscrete',
+    'OIDiscreteVE',
+    'OIStepper',
+    'OIStepperVE',
+    'OIMixed',
+    'OIMixedVE',
+    'OIAnalogLS',
+    'OIRelayLP',
+    'OIRelayHP',
+    'OIBrushless',
+    'OIDC'
 ];
 
 export function typeToName(input: string): string {
@@ -42,7 +42,7 @@ export function typeToName(input: string): string {
         '18': 'brushless',
         '21': 'dc'
     };
-    return typeMap[input] || 'Unknown';
+    return typeMap[getSimpleName(input)] || 'Unknown';
 }
 
 export function nameToType(input: string): string {
@@ -61,33 +61,32 @@ export function nameToType(input: string): string {
         'brushless': '18',
         'dc': '21'
     };
-    return nameMap[input] || 'Unknown';
+    return nameMap[getSimpleName(input)] || 'Unknown';
 }
 
 // Return a board without 'OI', '_' and '-'
-export function formatStringOItoEnvName(input: string): string {
+export function getSimpleName(input: string): string {
     return input.toLowerCase().replaceAll('oi', '').replaceAll('_', '').replaceAll('-', '');
 }
 
-// Return the oi-firmware env name from a given non formatted board name
-export function getClassNameFromEnv(str: string): string {
-    var envName = formatStringOItoEnvName(str);
+export function getClassName(str: string): string {
+    var envName = getSimpleName(str);
     return ("OI" + envName.charAt(0).toUpperCase() + envName.slice(1).toLowerCase())
             .replaceAll('ls', 'LS')
             .replaceAll('ve', 'VE')
             .replaceAll('hp', 'HP')
             .replaceAll('lp', 'LP')
-            .replaceAll('lite', '');
+            .replaceAll('lite', 'Lite');
 }
 
-export function getNiceNameFromEnv(str: string): string {
-    var envName = formatStringOItoEnvName(str);
-    return ("OI " + envName.charAt(0).toUpperCase() + envName.slice(1).toLowerCase())
-            .replaceAll('ls', ' LS')
-            .replaceAll('ve', ' VE')
-            .replaceAll('hp', ' HP')
-            .replaceAll('lp', ' LP')
-            .replaceAll('lite', ' Lite');
+export function getDefineName(str: string): string {
+    var envName = getSimpleName(str);
+    return ("OI_" + envName.toUpperCase())
+            .replaceAll('LS', '_LS')
+            .replaceAll('VE', '_VE')
+            .replaceAll('HP', '_HP')
+            .replaceAll('LP', '_LP')
+            .replaceAll('LITE', '');
 }
 
 export const caseImg = [
@@ -266,7 +265,7 @@ export async function downloadNewFirmwaresOnline(context: vscode.ExtensionContex
                 logger.info("Downloading firmware files from: " + firmwareSourceVersion);
                 for (const deviceType of deviceTypeList) {
                     for (const file of ['bootloader', 'partitions', 'ota_data_initial', 'firmware']) {
-                        const fileName = `${deviceType.toLowerCase()}_${file}-${firmwareSourceVersion.split('-')[2].split('/')[0]}.bin`;
+                        const fileName = `${getSimpleName(deviceType).toLowerCase()}_${file}-${firmwareSourceVersion.split('-')[2].split('/')[0]}.bin`;
                         const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "binaries", firmwareSourceVersion, fileName);
                         const destinationPath = vscode.Uri.joinPath(destinationDirectory, firmwareSourceVersion, fileName);
                         // download source file to destination path via https
