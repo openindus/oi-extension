@@ -276,7 +276,7 @@ export async function downloadNewFirmwaresOnline(context: vscode.ExtensionContex
                                 context
                             );
                             // Copy the downloaded file to the destination path
-                            vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
+                            await vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
                             logger.info(`Downloaded ${sourceFileUrl} to ${destinationPath}`);
 
                         } catch (error) {
@@ -319,11 +319,11 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
         });
 
         // Parse the html file to detect all openindus libraries version available
-        const openindusLibrariesDirectories = Array.from(new Set((response as string).match(/openindus-v\d+\.\d+\.\d+/g))) || [];
+        const openindusLibrariesDirectories = Array.from(new Set((response as string).match(/openindus-v\d+\.\d+\.\d+\.tar.gz/g))) || [];
         logger.info("OpenIndus libraries files found: " + openindusLibrariesDirectories);
 
         // Parse the html file to detect all libraries version available
-        const arduinoLibrariesDirectories = Array.from(new Set((response as string).match(/arduino-v\d+\.\d+\.\d+/g))) || [];
+        const arduinoLibrariesDirectories = Array.from(new Set((response as string).match(/arduino-esp32-v\d+\.\d+\.\d+.tar.gz/g))) || [];
         logger.info("Arduino libraries files found: " + arduinoLibrariesDirectories);
 
         // Check that both openindus and arduino libraries are found with same version and make a version common list
@@ -331,7 +331,7 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
         openindusLibrariesDirectories.forEach((openindusVersion) => {
             arduinoLibrariesDirectories.forEach((arduinoVersion) => {
                 if (openindusVersion.split('-v')[1] === arduinoVersion.split('-v')[1]) {
-                        librariesSourceVersionList.push(openindusVersion.split('-v')[1]);
+                        librariesSourceVersionList.push(openindusVersion.match(/\d+\.\d+\.\d+/)![0]);
                 }
             });
         });
@@ -340,7 +340,7 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
         // For all versions found, if the directory does not exist, download the files
         for (const librarySourceVersion of librariesSourceVersionList) {
             // Download openindus and arduino libraries
-            for (const lib of ["openindus", "arduino"]) {
+            for (const lib of ["openindus", "arduino-esp32"]) {
                 // OpenIndus libraries
                 if (fs.existsSync(vscode.Uri.joinPath(destinationDirectory, lib + "-v" + librarySourceVersion + ".tar.gz").fsPath)) {
                     logger.info("Library already exists: " + lib + "-v" + librarySourceVersion + ".tar.gz");
@@ -358,7 +358,7 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
                             context
                         );
                         // Copy the downloaded file to the destination path
-                        vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
+                        await vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
                         logger.info(`Downloaded ${sourceFileUrl} to ${destinationPath}`);
 
                     } catch (error) {

@@ -255,7 +255,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             if (state.useArduinoLib.label === 'Use Arduino Library') {
                 await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/components/arduino'));
                 await tar.extract({
-                    file: context.asAbsolutePath(`/resources/libraries/arduino-v${libraryVersion}.tar.gz`),
+                    file: context.asAbsolutePath(`/resources/libraries/arduino-esp32-v${libraryVersion}.tar.gz`),
                     cwd: state.path + '/' + state.name + '/components/arduino/'
                 });
             }
@@ -269,6 +269,14 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
                 versionFile = versionFile.replace("%LIB_VERSION%", "1.0.0");
             }
             fs.writeFileSync(state.path + '/' + state.name + '/version.txt', versionFile, 'utf8');
+
+            // Copy partition.csv to root project folder
+            await vscode.workspace.fs.copy(
+                vscode.Uri.file(state.path + '/' + state.name + '/components/openindus/partitions.csv'),
+                vscode.Uri.file(state.path + '/' + state.name + '/partitions.csv')
+            );
+
+            logger.info(`Project ${state.name} created successfully at ${state.path}`);
         }
         catch (error) {
             logger.error("Error while creating project: " + error);
