@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as CryptoJS from 'crypto-js';
 
-import { ModuleInfo, nameToType, deviceTypeList } from './utils';
+import { ModuleInfo, nameToType, deviceTypeList, getSimpleName } from './utils';
 import { NodeTransport, ESPLoader, LoaderOptions, CustomReset, FlashOptions } from './esptool-js/index';
 import { logger } from './extension';
 import { OISerial } from './com/OISerial';
@@ -48,7 +48,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
         for await (const slaveModuleInfo of slavesModuleInfo) { 
             
             // Check if device type is known
-            if (!deviceTypeList.includes(slaveModuleInfo.type)) {
+            if (!deviceTypeList.map(getSimpleName).includes(slaveModuleInfo.type)) {
                 continue;
             }  
 

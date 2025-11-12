@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as CryptoJS from 'crypto-js';
 
 import { NodeTransport, ESPLoader, LoaderOptions, CustomReset, FlashOptions } from './esptool-js/index';
-import { deviceTypeList, pickDevice, ModuleInfo } from './utils';
+import { deviceTypeList, pickDevice, ModuleInfo, getSimpleName } from './utils';
 import { logger } from './extension';
 
 export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string, inputModuleInfo?: ModuleInfo): Promise<void> {
@@ -29,7 +29,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     }
 
     // Ensure device type is valid
-    if (!deviceTypeList.includes(moduleInfo.type)) {
+    if (!deviceTypeList.map(getSimpleName).includes(moduleInfo.type)) {
         const deviceSelected = await vscode.window.showQuickPick(deviceTypeList, {
             placeHolder: 'Choose the device type',
             ignoreFocusOut: true

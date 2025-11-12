@@ -309,7 +309,7 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
     // Get list of files from server
     try {
         const response = await new Promise((resolve, reject) => {
-            https.get(`${webSiteAddress}binaries/test/
+            https.get(`${webSiteAddress}libraries/
                 `, res => {
                 let data = '';
                 res.on('data', chunk => { data += chunk; });
@@ -335,7 +335,7 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
                 }
             });
         });
-        logger.info("Common libraries versions found: v" + librariesSourceVersionList);
+        logger.info("Common libraries versions found: " + librariesSourceVersionList);
 
         // For all versions found, if the directory does not exist, download the files
         for (const librarySourceVersion of librariesSourceVersionList) {
@@ -346,9 +346,9 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
                     logger.info("Library already exists: " + lib + librarySourceVersion + ".tar.gz");
                     continue; // Skip if the directory already exists
                 } else {
-                    logger.info("Downloading library " + lib+ librarySourceVersion + ".tar.gz");
+                    logger.info("Downloading library " + lib + librarySourceVersion + ".tar.gz");
                     const fileName = lib + librarySourceVersion + ".tar.gz";
-                    const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "binaries", "test", fileName);
+                    const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "libraries", fileName);
                     const destinationPath = vscode.Uri.joinPath(destinationDirectory, lib + librarySourceVersion + ".tar.gz");
                     // download source file to destination path via https
                     try {
