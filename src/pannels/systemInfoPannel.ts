@@ -84,7 +84,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
                                     Connected on Bus<br>
                                     <b>Serial Number:</b> ${slave.serialNum}<br>
                                     <b>Hardware Version:</b> ${slave.hardwareVar}<br>
-                                    <b>Software version:</b> v${slave.versionSw}
+                                    <b>Software version:</b> ${slave.versionSw}
                                 </p>
                                 <button onClick="flashSlave(` + id + `)">Update firmware</button>
                             </div>

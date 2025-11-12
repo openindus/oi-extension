@@ -253,7 +253,7 @@ export async function downloadNewFirmwaresOnline(context: vscode.ExtensionContex
         });
 
         // Parse the html file to detect all firmware version available
-        const firmwareSourceVersionList =  Array.from(new Set((response as string).match(/oi-firmware-\d+\.\d+\.\d+/g))) || [];
+        const firmwareSourceVersionList =  Array.from(new Set((response as string).match(/oi-firmware-v\d+\.\d+\.\d+/g))) || [];
         logger.info("Firmware files found: " + firmwareSourceVersionList);
 
         // For all versions found, if the directory does not exist, download the files
@@ -330,8 +330,8 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
         const librariesSourceVersionList: string[] = [];
         openindusLibrariesDirectories.forEach((openindusVersion) => {
             arduinoLibrariesDirectories.forEach((arduinoVersion) => {
-                if (openindusVersion.split('-v')[1] === arduinoVersion.split('-v')[1]) {
-                        librariesSourceVersionList.push(openindusVersion.match(/\d+\.\d+\.\d+/)![0]);
+                if (openindusVersion.split('openindus-')[1] === arduinoVersion.split('arduino-esp32-')[1]) {
+                        librariesSourceVersionList.push(openindusVersion.match(/v\d+\.\d+\.\d+/)![0]);
                 }
             });
         });
@@ -340,16 +340,16 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
         // For all versions found, if the directory does not exist, download the files
         for (const librarySourceVersion of librariesSourceVersionList) {
             // Download openindus and arduino libraries
-            for (const lib of ["openindus", "arduino-esp32"]) {
+            for (const lib of ["openindus-", "arduino-esp32-"]) {
                 // OpenIndus libraries
-                if (fs.existsSync(vscode.Uri.joinPath(destinationDirectory, lib + "-v" + librarySourceVersion + ".tar.gz").fsPath)) {
-                    logger.info("Library already exists: " + lib + "-v" + librarySourceVersion + ".tar.gz");
+                if (fs.existsSync(vscode.Uri.joinPath(destinationDirectory, lib + librarySourceVersion + ".tar.gz").fsPath)) {
+                    logger.info("Library already exists: " + lib + librarySourceVersion + ".tar.gz");
                     continue; // Skip if the directory already exists
                 } else {
-                    logger.info("Downloading library " + lib + "-v" + librarySourceVersion + ".tar.gz");
-                    const fileName = lib + "-v" + librarySourceVersion + ".tar.gz";
+                    logger.info("Downloading library " + lib+ librarySourceVersion + ".tar.gz");
+                    const fileName = lib + librarySourceVersion + ".tar.gz";
                     const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "binaries", "test", fileName);
-                    const destinationPath = vscode.Uri.joinPath(destinationDirectory, lib + "-v" + librarySourceVersion + ".tar.gz");
+                    const destinationPath = vscode.Uri.joinPath(destinationDirectory, lib + librarySourceVersion + ".tar.gz");
                     // download source file to destination path via https
                     try {
                         const downloadedFileUri: vscode.Uri = await fileDownloader.downloadFile(
