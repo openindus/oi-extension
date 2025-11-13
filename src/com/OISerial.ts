@@ -1,7 +1,11 @@
 import { SerialPort, ReadlineParser, ReadyParser } from 'serialport';
-import { setTimeout } from 'timers-promises';
 import { logger } from '../extension';
 import {Mutex} from 'async-mutex';
+
+function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export class OISerial extends SerialPort {
 
     private lineParser: ReadlineParser;
@@ -77,7 +81,7 @@ export class OISerial extends SerialPort {
         return new Promise(async (resolve, reject) => {
 
             // Wait for the board to be ready 50ms
-            await setTimeout(50);
+            await sleep(50);
             
             // Send EOL to check if we have the prompt
             super.write("\n");
@@ -87,7 +91,7 @@ export class OISerial extends SerialPort {
             const startTime = Date.now();
             while (!this.readyParser.ready) {
                 if (Date.now() - startTime > 100) { break; }
-                await setTimeout(10);
+                await sleep(10);
             }
 
             // If prompt is ok; return
@@ -99,13 +103,13 @@ export class OISerial extends SerialPort {
             // Otherwise, reset the board to get the console
             this.setDTR(false); // Important
             this.setRTS(true); // Important
-            await setTimeout(10);
+            await sleep(10);
             this.setDTR(true); // Important
             this.setRTS(false); // Important
-            await setTimeout(10);
+            await sleep(10);
             this.setDTR(false); // Important
             this.setRTS(false); // Important
-            await setTimeout(10);
+            await sleep(10);
             super.write("console\n"); // To activate console
             super.drain();
 
@@ -113,7 +117,7 @@ export class OISerial extends SerialPort {
             const startTime2 = Date.now();
             while (!this.readyParser.ready) {
                 if (Date.now() - startTime2 > 2000) { reject("Prompt not available"); }
-                await setTimeout(10);
+                await sleep(10);
             }
 
             resolve(">");
@@ -168,7 +172,7 @@ export class OISerial extends SerialPort {
             if (Date.now() - startTime > timeout) {
                 return;
             }
-            await setTimeout(1);
+            await sleep(1);
         }
     }
 
@@ -254,7 +258,7 @@ export class OISerial extends SerialPort {
                             const startTime = Date.now();
                             while (txt === undefined) {
                                 if (Date.now() - startTime > 2000) { break; }
-                                await setTimeout(10);
+                                await sleep(10);
                                 txt = this.lastResponse.shift();
                             }
                             // If we've got a response, return it

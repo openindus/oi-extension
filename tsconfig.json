@@ -9,14 +9,13 @@
 		],
 		"sourceMap": true,
 		"rootDir": "src",
-		"types": [
-			"node"
-		],
-		"allowJs": true
+		"allowJs": true,
+		"strict": true
 	},
 	"exclude": [
 		"node_modules",
 		".vscode-test",
-		"out"
+		"out",
+		"eslint.config.mjs"
 	]
 }
