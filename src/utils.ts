@@ -91,7 +91,7 @@ export function getDefineName(str: string): string {
 
 export const caseImg = [
     {moduleName: "core", imgName: "core.png", caseName: "BOI23"},
-    {moduleName: "coreLite", imgName: "corelite.png", caseName: "BOI13"},
+    {moduleName: "corelite", imgName: "corelite.png", caseName: "BOI13"},
     {moduleName: "discrete", imgName: "discrete.png", caseName: "BOI12"},
     {moduleName: "discreteve", imgName: "discrete.png", caseName: "BOI12"},
     {moduleName: "stepper", imgName: "stepper.png", caseName: "BOI13"},
