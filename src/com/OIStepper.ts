@@ -1,6 +1,5 @@
 import { OISerial } from "./OISerial";
 import { logger } from "../extension";
-import { setTimeout } from 'timers-promises';
 
 export class OIStepper extends OISerial {
     

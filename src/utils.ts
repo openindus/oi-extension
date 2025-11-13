@@ -115,8 +115,6 @@ export type ModuleInfo = {
     caseName: string;
 };
 
-export const IS_WINDOWS = process.platform.startsWith('win');
-
 export async function getDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken): Promise<ModuleInfo[]> {
 
 	// Retrieve available devices with getConnectedBoards.py
@@ -128,7 +126,7 @@ export async function getDeviceInfoList(context: vscode.ExtensionContext, token:
             var serial = new OISerial(port.path);
             try {
                 await serial.connect();
-                await serial.getInfo().then((data: { type: string; serialNum: string; hardwareVar: string; versionFw: string }) => {
+                await serial.getInfo().then((data: { [key: string]: string }) => {
                     moduleInfoList.push({
                         port: port.path,
                         type: typeToName(data.type),
@@ -138,11 +136,12 @@ export async function getDeviceInfoList(context: vscode.ExtensionContext, token:
                         imgName: "",
                         caseName: ""});
                 });
-                await serial.disconnect();
             }
             catch (error) {
-                await serial.disconnect();
                 moduleInfoList.push({port: port.path, type: "undefined", serialNum: "undefined", hardwareVar: "undefined", versionSw: "undefined", imgName: "", caseName: ""});
+            }
+            finally {
+                await serial.disconnect();
             }
         }
     }
@@ -152,13 +151,13 @@ export async function getDeviceInfoList(context: vscode.ExtensionContext, token:
 export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken, port: string): Promise<ModuleInfo[] | undefined> {
 
 	// Retrieve available devices with getConnectedBoards.py
-	let moduleInfoList: ModuleInfo[] = [];
+	let moduleInfoList: ModuleInfo[] | undefined = [];
     var serial = new OISerial(port);
     try {
         await serial.connect();
-        await serial.getSlaves().then((data: { port: string; type: string; serialNum: string; hardwareVar: string; versionSw: string }[]) => {
-            data.forEach((element: { port: string; type: string; serialNum: string, hardwareVar: string, versionSw: string}) => {
-                moduleInfoList.push({
+        await serial.getSlaves().then((data: { [key: string]: string }[]) => {
+            data.forEach((element: { [key: string]: string }) => {
+                moduleInfoList!.push({
                     port: element.port,
                     type: typeToName(element.type),
                     serialNum: element.serialNum,
@@ -169,12 +168,13 @@ export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, t
                 });
             });
         });
-        await serial.disconnect();
     }
-    catch (error) {
+    catch (error: any) {
         logger.error(error);
+        moduleInfoList = undefined;
+    }
+    finally {
         await serial.disconnect();
-        return undefined;
     }
     return moduleInfoList;
 }

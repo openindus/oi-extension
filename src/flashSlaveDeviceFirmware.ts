@@ -115,7 +115,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
                                 lastProgressWritten = progressPercent / slavesModuleInfo.length;
                             }
                         },
-                        calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image))
+                        calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image)).toString()
                     };
 
                     let lastProgressWritten = 0;

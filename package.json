@@ -68,14 +68,15 @@
         "lint": "eslint"
     },
     "devDependencies": {
-		"@eslint/js": "^9.13.0",
-		"@stylistic/eslint-plugin": "^2.9.0",
+        "@eslint/js": "^9.13.0",
+        "@stylistic/eslint-plugin": "^2.9.0",
+        "@types/crypto-js": "^4.2.2",
         "@types/node": "^22.19.1",
         "@types/tar": "^6.1.13",
         "@types/vscode": "^1.106.0",
         "eslint": "^9.13.0",
         "typescript": "^5.9.3",
-		"typescript-eslint": "^8.26.0"
+        "typescript-eslint": "^8.26.0"
     },
     "dependencies": {
         "@microsoft/vscode-file-downloader-api": "^1.0.1",

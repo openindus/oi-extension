@@ -9,7 +9,7 @@ function sleep(ms: number) {
 export class OISerial extends SerialPort {
 
     private lineParser: ReadlineParser;
-    private readyParser: ReadyParser;
+    private readyParser: ReadyParser | undefined;
     private lastResponse: string[] = [];
     private serialMutex: Mutex;
 
@@ -89,13 +89,13 @@ export class OISerial extends SerialPort {
 
             // Check if we've got the prompt with a timeout of 100ms
             const startTime = Date.now();
-            while (!this.readyParser.ready) {
+            while (!this.readyParser!.ready) {
                 if (Date.now() - startTime > 100) { break; }
                 await sleep(10);
             }
 
             // If prompt is ok; return
-            if (this.readyParser.ready) {
+            if (this.readyParser!.ready) {
                 resolve(">");
                 return;
             }
@@ -115,7 +115,7 @@ export class OISerial extends SerialPort {
 
             // Check if we've got the prompt with a timeout of 2000ms
             const startTime2 = Date.now();
-            while (!this.readyParser.ready) {
+            while (!this.readyParser!.ready) {
                 if (Date.now() - startTime2 > 2000) { reject("Prompt not available"); }
                 await sleep(10);
             }
@@ -194,7 +194,7 @@ export class OISerial extends SerialPort {
                     // Retry sending the message after reconnecting
                     this.serialMutex.cancel();
                     this.sendMsg(args, tryNumber + 1).then(resolve).catch(reject);
-                } else if (!this.readyParser.ready || !super.isOpen) {
+                } else if (!this.readyParser!.ready || !super.isOpen) {
                     reject("Failed to send message: disconnected or not ready");
                     return;
                 } else {
@@ -240,7 +240,7 @@ export class OISerial extends SerialPort {
                     // Retry sending the message after reconnecting
                     this.serialMutex.cancel();
                     this.sendMsgWithReturn(args, tryNumber + 1).then(resolve).catch(reject);
-                } else if (!this.readyParser.ready || !super.isOpen) {
+                } else if (!this.readyParser!.ready || !super.isOpen) {
                     reject("Failed to send message: disconnected or not ready");
                     return;
                 } else {

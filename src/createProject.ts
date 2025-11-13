@@ -183,8 +183,8 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             // Modify sdkconfig.defaults to add right module type
             let sdkconfigFile = fs.readFileSync(state.path + '/' + state.name + '/sdkconfig.defaults', 'utf8');
             let configString = `\r\n# Module type configuration`;
-            configString += `\r\nCONFIG_${getDefineName(state.board.label!)}=y`;
-            if (state.mode.label !== 'Standalone') { configString += `\r\nCONFIG_MODULE_${state.mode.label!.toUpperCase()}=y`; }
+            configString += `\r\nCONFIG_${getDefineName(state.board!.label!)}=y`;
+            if (state.mode!.label !== 'Standalone') { configString += `\r\nCONFIG_MODULE_${state.mode!.label!.toUpperCase()}=y`; }
             sdkconfigFile = sdkconfigFile.replace("%CONFIG_OI%", configString);
             fs.writeFileSync(state.path + '/' + state.name + '/sdkconfig.defaults', sdkconfigFile, 'utf8');
             // Copy sdkconfig.defaults to sdkconfig so that configuration is taken into account at first build
@@ -204,7 +204,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
 
             // main.cpp and CMakeLists.txt in /main
-            let mainFolder = state.useArduinoLib.label === 'Use Arduino Library' ? 'main_arduino' : 'main_espidf';
+            let mainFolder = state.useArduinoLib!.label === 'Use Arduino Library' ? 'main_arduino' : 'main_espidf';
             await vscode.workspace.fs.copy(
                 vscode.Uri.file(context.asAbsolutePath('/resources/project_files/' + mainFolder + '/CMakeLists.txt')),
                 vscode.Uri.file(state.path + '/' + state.name + '/main/CMakeLists.txt')
@@ -215,8 +215,8 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             );
 
             // Add modules instance to main.cpp
-            let envName = getSimpleName(state.board.label);
-            let className = getClassName(state.board.label);
+            let envName = getSimpleName(state.board!.label);
+            let className = getClassName(state.board!.label);
             let mainSetupText: string = "%MODULE_INIT%";
             var mainInitText: string = "";
             
@@ -252,7 +252,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             });
 
             // Extract Arduino component to project if needed
-            if (state.useArduinoLib.label === 'Use Arduino Library') {
+            if (state.useArduinoLib!.label === 'Use Arduino Library') {
                 await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/components/arduino'));
                 await tar.extract({
                     file: context.asAbsolutePath(`/resources/libraries/arduino-esp32-v${libraryVersion}.tar.gz`),

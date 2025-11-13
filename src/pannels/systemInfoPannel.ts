@@ -8,7 +8,7 @@ import {Mutex} from 'async-mutex';
 
 export async function getSystemInfo(context: vscode.ExtensionContext, portName?: string) {
 
-    let moduleInfo: ModuleInfo = await pickDevice(context, portName);
+    let moduleInfo: ModuleInfo | undefined = await pickDevice(context, portName);
 
     if (moduleInfo === undefined) { return; }
     if (moduleInfo.port === undefined) { return; }

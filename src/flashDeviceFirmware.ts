@@ -155,7 +155,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
                             lastProgressWritten = progressPercent;
                         }
                     },
-                    calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image))
+                    calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image)).toString()
                 };
 
                 let lastProgressWritten = 0;
