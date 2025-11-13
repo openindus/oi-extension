@@ -70,7 +70,7 @@ export function getSimpleName(input: string): string {
 }
 
 export function getClassName(str: string): string {
-    var envName = getSimpleName(str);
+    const envName = getSimpleName(str);
     return ("OI" + envName.charAt(0).toUpperCase() + envName.slice(1).toLowerCase())
             .replaceAll('ls', 'LS')
             .replaceAll('ve', 'VE')
@@ -80,7 +80,7 @@ export function getClassName(str: string): string {
 }
 
 export function getDefineName(str: string): string {
-    var envName = getSimpleName(str);
+    const envName = getSimpleName(str);
     return ("OI_" + envName.toUpperCase())
             .replaceAll('LS', '_LS')
             .replaceAll('VE', '_VE')
@@ -105,7 +105,7 @@ export const caseImg = [
     {moduleName: "dc", imgName: "stepper.png", caseName: "BOI13"}
 ];
 
-export type ModuleInfo = {
+export interface ModuleInfo {
     port: string;
     type: string;
     serialNum: string;
@@ -115,12 +115,12 @@ export type ModuleInfo = {
     caseName: string;
 };
 
-export async function getDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken): Promise<ModuleInfo[]> {
+export async function getDeviceInfoList(): Promise<ModuleInfo[]> {
 
 	// Retrieve available devices with getConnectedBoards.py
-	let moduleInfoList: ModuleInfo[] = [];
-    let targetVid = '10C4';
-    let ports = await OISerial.list();
+	const moduleInfoList: ModuleInfo[] = [];
+    const targetVid = '10C4';
+    const ports = await OISerial.list();
     for await (const port of ports) {
         if (port.vendorId === targetVid) {
             var serial = new OISerial(port.path);
@@ -137,7 +137,7 @@ export async function getDeviceInfoList(context: vscode.ExtensionContext, token:
                         caseName: ""});
                 });
             }
-            catch (error) {
+            catch {
                 moduleInfoList.push({port: port.path, type: "undefined", serialNum: "undefined", hardwareVar: "undefined", versionSw: "undefined", imgName: "", caseName: ""});
             }
             finally {
@@ -148,7 +148,7 @@ export async function getDeviceInfoList(context: vscode.ExtensionContext, token:
     return moduleInfoList;
 }
 
-export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken, port: string): Promise<ModuleInfo[] | undefined> {
+export async function getSlaveDeviceInfoList(port: string): Promise<ModuleInfo[] | undefined> {
 
 	// Retrieve available devices with getConnectedBoards.py
 	let moduleInfoList: ModuleInfo[] | undefined = [];
@@ -179,7 +179,7 @@ export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, t
     return moduleInfoList;
 }
 
-export async function pickDevice(context: vscode.ExtensionContext, portName?: string): Promise<ModuleInfo | undefined> {
+export async function pickDevice(portName?: string): Promise<ModuleInfo | undefined> {
     
     let moduleInfoList: ModuleInfo[] | undefined;
     // Progress notification with option to cancel while getting device list
@@ -187,8 +187,8 @@ export async function pickDevice(context: vscode.ExtensionContext, portName?: st
         location: vscode.ProgressLocation.Notification,
         title: "Retrieving modules informations",
         cancellable: true
-    }, async (progress, token) => {
-        moduleInfoList = await getDeviceInfoList(context, token);
+    }, async () => {
+        moduleInfoList = await getDeviceInfoList();
     });
 
     if (moduleInfoList === undefined) { return; }

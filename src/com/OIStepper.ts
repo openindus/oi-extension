@@ -76,8 +76,8 @@ export class OIStepper extends OISerial {
 
     static listStepper(): Promise<{port: string, serialNum: string}[]> {
         return new Promise(async (resolve) => {
-            let stepperPorts: {port: string, serialNum: string, id:string, onBus: boolean}[] = [];
-            let ports = await OISerial.list();
+            const stepperPorts: {port: string, serialNum: string, id:string, onBus: boolean}[] = [];
+            const ports = await OISerial.list();
             // Loop through all available ports
             for await (let port of ports) {
                 var serial = new OISerial(port.path);
@@ -91,7 +91,7 @@ export class OIStepper extends OISerial {
                         }
                         // Try to get slaves and check if they are steppers modules
                         await serial.getSlaves().then((slaves) => {
-                            for (let slave of slaves) {
+                            for (const slave of slaves) {
                                 if (slave.type === "11") {
                                     stepperPorts.push({ port: port.path, serialNum: slave.serialNum, id: slave.id, onBus: true });
                                 }
@@ -157,7 +157,7 @@ export class OIStepper extends OISerial {
 
     getParam(motor: string): Promise<{[key: string]: string}> {
         return new Promise(async (resolve, reject) => {
-            let advancedParamList: {[key: string]: string} = {};
+            const advancedParamList: {[key: string]: string} = {};
             for (let param of this.paramList) {
                 try {
                     const response = await this.cmd(['stepper-advanced-param', motor, 'get', param]);
@@ -195,13 +195,13 @@ export class OIStepper extends OISerial {
 
     getStatus(): Promise<{[key: string]: string}[]> {
         return new Promise(async (resolve, reject) => {
-            let status: {[key: string]: string}[] = [{}, {}];
+            const status: {[key: string]: string}[] = [{}, {}];
             try {
-                let rawStatus1 = await this.cmd(['stepper-get-status', '1', '--raw']);
-                let rawStatus2 = await this.cmd(['stepper-get-status', '2', '--raw']);
-                let status1 = parseInt(rawStatus1, 16);
-                let status2 = parseInt(rawStatus2, 16);
-                for (let statusName of this.statusList) {
+                const rawStatus1 = await this.cmd(['stepper-get-status', '1', '--raw']);
+                const rawStatus2 = await this.cmd(['stepper-get-status', '2', '--raw']);
+                const status1 = parseInt(rawStatus1, 16);
+                const status2 = parseInt(rawStatus2, 16);
+                for (const statusName of this.statusList) {
                     status[0][statusName] = (status1 & (1 << this.statusList.indexOf(statusName))) ? '1' : '0';
                     status[1][statusName] = (status2 & (1 << this.statusList.indexOf(statusName))) ? '1' : '0';
                 }

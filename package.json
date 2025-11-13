@@ -65,6 +65,7 @@
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
+		"test": "vscode-test",
         "lint": "eslint"
     },
     "devDependencies": {

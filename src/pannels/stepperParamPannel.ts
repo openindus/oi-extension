@@ -266,7 +266,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
         context.subscriptions
 	);
 
-	pannel.onDidChangeViewState((e) => {
+	pannel.onDidChangeViewState(() => {
 		if (!pannel.visible && stepper !== undefined) {
 			handleDisconnect({command: 'disconnect', doNotDelete: true});
 		} else if (pannel.visible && stepper !== undefined) {

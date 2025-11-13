@@ -294,7 +294,7 @@ export class NodeTransport {
                 const arrived = await new Promise<boolean>(res => {
                     const onData = () => { this.emitter.off('data', onData); res(true); };
                     this.emitter.once('data', onData);
-                    const t = setTimeout(() => { this.emitter.off('data', onData); res(false); }, 1000);
+                    setTimeout(() => { this.emitter.off('data', onData); res(false); }, 1000);
                 });
                 if (!arrived) { continue; }
             }

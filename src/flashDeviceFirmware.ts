@@ -17,7 +17,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
 
     // If device type and port are given, use them; otherwise, prompt user to select
     if (inputModuleInfo === undefined) {
-        moduleInfo = await pickDevice(context, portName);
+        moduleInfo = await pickDevice(portName);
     } else {
         moduleInfo = inputModuleInfo;
     }
