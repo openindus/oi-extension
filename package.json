@@ -67,7 +67,7 @@
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile",
         "test": "vscode-test",
-        "clean": "rm -rf ./out"
+        "clean": "rd /s /q out"
     },
     "devDependencies": {
         "@eslint/js": "^9.13.0",

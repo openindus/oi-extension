@@ -5,7 +5,14 @@ import * as tar from 'tar';
 import { ModuleInfo, deviceTypeList, getClassName, getDefineName, getSimpleName} from './utils';
 import { logger } from './extension';
 
-export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
+export async function createProject(
+    context: vscode.ExtensionContext, 
+    master?: ModuleInfo, 
+    slaves?: ModuleInfo[], 
+    projectPath?: string, 
+    projectName?: string,
+    useArduinoLib?: boolean,
+    useLastLibVersion?: boolean) {
     
     const boardsNames: vscode.QuickPickItem[] = deviceTypeList.map(element => ({ label:getClassName(element) }));
 
@@ -34,6 +41,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         path: string;
         mode: vscode.QuickPickItem;
         useArduinoLib: vscode.QuickPickItem;
+        libraryVersion: string;
 	}
 
     const state = {} as Partial<State>;
@@ -60,40 +68,48 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     // --------------------------------------------------------------------------------------------
     // Second STEP: select folder
     // --------------------------------------------------------------------------------------------
-    state.path = await vscode.window.showOpenDialog(optionsSelectFolder).then(fileUri => {
-        if (fileUri && fileUri[0]) {
-            return fileUri[0].fsPath;
-        }
-        else {
-            return undefined;
-        }
-    });
+    if (projectPath !== undefined) {
+        state.path = projectPath
+    } else {
+        state.path = await vscode.window.showOpenDialog(optionsSelectFolder).then(fileUri => {
+            if (fileUri && fileUri[0]) {
+                return fileUri[0].fsPath;
+            }
+            else {
+                return undefined;
+            }
+        });
+    }
     
     if (state.path === undefined) { return; }
 
     // --------------------------------------------------------------------------------------------
     // Third STEP: select project name
     // --------------------------------------------------------------------------------------------
-    state.name = await vscode.window.showInputBox({
-        title: "Create a Project",
-        value: "my_project",
-        prompt: 'Enter a name for your project',
-        ignoreFocusOut: true,
-        validateInput: (text: string): string | undefined => {
-            if (text !== path.basename(text)) { 
-                return "Name is not valid";
-            } else if (fs.existsSync(state.path + '/' + text) && text !== "") { // Check is folder already exists
-                return "Folder already exits";
-            } else if (text.indexOf(' ') >= 0) { // Check for white space
-                return "Project name can not contains white space";
-            } else if (text.indexOf('*') >= 0) { // Check for "*"
-                return "Project name can not contains *";
-            } else {
-                return undefined;
+    if (projectName !== undefined) {
+        state.name = projectName
+    } else {
+        state.name = await vscode.window.showInputBox({
+            title: "Create a Project",
+            value: "my_project",
+            prompt: 'Enter a name for your project',
+            ignoreFocusOut: true,
+            validateInput: (text: string): string | undefined => {
+                if (text !== path.basename(text)) { 
+                    return "Name is not valid";
+                } else if (fs.existsSync(state.path + '/' + text) && text !== "") { // Check is folder already exists
+                    return "Folder already exits";
+                } else if (text.indexOf(' ') >= 0) { // Check for white space
+                    return "Project name can not contains white space";
+                } else if (text.indexOf('*') >= 0) { // Check for "*"
+                    return "Project name can not contains *";
+                } else {
+                    return undefined;
+                }
             }
-        }
-    });
-    
+        });
+    }
+
     if (state.name === undefined) { return; }
 
     // --------------------------------------------------------------------------------------------
@@ -114,11 +130,15 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     // --------------------------------------------------------------------------------------------
     // Fifth STEP: select if use arduino library or not
     // --------------------------------------------------------------------------------------------
-    state.useArduinoLib = await vscode.window.showQuickPick(useArduinoQuickPick, {
-        title: "Choose Library Option",
-        placeHolder: "Do you want to use Arduino library in your project ?",
-        ignoreFocusOut: true // to prevent closing when clicking outside at this step
-    });
+    if (useArduinoLib !== undefined) {
+        state.useArduinoLib = useArduinoLib ? useArduinoQuickPick[0] : useArduinoQuickPick[1];
+    } else {
+        state.useArduinoLib = await vscode.window.showQuickPick(useArduinoQuickPick, {
+            title: "Choose Library Option",
+            placeHolder: "Do you want to use Arduino library in your project ?",
+            ignoreFocusOut: true // to prevent closing when clicking outside at this step
+        });
+    }
 
     if (state.useArduinoLib === undefined) { return; }
 
@@ -149,17 +169,24 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
     validVersions[0].description = "(Recommended)";
 
     // Prompt user to select firmware version
-    const selectedVersion = await vscode.window.showQuickPick(validVersions, {
-        placeHolder: 'Select the version',
-        ignoreFocusOut: true
-    });
+    if (useLastLibVersion !== undefined) {
+        state.libraryVersion = validVersions[0].label;
+    } else {
+        const selectedVersion = await vscode.window.showQuickPick(validVersions, {
+            placeHolder: 'Select the version',
+            ignoreFocusOut: true
+        });
 
-    if (!selectedVersion?.label) {
-        logger.info('Firmware version selection cancelled');
-        return;
+        if (!selectedVersion?.label) {
+            logger.info('Firmware version selection cancelled');
+            return;
+        }
+
+        state.libraryVersion = selectedVersion.label;
     }
 
-    const libraryVersion = selectedVersion.label;
+    if (state.libraryVersion === undefined) { return; }
+
 
     // --------------------------------------------------------------------------------------------
     // Seventh STEP: Create project with progress bar
@@ -247,7 +274,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             
             // Extract OpenIndus component to project
             await tar.extract({
-                file: context.asAbsolutePath(`/resources/libraries/openindus-v${libraryVersion}.tar.gz`),
+                file: context.asAbsolutePath(`/resources/libraries/openindus-v${state.libraryVersion}.tar.gz`),
                 cwd: state.path + '/' + state.name + '/components/openindus/'
             });
 
@@ -255,7 +282,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             if (state.useArduinoLib!.label === 'Use Arduino Library') {
                 await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/components/arduino'));
                 await tar.extract({
-                    file: context.asAbsolutePath(`/resources/libraries/arduino-esp32-v${libraryVersion}.tar.gz`),
+                    file: context.asAbsolutePath(`/resources/libraries/arduino-esp32-v${state.libraryVersion}.tar.gz`),
                     cwd: state.path + '/' + state.name + '/components/arduino/'
                 });
             }
@@ -263,8 +290,8 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             // Copy versionFile.txt and replace %LIB_VERSION%
             await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/version.txt')), vscode.Uri.file(state.path + '/' + state.name + '/version.txt'));
             let versionFile = fs.readFileSync(state.path + '/' + state.name + '/version.txt', 'utf8');
-            if (libraryVersion !== null) {
-                versionFile = versionFile.replace("%LIB_VERSION%", libraryVersion);
+            if (state.libraryVersion !== null) {
+                versionFile = versionFile.replace("%LIB_VERSION%", state.libraryVersion!);
             } else {
                 versionFile = versionFile.replace("%LIB_VERSION%", "1.0.0");
             }

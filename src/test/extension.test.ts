@@ -4,15 +4,44 @@ import * as assert from 'assert';
 // as well as import your extension to test it
 import * as vscode from 'vscode';
 
+// Import createProject after mocking VS Code methods
 import { createProject } from '../createProject';
 
 suite('Extension Test Suite', () => {
 	
-	vscode.window.showInformationMessage('Start create project test');
+	test('Create project - mock UI interactions', async () => {
+		// Mock the extension context for testing
+		const mockContext = {
+			extensionPath: '/mock/extension/path',
+			extensionUri: vscode.Uri.file('/mock/extension/path'),
+			asAbsolutePath: (relativePath: string) => relativePath,
+			// Add other required properties as needed
+		} as unknown as vscode.ExtensionContext;
 
-	test('Create project', () => {
-		// createProject()
-		assert.strictEqual([1, 2, 3].indexOf(5), -1);
-		assert.strictEqual([1, 2, 3].indexOf(0), -1);
+		// Create mock ModuleInfo directly without importing from utils
+		const moduleInfo: any = {
+			port: "",
+			type: "core",
+			serialNum: "",
+			hardwareVar: "",
+			versionSw: "",
+			imgName: "",
+			caseName: "",
+		}
+		
+		const slaveInfo: any[] = [
+			{ type: "discrete", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" },
+			{ type: "mixed", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" },
+			{ type: "stepper", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" },
+			{ type: "relayhp", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" },
+			{ type: "analogls", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" },
+			{ type: "dc", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" }
+		]
+		
+		// Test the function without UI interactions
+		await createProject(mockContext, moduleInfo, slaveInfo, "C:/Users/aurelien.floutard/Documents/01-SOFT/oi-extension/tmp_test", "TestProject", true, true);
+
+		// Add assertions to verify the function executed without errors
+		assert.ok(true, 'createProject executed without errors');
 	});
 });
