@@ -8,7 +8,7 @@ import {Mutex} from 'async-mutex';
 
 export async function getSystemInfo(context: vscode.ExtensionContext, portName?: string) {
 
-    let moduleInfo: ModuleInfo | undefined = await pickDevice(portName);
+    const moduleInfo: ModuleInfo | undefined = await pickDevice(portName);
 
     if (moduleInfo === undefined) { return; }
     if (moduleInfo.port === undefined) { return; }
@@ -22,7 +22,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
             location: vscode.ProgressLocation.Notification,
             title: "Reading slaves modules informations",
             cancellable: true
-        }, async (progress, token) => {
+        }, async () => {
             if (moduleInfo !== undefined) {
                 slaveInfoList = await getSlaveDeviceInfoList(moduleInfo.port);
             }
@@ -115,7 +115,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
         }
     });		
     
-  	var receivedMessageMutex = new Mutex();
+  	const receivedMessageMutex = new Mutex();
 
     // Handle messages from the webview
     panel.webview.onDidReceiveMessage(
@@ -146,7 +146,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
                     case 'flash-slave':
                         logger.info("flash slave: " + message.text + " clicked !");
                         if (moduleInfo !== undefined && slaveInfoList !== undefined) {
-                            let selectedSlaveInfoList: ModuleInfo[] = []; // We need a list even if there is only one module
+                            const selectedSlaveInfoList: ModuleInfo[] = []; // We need a list even if there is only one module
                             selectedSlaveInfoList.push(slaveInfoList[Number(message.text)]);
                             vscode.commands.executeCommand('openindus.flashSlavesDevicesFirmware', moduleInfo.port, selectedSlaveInfoList);
                         }

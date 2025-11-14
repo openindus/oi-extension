@@ -27,7 +27,7 @@ export const deviceTypeList: string[] =
 ];
 
 export function typeToName(input: string): string {
-    const typeMap: { [key: string]: string } = {
+    const typeMap: Record<string, string> = {
         '3': 'core',
         '4': 'corelite',
         '6': 'discrete',
@@ -46,7 +46,7 @@ export function typeToName(input: string): string {
 }
 
 export function nameToType(input: string): string {
-    const nameMap: { [key: string]: string } = {
+    const nameMap: Record<string, string> = {
         'core': '3',
         'corelite': '4',
         'discrete': '6',
@@ -123,10 +123,10 @@ export async function getDeviceInfoList(): Promise<ModuleInfo[]> {
     const ports = await OISerial.list();
     for await (const port of ports) {
         if (port.vendorId === targetVid) {
-            var serial = new OISerial(port.path);
+            const serial = new OISerial(port.path);
             try {
                 await serial.connect();
-                await serial.getInfo().then((data: { [key: string]: string }) => {
+                await serial.getInfo().then((data: Record<string, string>) => {
                     moduleInfoList.push({
                         port: port.path,
                         type: typeToName(data.type),
@@ -152,11 +152,11 @@ export async function getSlaveDeviceInfoList(port: string): Promise<ModuleInfo[]
 
 	// Retrieve available devices with getConnectedBoards.py
 	let moduleInfoList: ModuleInfo[] | undefined = [];
-    var serial = new OISerial(port);
+    const serial = new OISerial(port);
     try {
         await serial.connect();
-        await serial.getSlaves().then((data: { [key: string]: string }[]) => {
-            data.forEach((element: { [key: string]: string }) => {
+        await serial.getSlaves().then((data: Record<string, string>[]) => {
+            data.forEach((element: Record<string, string>) => {
                 moduleInfoList!.push({
                     port: element.port,
                     type: typeToName(element.type),
@@ -216,7 +216,7 @@ export async function pickDevice(portName?: string): Promise<ModuleInfo | undefi
     else if (moduleInfoList.length > 1) {
         deviceInfoSelected = await vscode.window.showQuickPick(deviceInfoQuickPickItem, { placeHolder: 'Select the master device', ignoreFocusOut: true });
     } 
-    else if (moduleInfoList.length = 1) {
+    else if (moduleInfoList.length === 1) {
         deviceInfoSelected = deviceInfoQuickPickItem[0];
     }
 

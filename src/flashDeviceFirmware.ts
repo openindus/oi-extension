@@ -75,7 +75,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
 
     // Construct file paths for all required firmware components
     const version = selectedVersion.label;
-    const deviceType = moduleInfo.type.replace('lite', ''); // Remove 'lite' suffix for file naming
+    const deviceType = getSimpleName(moduleInfo.type).replace('lite', ''); // Remove 'lite' suffix for file naming
     const firmwarePath = vscode.Uri.joinPath(binariesPath, `oi-firmware-${version}`);
 
     const bootloaderPath = vscode.Uri.joinPath(firmwarePath, `${deviceType}_bootloader-${version}.bin`);
@@ -120,7 +120,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
         enableTracing: false,
         resetConstructors: {
             // override only the constructor you need; others will fall back to defaults
-            customReset: (transport, sequenceString) => new CustomReset(transport, 'D0|R1|W50|D1|R0')
+            customReset: (transport) => new CustomReset(transport, 'D0|R1|W50|D1|R0')
         }
     };
     const esploader = new ESPLoader(loaderOptions);
@@ -130,7 +130,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
         location: vscode.ProgressLocation.Notification,
         title: `Flashing OI${moduleInfo.type} on ${moduleInfo.port}`,
         cancellable: true
-    }, async (progress, cancellationToken) => {
+    }, async (progress) => {
         return new Promise<boolean>(async (resolve) => {
             let result = true;
             try {

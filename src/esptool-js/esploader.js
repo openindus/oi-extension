@@ -1352,6 +1352,7 @@ export class ESPLoader {
                 this.info("Hard resetting via RTS pin...");
                 const hardReset = this.resetConstructors.customReset(this.transport);
                 await hardReset.reset();
+                break;
             default:
                 this.info("Staying in bootloader.");
                 if (this.IS_STUB) {

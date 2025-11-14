@@ -8,12 +8,12 @@ import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
 import { getSystemInfo } from './pannels/systemInfoPannel';
 import { startStepperPanelConfig } from './pannels/stepperParamPannel';
 
-var commandReadyCreateProject: Boolean = true;
-var commandReadyGetSystemInfo: Boolean = true;
-var commandReadyFlashDeviceFirmware: Boolean = true;
-var commandReadyFlashSlavesDevicesFirmware: Boolean = true;
+let commandReadyCreateProject = true;
+let commandReadyGetSystemInfo = true;
+let commandReadyFlashDeviceFirmware = true;
+let commandReadyFlashSlavesDevicesFirmware = true;
 
-export var logger: vscode.LogOutputChannel;
+export let logger: vscode.LogOutputChannel;
 
 export async function activate(context: vscode.ExtensionContext) {
 

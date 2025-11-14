@@ -33,7 +33,7 @@ export class ESP8266ROM extends ROM {
         this.getChipFeatures = async (loader) => {
             const features = ["WiFi"];
             if ((await this.getChipDescription(loader)) == "ESP8285")
-                features.push("Embedded Flash");
+                {features.push("Embedded Flash");}
             return features;
         };
     }

@@ -36,12 +36,8 @@ export declare class ESPLoader {
     FLASH_READ_TIMEOUT: number;
     MAX_TIMEOUT: number;
     CHIP_DETECT_MAGIC_REG_ADDR: number;
-    DETECTED_FLASH_SIZES: {
-        [key: number]: string;
-    };
-    DETECTED_FLASH_SIZES_NUM: {
-        [key: number]: number;
-    };
+    DETECTED_FLASH_SIZES: Record<number, string>;
+    DETECTED_FLASH_SIZES_NUM: Record<number, number>;
     USB_JTAG_SERIAL_PID: number;
     chip: ROM;
     IS_STUB: boolean;

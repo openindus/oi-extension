@@ -190,7 +190,7 @@ export class CustomReset {
                 }
             }
         }
-        catch (error) {
+        catch {
             throw new Error("Invalid custom reset sequence");
         }
     }

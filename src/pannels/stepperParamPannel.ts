@@ -7,8 +7,8 @@ import { OIStepper } from "../com/OIStepper";
 import { logger } from "../extension";
 import { ModuleInfo } from '../utils';
 
-var currentPanel:vscode.WebviewPanel | undefined;
-var stepper:OIStepper | undefined;
+let currentPanel:vscode.WebviewPanel | undefined;
+let stepper:OIStepper | undefined;
 
 export async function startStepperPanelConfig(context: vscode.ExtensionContext, portName?: string, stepperModuleInfo?: ModuleInfo) {
 
@@ -44,9 +44,9 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 		}
 	});
 
-	var receivedMessageMutex = new Mutex();
-	var lastCommand = '';
-	var normalDisconnect = false; // Set this var to true when the disconnection is wanted
+	const receivedMessageMutex = new Mutex();
+	let lastCommand = '';
+	let normalDisconnect = false; // Set this var to true when the disconnection is wanted
 
 	// Handler functions
 	async function handleConnect(message: any) {

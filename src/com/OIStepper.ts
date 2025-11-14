@@ -67,7 +67,7 @@ export class OIStepper extends OISerial {
         'stall-a',
     ];
 
-    constructor(portPath: string, serialNum: string, id: string, onBus: boolean = false) {
+    constructor(portPath: string, serialNum: string, id: string, onBus = false) {
         super(portPath);
         this.serialNum = serialNum;
         this.id = parseInt(id, 10);
@@ -79,7 +79,7 @@ export class OIStepper extends OISerial {
             const stepperPorts: {port: string, serialNum: string, id:string, onBus: boolean}[] = [];
             const ports = await OISerial.list();
             // Loop through all available ports
-            for await (let port of ports) {
+            for await (const port of ports) {
                 var serial = new OISerial(port.path);
                 // Try to connect to the port
                 await serial.connect().then(async () => {
@@ -155,10 +155,10 @@ export class OIStepper extends OISerial {
         });
     }
 
-    getParam(motor: string): Promise<{[key: string]: string}> {
+    getParam(motor: string): Promise<Record<string, string>> {
         return new Promise(async (resolve, reject) => {
-            const advancedParamList: {[key: string]: string} = {};
-            for (let param of this.paramList) {
+            const advancedParamList: Record<string, string> = {};
+            for (const param of this.paramList) {
                 try {
                     const response = await this.cmd(['stepper-advanced-param', motor, 'get', param]);
                     advancedParamList[param] = response;
@@ -171,9 +171,9 @@ export class OIStepper extends OISerial {
         });
     }
 
-    setParam(motor: string, advancedParamList: {[key: string]: string}): Promise<void> {
+    setParam(motor: string, advancedParamList: Record<string, string>): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            for (let param of this.paramList) {
+            for (const param of this.paramList) {
                 try {
                     if (advancedParamList[param] !== undefined) {
                         await this.cmd(['stepper-advanced-param', motor, 'set', param, advancedParamList[param]]);
@@ -193,9 +193,9 @@ export class OIStepper extends OISerial {
         });
     }
 
-    getStatus(): Promise<{[key: string]: string}[]> {
+    getStatus(): Promise<Record<string, string>[]> {
         return new Promise(async (resolve, reject) => {
-            const status: {[key: string]: string}[] = [{}, {}];
+            const status: Record<string, string>[] = [{}, {}];
             try {
                 const rawStatus1 = await this.cmd(['stepper-get-status', '1', '--raw']);
                 const rawStatus2 = await this.cmd(['stepper-get-status', '2', '--raw']);

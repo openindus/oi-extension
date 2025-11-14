@@ -64,9 +64,7 @@ export declare abstract class ROM {
      * @returns {number} The erase size of the chip as number.
      */
     getEraseSize(offset: number, size: number): number;
-    abstract FLASH_SIZES: {
-        [key: string]: number;
-    };
+    abstract FLASH_SIZES: Record<string, number>;
     abstract BOOTLOADER_FLASH_OFFSET: number;
     abstract CHIP_NAME: string;
     abstract FLASH_WRITE_SIZE: number;

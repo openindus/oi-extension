@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+ 
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { logger } from '../extension';

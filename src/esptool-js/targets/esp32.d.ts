@@ -9,9 +9,7 @@ export declare class ESP32ROM extends ROM {
     UART_CLKDIV_MASK: number;
     UART_DATE_REG_ADDR: number;
     XTAL_CLK_DIVIDER: number;
-    FLASH_SIZES: {
-        [key: string]: number;
-    };
+    FLASH_SIZES: Record<string, number>;
     FLASH_WRITE_SIZE: number;
     BOOTLOADER_FLASH_OFFSET: number;
     SPI_REG_BASE: number;

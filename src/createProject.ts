@@ -36,7 +36,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         useArduinoLib: vscode.QuickPickItem;
 	}
 
-    let state = {} as Partial<State>;
+    const state = {} as Partial<State>;
 
     // --------------------------------------------------------------------------------------------
     // First STEP: select board
@@ -204,7 +204,7 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
 
             // main.cpp and CMakeLists.txt in /main
-            let mainFolder = state.useArduinoLib!.label === 'Use Arduino Library' ? 'main_arduino' : 'main_espidf';
+            const mainFolder = state.useArduinoLib!.label === 'Use Arduino Library' ? 'main_arduino' : 'main_espidf';
             await vscode.workspace.fs.copy(
                 vscode.Uri.file(context.asAbsolutePath('/resources/project_files/' + mainFolder + '/CMakeLists.txt')),
                 vscode.Uri.file(state.path + '/' + state.name + '/main/CMakeLists.txt')
@@ -215,10 +215,10 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
             );
 
             // Add modules instance to main.cpp
-            let envName = getSimpleName(state.board!.label);
-            let className = getClassName(state.board!.label);
-            let mainSetupText: string = "%MODULE_INIT%";
-            var mainInitText: string = "";
+            const envName = getSimpleName(state.board!.label);
+            const className = getClassName(state.board!.label);
+            const mainSetupText = "%MODULE_INIT%";
+            let mainInitText = "";
             
             // Master module init
             mainInitText += '\r\n// First, init the master device\r\n'; // empty line + master comment

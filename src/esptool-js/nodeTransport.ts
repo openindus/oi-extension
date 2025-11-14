@@ -16,7 +16,7 @@ export class NodeTransport {
     device: string;
     tracing: boolean;
     slipReaderEnabled: boolean;
-    baudrate: number = 115200;
+    baudrate = 115200;
 
     private port?: SerialPort;
     private emitter = new EventEmitter();

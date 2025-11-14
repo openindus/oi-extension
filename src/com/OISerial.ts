@@ -166,7 +166,7 @@ export class OISerial extends SerialPort {
         }); 
     }
 
-    protected async waitForResponse(timeout: number = 300): Promise<void> {
+    protected async waitForResponse(timeout = 300): Promise<void> {
         const startTime = Date.now();
         while (this.lastResponse.length === 0) {
             if (Date.now() - startTime > timeout) {
@@ -280,9 +280,9 @@ export class OISerial extends SerialPort {
         });
     }
 
-    async getInfo(): Promise<{ [key: string]: string }> {
+    async getInfo(): Promise<Record<string, string>> {
         logger.info("Getting device info");
-        const deviceInfo: { [key: string]: string } = {
+        const deviceInfo: Record<string, string> = {
             type: "undefined",
             serialNum: "undefined",
             hardwareVar: "undefined",
@@ -306,9 +306,9 @@ export class OISerial extends SerialPort {
         return deviceInfo;
     }
 
-    async getSlaves(): Promise<{ [key: string]: string }[]> {
+    async getSlaves(): Promise<Record<string, string>[]> {
         logger.info("Getting slaves info");
-        const slaveInfo: { [key: string]: string }[] = [];
+        const slaveInfo: Record<string, string>[] = [];
         let slaveSNList: any[] = [];
 
         await this.sendMsgWithReturn('discover-slaves').then((response) => {
@@ -316,7 +316,7 @@ export class OISerial extends SerialPort {
         }).catch((error) => { throw(error); });
 
         for (const slaveSn of slaveSNList) {
-            const deviceInfo: { [key: string]: string } = {
+            const deviceInfo: Record<string, string> = {
                 port: "undefined",
                 type: "undefined",
                 serialNum: "undefined",
