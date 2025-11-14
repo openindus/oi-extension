@@ -63,10 +63,11 @@
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
+        "lint": "eslint",
         "watch": "tsc -watch -p ./",
-        "pretest": "npm run compile && npm run lint",
-		"test": "vscode-test",
-        "lint": "eslint"
+        "pretest": "npm run compile",
+        "test": "vscode-test",
+        "clean": "rm -rf ./out"
     },
     "devDependencies": {
         "@eslint/js": "^9.13.0",
@@ -75,6 +76,8 @@
         "@types/node": "^22.19.1",
         "@types/tar": "^6.1.13",
         "@types/vscode": "^1.106.0",
+        "@vscode/test-cli": "^0.0.12",
+        "@vscode/test-electron": "^2.5.2",
         "eslint": "^9.13.0",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.26.0"
