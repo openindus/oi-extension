@@ -6,11 +6,15 @@ import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
 
 import { OISerial } from './com/OISerial';
 
-export let logger: vscode.LogOutputChannel;
+export let logger: vscode.LogOutputChannel | Console;
 
 export function startLogger() {
-    logger = vscode.window.createOutputChannel("OpenIndus Extension", {log: true});
-    logger.info("OpenIndus Extension Activated");
+    if (process.env.VSCODE_TEST || process.env.NODE_ENV === 'test') {
+        logger = vscode.window.createOutputChannel("OpenIndus Extension", {log: true});
+        logger.info("OpenIndus Extension Activated");
+    } else {
+        logger = console;
+    }
 }
 
 export const webSiteAddress = "https://openindus.com/";

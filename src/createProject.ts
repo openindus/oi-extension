@@ -11,8 +11,10 @@ export async function createProject(
     projectPath?: string, 
     projectName?: string,
     useArduinoLib?: boolean,
-    useLastLibVersion?: boolean) {
+    useLastLibVersion?: boolean): Promise<boolean> {
     
+    logger.info('Starting project creation process');
+
     const boardsNames: vscode.QuickPickItem[] = deviceTypeList.map(element => ({ label:getClassName(element) }));
 
     const modeNames: vscode.QuickPickItem[] = [ 
@@ -62,7 +64,7 @@ export async function createProject(
         });
     }
 
-    if (state.board === undefined) { return; }
+    if (state.board === undefined) { return false; }
 
     // --------------------------------------------------------------------------------------------
     // Second STEP: select folder
@@ -80,7 +82,7 @@ export async function createProject(
         });
     }
     
-    if (state.path === undefined) { return; }
+    if (state.path === undefined) { return false; }
 
     // --------------------------------------------------------------------------------------------
     // Third STEP: select project name
@@ -109,7 +111,7 @@ export async function createProject(
         });
     }
 
-    if (state.name === undefined) { return; }
+    if (state.name === undefined) { return false; }
 
     // --------------------------------------------------------------------------------------------
     // Fourth STEP: select project mode: master, standalone or slave
@@ -124,7 +126,7 @@ export async function createProject(
         });
     }
 
-    if (state.mode === undefined) { return; }
+    if (state.mode === undefined) { return false; }
 
     // --------------------------------------------------------------------------------------------
     // Fifth STEP: select if use arduino library or not
@@ -139,7 +141,7 @@ export async function createProject(
         });
     }
 
-    if (state.useArduinoLib === undefined) { return; }
+    if (state.useArduinoLib === undefined) { return false; }
 
     // --------------------------------------------------------------------------------------------
     // Sixth STEP: select library version
@@ -161,7 +163,7 @@ export async function createProject(
     if (validVersions.length === 0) {
         vscode.window.showErrorMessage('No libraries versions found in resources/libraries');
         logger.error('No valid libraries versions found in resources/libraries');
-        return;
+        return false;
     }
 
     // Add a (recommended) flag to last version
@@ -178,13 +180,13 @@ export async function createProject(
 
         if (!selectedVersion?.label) {
             logger.info('Firmware version selection cancelled');
-            return;
+            return false;
         }
 
         state.libraryVersion = selectedVersion.label;
     }
 
-    if (state.libraryVersion === undefined) { return; }
+    if (state.libraryVersion === undefined) { return false; }
 
 
     // --------------------------------------------------------------------------------------------
@@ -307,9 +309,11 @@ export async function createProject(
         catch (error) {
             logger.error("Error while creating project: " + error);
             vscode.window.showErrorMessage("Error while creating project: " + error);
+            return false;
         }
     });
 
     // Last STEP: Open folfer
     await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name), { forceNewWindow: true });
+    return true;
 }

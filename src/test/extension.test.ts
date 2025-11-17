@@ -6,10 +6,11 @@ import * as vscode from 'vscode';
 
 // Import createProject after mocking VS Code methods
 import { createProject } from '../createProject';
+import { startLogger } from '../utils';
 
 suite('Extension Test Suite', () => {
 	
-	test('Create project - mock UI interactions', async () => {
+	test('Create project', async () => {
 		// Mock the extension context for testing
 		const mockContext = {
 			extensionPath: 'C:/Users/aurelien.floutard/Documents/01-SOFT/oi-extension',
@@ -37,11 +38,15 @@ suite('Extension Test Suite', () => {
 			{ type: "analogls", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" },
 			{ type: "dc", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" }
 		]
-		
-		// Test the function without UI interactions
-		await createProject(mockContext, moduleInfo, slaveInfo, "C:/Users/aurelien.floutard/Documents/01-SOFT/oi-extension/tmp_test", "TestProject", true, true);
 
-		// Add assertions to verify the function executed without errors
-		assert.ok(true, 'createProject executed without errors');
+		// Open tree view to launch extension
+		// await vscode.commands.executeCommand('openindus-treeview.focus', mockContext);
+		
+		startLogger();
+
+		// Test the function without UI interactions
+		const ret = await createProject(mockContext, moduleInfo, slaveInfo, "C:/Users/aurelien.floutard/Documents/01-SOFT/oi-extension/tmp_test", "TestProject", true, true);
+		console.log("createProject returned: " + ret);
+		assert.strictEqual(ret, true);
 	});
 });
