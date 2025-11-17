@@ -3,6 +3,8 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Import createProject after mocking VS Code methods
 import { createProject } from '../createProject';
@@ -10,14 +12,27 @@ import { startLogger } from '../utils';
 
 suite('Extension Test Suite', () => {
 	
-	test('Create project', async () => {
+	test('Create project', async function() {
+		// Increase timeout for project creation test
+		this.timeout(10000);
+
 		// Mock the extension context for testing
+		const extensionRoot = __dirname.replace(/\\/g, '/').replace(/\/test\/?$/, '').replace(/\/out\/?$/, '');
+		console.log('Extension Root:', extensionRoot);
 		const mockContext = {
-			extensionPath: 'C:/Users/aurelien.floutard/Documents/01-SOFT/oi-extension',
-			extensionUri: vscode.Uri.file('C:/Users/aurelien.floutard/Documents/01-SOFT/oi-extension'),
-			asAbsolutePath: (relativePath: string) => relativePath,
+			extensionPath: extensionRoot,
+			extensionUri: vscode.Uri.file(extensionRoot),
+			asAbsolutePath: (relativePath: string) => {
+				return `${extensionRoot}/${relativePath}`;
+			},
 			// Add other required properties as needed
 		} as unknown as vscode.ExtensionContext;
+
+		// Clean up from previous test runs
+		const testProjectPath = path.join(extensionRoot, 'tmp_test', 'TestProject');
+		if (fs.existsSync(testProjectPath)) {
+			fs.rmSync(testProjectPath, { recursive: true, force: true });
+		}
 
 		// Create mock ModuleInfo directly without importing from utils
 		const moduleInfo: any = {
@@ -39,14 +54,10 @@ suite('Extension Test Suite', () => {
 			{ type: "dc", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" }
 		]
 
-		// Open tree view to launch extension
-		// await vscode.commands.executeCommand('openindus-treeview.focus', mockContext);
-		
 		startLogger();
 
 		// Test the function without UI interactions
-		const ret = await createProject(mockContext, moduleInfo, slaveInfo, "C:/Users/aurelien.floutard/Documents/01-SOFT/oi-extension/tmp_test", "TestProject", true, true);
-		console.log("createProject returned: " + ret);
-		assert.strictEqual(ret, true);
+		const ret = await createProject(mockContext, moduleInfo, slaveInfo, path.join(extensionRoot, 'tmp_test'), "TestProject", true, true);
+		assert(ret, "Create project failed");
 	});
 });

@@ -70,16 +70,10 @@ export async function createProject(
     // Second STEP: select folder
     // --------------------------------------------------------------------------------------------
     if (projectPath !== undefined) {
-        state.path = projectPath
+        state.path = projectPath;
     } else {
-        state.path = await vscode.window.showOpenDialog(optionsSelectFolder).then(fileUri => {
-            if (fileUri && fileUri[0]) {
-                return fileUri[0].fsPath;
-            }
-            else {
-                return undefined;
-            }
-        });
+        const folderUri = await vscode.window.showOpenDialog(optionsSelectFolder);
+        state.path = folderUri && folderUri[0] ? folderUri[0].fsPath : undefined;
     }
     
     if (state.path === undefined) { return false; }
@@ -149,7 +143,13 @@ export async function createProject(
 
     // Get library versions from resources directory
     const librariesPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'libraries');
-    const librariesVersions = await vscode.workspace.fs.readDirectory(librariesPath);
+    let librariesVersions: [string, vscode.FileType][] = [];
+    try {
+        librariesVersions = await vscode.workspace.fs.readDirectory(librariesPath);
+    } catch (err) {
+        // Handle missing resources directory gracefully (may happen in test environments)
+        logger.warn(`Failed to read libraries directory: ${err}`);
+    }
     
     // Filter valid firmware versions (must be directories and have version format like oi-firmware-x.x.x)
     const validVersions = librariesVersions
@@ -161,7 +161,7 @@ export async function createProject(
 
     // If no valid versions found, show error
     if (validVersions.length === 0) {
-        vscode.window.showErrorMessage('No libraries versions found in resources/libraries');
+        await vscode.window.showErrorMessage('No libraries versions found in resources/libraries');
         logger.error('No valid libraries versions found in resources/libraries');
         return false;
     }
@@ -192,13 +192,13 @@ export async function createProject(
     // --------------------------------------------------------------------------------------------
     // Seventh STEP: Create project with progress bar
     // --------------------------------------------------------------------------------------------
-    await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: `Creating project ${state.name}`,
-        cancellable: false
-    }, async () => {
-
-        try {
+    let projectCreated = true;
+    try {
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: `Creating project ${state.name}`,
+            cancellable: false
+        }, async () => {
 
             // Create src directory
             await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/main'));
@@ -256,7 +256,7 @@ export async function createProject(
             if (slaves !== undefined) {
                 let i = 1;
                 slaves.forEach((slave: ModuleInfo) => {
-                    // /!\ OIStepperVE = OIStepper ? Really ??
+                    // /!\ OIStepperVE = OIStepper ? Really ?? 
                     mainInitText += getClassName(slave.type) + " " + getSimpleName(slave.type) + String(i) + ";\r\n"; // slave instance line
                     i++;
                 });
@@ -305,15 +305,22 @@ export async function createProject(
             );
 
             logger.info(`Project ${state.name} created successfully at ${state.path}`);
-        }
-        catch (error) {
-            logger.error("Error while creating project: " + error);
-            vscode.window.showErrorMessage("Error while creating project: " + error);
-            return false;
-        }
-    });
+        });
+    }
+    catch (error) {
+        logger.error("Error while creating project: " + error);
+        await vscode.window.showErrorMessage("Error while creating project: " + error);
+        projectCreated = false;
+    }
 
-    // Last STEP: Open folfer
-    await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name), { forceNewWindow: true });
-    return true;
+    // Last STEP: Open folder
+    if (projectCreated) {
+        // Skip opening folder when running tests or in non-interactive environments
+        try {
+            await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name), { forceNewWindow: true });
+        } catch (err) {
+            logger.warn('Could not open folder in editor: ' + err);
+        }
+    }
+    return projectCreated;
 }
