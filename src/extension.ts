@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { OIAccessTreeProvider } from './customTreeView';
 import { createProject } from './createProject';
-import { ModuleInfo, downloadNewFirmwaresOnline, downloadNewLibrariesOnline } from './utils';
+import { startLogger, ModuleInfo, downloadNewFirmwaresOnline, downloadNewLibrariesOnline } from './utils';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
 import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
 import { getSystemInfo } from './pannels/systemInfoPannel';
@@ -13,12 +13,9 @@ let commandReadyGetSystemInfo = true;
 let commandReadyFlashDeviceFirmware = true;
 let commandReadyFlashSlavesDevicesFirmware = true;
 
-export let logger: vscode.LogOutputChannel;
-
 export async function activate(context: vscode.ExtensionContext) {
 
-    logger = vscode.window.createOutputChannel("OpenIndus Extension", {log: true});
-	logger.info("OpenIndus Extension Activated");
+	startLogger();
 
 	vscode.window.registerTreeDataProvider('openindus-treeview', new OIAccessTreeProvider());
 

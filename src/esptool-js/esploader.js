@@ -4,7 +4,7 @@ import { NodeTransport } from "./nodeTransport";
 import { ClassicReset, CustomReset, HardReset, UsbJtagSerialReset } from "./reset.js";
 import { getStubJsonByChipName } from "./stubFlasher.js";
 import { padTo } from "./util.js";
-import { logger } from "../extension";
+import { logger } from "../utils";
 /**
  * Return the chip ROM based on the given magic number
  * @param {number} magic - magic hex number to select ROM.

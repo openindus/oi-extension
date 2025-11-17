@@ -1,7 +1,7 @@
  
 import * as fs from 'fs';
 import * as vscode from 'vscode';
-import { logger } from '../extension';
+import { logger } from '../utils';
 
 /**
  * Import flash stub json for the given chip name.

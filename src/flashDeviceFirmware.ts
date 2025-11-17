@@ -3,8 +3,7 @@ import * as fs from 'fs';
 import * as CryptoJS from 'crypto-js';
 
 import { NodeTransport, ESPLoader, LoaderOptions, CustomReset, FlashOptions } from './esptool-js/index';
-import { deviceTypeList, pickDevice, ModuleInfo, getSimpleName } from './utils';
-import { logger } from './extension';
+import { deviceTypeList, pickDevice, ModuleInfo, getSimpleName, logger } from './utils';
 
 export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string, inputModuleInfo?: ModuleInfo): Promise<void> {
     // Validate input parameters

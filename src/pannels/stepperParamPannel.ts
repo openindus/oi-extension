@@ -4,8 +4,7 @@ import * as fs from 'fs';
 
 import {Mutex} from 'async-mutex';
 import { OIStepper } from "../com/OIStepper";
-import { logger } from "../extension";
-import { ModuleInfo } from '../utils';
+import { ModuleInfo, logger } from '../utils';
 
 let currentPanel:vscode.WebviewPanel | undefined;
 let stepper:OIStepper | undefined;

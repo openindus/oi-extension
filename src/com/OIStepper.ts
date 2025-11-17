@@ -1,5 +1,5 @@
 import { OISerial } from "./OISerial";
-import { logger } from "../extension";
+import { logger } from "../utils";
 
 export class OIStepper extends OISerial {
     

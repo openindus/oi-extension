@@ -2,9 +2,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as CryptoJS from 'crypto-js';
 
-import { ModuleInfo, nameToType, deviceTypeList, getSimpleName } from './utils';
+import { ModuleInfo, nameToType, deviceTypeList, getSimpleName, logger } from './utils';
 import { NodeTransport, ESPLoader, LoaderOptions, FlashOptions } from './esptool-js/index';
-import { logger } from './extension';
 import { OISerial } from './com/OISerial';
 
 export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext, masterPortName: string, slavesModuleInfo: ModuleInfo[], version?: string) {

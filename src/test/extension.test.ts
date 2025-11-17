@@ -12,8 +12,8 @@ suite('Extension Test Suite', () => {
 	test('Create project - mock UI interactions', async () => {
 		// Mock the extension context for testing
 		const mockContext = {
-			extensionPath: '/mock/extension/path',
-			extensionUri: vscode.Uri.file('/mock/extension/path'),
+			extensionPath: 'C:/Users/aurelien.floutard/Documents/01-SOFT/oi-extension',
+			extensionUri: vscode.Uri.file('C:/Users/aurelien.floutard/Documents/01-SOFT/oi-extension'),
 			asAbsolutePath: (relativePath: string) => relativePath,
 			// Add other required properties as needed
 		} as unknown as vscode.ExtensionContext;

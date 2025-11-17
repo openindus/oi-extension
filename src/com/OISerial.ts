@@ -1,5 +1,5 @@
 import { SerialPort, ReadlineParser, ReadyParser } from 'serialport';
-import { logger } from '../extension';
+import { logger } from '../utils';
 import {Mutex} from 'async-mutex';
 
 function sleep(ms: number) {

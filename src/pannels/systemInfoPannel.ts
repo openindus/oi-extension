@@ -2,8 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { ModuleInfo, caseImg, getClassName, getSlaveDeviceInfoList, pickDevice } from '../utils';
-import { logger } from "../extension";
+import { ModuleInfo, caseImg, getClassName, getSlaveDeviceInfoList, pickDevice, logger } from '../utils';
 import {Mutex} from 'async-mutex';
 
 export async function getSystemInfo(context: vscode.ExtensionContext, portName?: string) {

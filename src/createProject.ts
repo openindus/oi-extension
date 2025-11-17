@@ -2,8 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as tar from 'tar';
-import { ModuleInfo, deviceTypeList, getClassName, getDefineName, getSimpleName} from './utils';
-import { logger } from './extension';
+import { ModuleInfo, deviceTypeList, getClassName, getDefineName, getSimpleName, logger} from './utils';
 
 export async function createProject(
     context: vscode.ExtensionContext, 

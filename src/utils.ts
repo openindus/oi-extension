@@ -5,7 +5,13 @@ import * as https from 'https';
 import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
 
 import { OISerial } from './com/OISerial';
-import { logger } from './extension';
+
+export let logger: vscode.LogOutputChannel;
+
+export function startLogger() {
+    logger = vscode.window.createOutputChannel("OpenIndus Extension", {log: true});
+    logger.info("OpenIndus Extension Activated");
+}
 
 export const webSiteAddress = "https://openindus.com/";
 

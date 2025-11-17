@@ -1,6 +1,6 @@
 import { SerialPort } from 'serialport';
 import { EventEmitter } from 'events';
-import { logger } from '../extension';
+import { logger } from '../utils';
 
 /**
  * NodeTransport - adapter implementing the same API surface as esptool-js Transport
