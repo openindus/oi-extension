@@ -1,4 +1,4 @@
-image: "https://gitlab.openindus.com/openindus/oi-tools/docker_idf_npm/-/blob/master/idf_npm.tar.gz"
+image: "https://gitlab.openindus.com/openindus/oi-tools/docker_idf_npm/-/raw/master/idf_npm.tar.gz"
 
 # workflow:
 #   rules:
