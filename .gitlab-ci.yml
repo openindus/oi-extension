@@ -1,4 +1,4 @@
-image: espressif/idf:v5.5
+image: "https://gitlab.openindus.com/openindus/oi-tools/docker_idf_npm"
 
 # workflow:
 #   rules:
