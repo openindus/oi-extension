@@ -3,3 +3,4 @@ out
 __pycache__
 .vscode-test
 tmp_test
+*.vsix
