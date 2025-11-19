@@ -14,7 +14,7 @@ setup:
   stage: setup
   script:
     - apt update
-    - apt install -y --no-install-recommends \
+    - apt install -y \
     - nodejs
     - npm
     - xvfb \
@@ -34,4 +34,6 @@ create_project:
 
 build:
   stage: build
-  script: idf.py build
+  script: 
+    - cd tmp_test/TestProject
+    - idf.py build
