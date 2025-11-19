@@ -14,17 +14,7 @@ setup:
   stage: setup
   script:
     - apt update
-    - apt install nodejs npm -y
-    - apt install -y --no-install-recommends\
-    - xvfb \
-    - xauth \
-    - dbus-x11 \
-    - libgtk-3-0 \
-    - libnss3 \
-    - libnspr4 \
-    - libx11-xcb1 \
-    - libxss1 \
-    - libatk-bridge2.0-0
+    - apt install nodejs npm xvfb xauth dbus-x11 libgtk-3-0 libnss3 libnspr4 libx11-xcb1 libxss1 libatk-bridge2.0-0 -y
     - rm -rf /var/lib/apt/lists/*
 
 create_project:
