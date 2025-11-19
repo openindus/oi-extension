@@ -16,13 +16,23 @@ setup:
     - apt update
     - apt install nodejs npm xvfb xauth dbus-x11 libgtk-3-0 libnss3 libnspr4 libx11-xcb1 libxss1 libatk-bridge2.0-0 -y
     - rm -rf /var/lib/apt/lists/*
+  tags:
+    - oi-extension
 
 create_project:
   stage: create_project
+  needs:
+    - job: setup
   script: xvfb-run -a npm test
+  tags:
+    - oi-extension
 
 build:
   stage: build
+  needs:
+    - create_project
   script: 
     - cd tmp_test/TestProject
     - idf.py build
+  tags:
+    - oi-extension
