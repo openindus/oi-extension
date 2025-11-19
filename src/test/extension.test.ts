@@ -8,7 +8,7 @@ import * as path from 'path';
 
 // Import createProject after mocking VS Code methods
 import { createProject } from '../createProject';
-import { startLogger } from '../utils';
+import { ModuleInfo, startLogger } from '../utils';
 
 suite('Extension Test Suite', () => {
 	
@@ -35,7 +35,7 @@ suite('Extension Test Suite', () => {
 		}
 
 		// Create mock ModuleInfo directly without importing from utils
-		const moduleInfo: any = {
+		const moduleInfo: ModuleInfo = {
 			port: "",
 			type: "core",
 			serialNum: "",
@@ -43,16 +43,16 @@ suite('Extension Test Suite', () => {
 			versionSw: "",
 			imgName: "",
 			caseName: "",
-		}
+		};
 		
-		const slaveInfo: any[] = [
+		const slaveInfo: ModuleInfo[] = [
 			{ type: "discrete", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" },
 			{ type: "mixed", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" },
 			{ type: "stepper", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" },
 			{ type: "relayhp", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" },
 			{ type: "analogls", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" },
 			{ type: "dc", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" }
-		]
+		];
 
 		startLogger();
 
