@@ -15,7 +15,9 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "onView:openindus-treeview"
+    ],
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
@@ -98,5 +100,8 @@
         "esp32",
         "firmware",
         "flash"
+    ],
+    "extensionDependencies": [
+        "espressif.esp-idf-extension"
     ]
 }
