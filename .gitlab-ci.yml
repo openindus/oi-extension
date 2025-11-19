@@ -14,9 +14,8 @@ setup:
   stage: setup
   script:
     - apt update
-    - apt install -y \
-    - nodejs
-    - npm
+    - apt install nodejs npm -y
+    - apt install -y --no-install-recommends\
     - xvfb \
     - xauth \
     - dbus-x11 \
