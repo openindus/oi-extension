@@ -25,8 +25,8 @@ setup:
     - libnspr4 \
     - libx11-xcb1 \
     - libxss1 \
-    - libatk-bridge2.0-0 \
-    - && rm -rf /var/lib/apt/lists/*
+    - libatk-bridge2.0-0
+    - rm -rf /var/lib/apt/lists/*
 
 create_project:
   stage: create_project
