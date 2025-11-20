@@ -8,7 +8,7 @@ import * as path from 'path';
 
 // Import createProject after mocking VS Code methods
 import { createProject } from '../createProject';
-import { ModuleInfo, startLogger } from '../utils';
+import { ModuleInfo, startLogger, downloadNewFirmwaresOnline, downloadNewLibrariesOnline } from '../utils';
 
 suite('Extension Test Suite', () => {
 	
@@ -27,6 +27,14 @@ suite('Extension Test Suite', () => {
 			},
 			extensionMode: vscode.ExtensionMode.Test
 		} as unknown as vscode.ExtensionContext;
+
+		
+		// Activate logger in test mode
+		startLogger(mockContext);
+
+		// Download the latets firmware from openindus server at each launch of application
+		await downloadNewFirmwaresOnline(mockContext);
+		await downloadNewLibrariesOnline(mockContext);
 
 		// Clean up from previous test runs
 		const testProjectPath = path.join(extensionRoot, 'tmp_test', 'TestProject');
@@ -53,11 +61,6 @@ suite('Extension Test Suite', () => {
 			{ type: "analogls", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" },
 			{ type: "dc", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" }
 		];
-
-		startLogger(mockContext);
-
-		// 			fix lib download in test mode
-
 
 		// Test the function without UI interactions
 		const ret = await createProject(mockContext, moduleInfo, slaveInfo, path.join(extensionRoot, 'tmp_test'), "TestProject", true, true);

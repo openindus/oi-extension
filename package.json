@@ -102,6 +102,7 @@
         "flash"
     ],
     "extensionDependencies": [
-        "espressif.esp-idf-extension"
+        "espressif.esp-idf-extension",
+        "mindaro-dev.file-downloader"
     ]
 }

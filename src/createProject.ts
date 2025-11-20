@@ -161,7 +161,7 @@ export async function createProject(
 
     // If no valid versions found, show error
     if (validVersions.length === 0) {
-        await vscode.window.showErrorMessage('No libraries versions found in resources/libraries');
+        vscode.window.showErrorMessage('No libraries versions found in resources/libraries');
         logger.error('No valid libraries versions found in resources/libraries');
         return false;
     }
@@ -309,7 +309,7 @@ export async function createProject(
     }
     catch (error) {
         logger.error("Error while creating project: " + error);
-        await vscode.window.showErrorMessage("Error while creating project: " + error);
+        vscode.window.showErrorMessage("Error while creating project: " + error);
         projectCreated = false;
     }
 
