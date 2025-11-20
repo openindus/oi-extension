@@ -4,5 +4,4 @@ __pycache__
 .vscode-test
 tmp_test
 *.vsix
-resources/binaries/
-resources/libraries/
+resources

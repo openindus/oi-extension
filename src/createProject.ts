@@ -205,7 +205,7 @@ export async function createProject(
 
             // sdkconfig.defaults
             await vscode.workspace.fs.copy(
-                vscode.Uri.file(context.asAbsolutePath('/resources/project_files/sdkconfig.defaults')),
+                vscode.Uri.file(context.asAbsolutePath('/src/static/project_files/sdkconfig.defaults')),
                 vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults')
             );            
             // Modify sdkconfig.defaults to add right module type
@@ -223,7 +223,7 @@ export async function createProject(
 
             // CMakeLists.txt
             await vscode.workspace.fs.copy(
-                vscode.Uri.file(context.asAbsolutePath('/resources/project_files/CMakeLists.txt')),
+                vscode.Uri.file(context.asAbsolutePath('/src/static/project_files/CMakeLists.txt')),
                 vscode.Uri.file(state.path + '/' + state.name + '/CMakeLists.txt')
             );
             // Replace %PROJECT% in CMakeLists.txt
@@ -234,11 +234,11 @@ export async function createProject(
             // main.cpp and CMakeLists.txt in /main
             const mainFolder = state.useArduinoLib!.label === 'Use Arduino Library' ? 'main_arduino' : 'main_espidf';
             await vscode.workspace.fs.copy(
-                vscode.Uri.file(context.asAbsolutePath('/resources/project_files/' + mainFolder + '/CMakeLists.txt')),
+                vscode.Uri.file(context.asAbsolutePath('/src/static/project_files/' + mainFolder + '/CMakeLists.txt')),
                 vscode.Uri.file(state.path + '/' + state.name + '/main/CMakeLists.txt')
             );
             await vscode.workspace.fs.copy(
-                vscode.Uri.file(context.asAbsolutePath('/resources/project_files/' + mainFolder + '/main.cpp')),
+                vscode.Uri.file(context.asAbsolutePath('/src/static/project_files/' + mainFolder + '/main.cpp')),
                 vscode.Uri.file(state.path + '/' + state.name + '/main/main.cpp')
             );
 
@@ -289,7 +289,7 @@ export async function createProject(
             }
 
             // Copy versionFile.txt and replace %LIB_VERSION%
-            await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/version.txt')), vscode.Uri.file(state.path + '/' + state.name + '/version.txt'));
+            await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/src/static/project_files/version.txt')), vscode.Uri.file(state.path + '/' + state.name + '/version.txt'));
             let versionFile = fs.readFileSync(state.path + '/' + state.name + '/version.txt', 'utf8');
             if (state.libraryVersion !== null) {
                 versionFile = versionFile.replace("%LIB_VERSION%", state.libraryVersion!);

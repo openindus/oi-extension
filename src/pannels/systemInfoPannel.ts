@@ -60,7 +60,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
         {enableScripts: true}
     );
 
-    const contentUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'resources', 'html', 'content')).toString();
+    const contentUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'src', 'static', 'html', 'content')).toString();
 
     let slaveModuleHtml = '';
     if (slaveInfoList !== undefined && slaveInfoList.length !== undefined && slaveInfoList.length > 0) {   
@@ -96,7 +96,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
                     </div>`;
                 }
 
-    fs.readFile(path.join(context.extensionPath, 'resources', 'html', 'information.html'), (err,data) => {
+    fs.readFile(path.join(context.extensionPath, 'src', 'static', 'html', 'information.html'), (err,data) => {
         if (err) {
             logger.error(err);
         } else {

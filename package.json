@@ -8,7 +8,7 @@
         "type": "git",
         "url": "https://github.com/openindus/oi-extension.git"
     },
-    "icon": "resources/logo_blanc.png",
+    "icon": "src/static/logo_blanc.png",
     "engines": {
         "vscode": "^1.100.0"
     },
@@ -47,7 +47,7 @@
                 {
                     "id": "openindus-treeviewcontainer",
                     "title": "OpenIndus",
-                    "icon": "resources/logoMenu.png"
+                    "icon": "src/static/logoMenu.png"
                 }
             ]
         },
@@ -57,19 +57,19 @@
                     "id": "openindus-treeview",
                     "name": "OpenIndus",
                     "contextualTitle": "OpenIndus",
-                    "icon": "resources/logoMenu.png"
+                    "icon": "src/static/logoMenu.png"
                 }
             ]
         }
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
+        "vscode:prepublish": "npm run clean ; npm run compile",
         "compile": "tsc -p ./",
         "lint": "eslint",
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile",
         "test": "vscode-test",
-        "clean": "rd /s /q out; rd /s /q resources\\binaries; rd /s /q resources\\libraries; rd /s /q .vscode-test"
+        "clean": "powershell -Command \"@('out','resources', '.vscode-test') | ForEach-Object { Remove-Item -Path $_ -Recurse -ErrorAction SilentlyContinue }\""
     },
     "devDependencies": {
         "@eslint/js": "^9.13.0",
