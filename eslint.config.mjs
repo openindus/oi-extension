@@ -26,6 +26,7 @@ export default tseslint.config(
 			'curly': 'warn',
 			'@stylistic/semi': ['warn', 'always'],
 			'@typescript-eslint/no-empty-function': 'off',
+			'@typescript-eslint/no-explicit-any': 'off',
 			'@typescript-eslint/naming-convention': [
 				'warn',
 				{

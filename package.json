@@ -63,7 +63,7 @@
         }
     },
     "scripts": {
-        "vscode:prepublish": "npm run clean ; npm run compile",
+        "vscode:prepublish": "npm run clean ; npm install ; npm run compile",
         "compile": "tsc -p ./",
         "lint": "eslint",
         "watch": "tsc -watch -p ./",
