@@ -8,7 +8,7 @@
         "type": "git",
         "url": "https://github.com/openindus/oi-extension.git"
     },
-    "icon": "src/static/logo_blanc.png",
+    "icon": "static/logo_blanc.png",
     "engines": {
         "vscode": "^1.100.0"
     },
@@ -47,7 +47,7 @@
                 {
                     "id": "openindus-treeviewcontainer",
                     "title": "OpenIndus",
-                    "icon": "src/static/logoMenu.png"
+                    "icon": "static/logoMenu.png"
                 }
             ]
         },
@@ -57,7 +57,7 @@
                     "id": "openindus-treeview",
                     "name": "OpenIndus",
                     "contextualTitle": "OpenIndus",
-                    "icon": "src/static/logoMenu.png"
+                    "icon": "static/logoMenu.png"
                 }
             ]
         }

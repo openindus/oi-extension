@@ -31,9 +31,9 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 
     currentPanel = pannel;
 
-	const contentUri = pannel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'src', 'static', 'html', 'content'));
+	const contentUri = pannel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'static', 'html', 'content'));
 
-	fs.readFile(path.join(context.extensionPath, 'src', 'static', 'html', 'stepper.html'), (err,data) => {
+	fs.readFile(path.join(context.extensionPath, 'static', 'html', 'stepper.html'), (err,data) => {
 		if (err) {
 			logger.error(err);
 		} else {
