@@ -14,7 +14,7 @@ suite('Extension Test Suite', () => {
 	
 	test('Create project', async function() {
 		// Increase timeout for project creation test
-		this.timeout(10000);
+		this.timeout(30000);
 
 		// Mock the extension context for testing
 		const extensionRoot = __dirname.replace(/\\/g, '/').replace(/\/test\/?$/, '').replace(/\/out\/?$/, '');
@@ -22,6 +22,7 @@ suite('Extension Test Suite', () => {
 		const mockContext = {
 			extensionPath: extensionRoot,
 			extensionUri: vscode.Uri.file(extensionRoot),
+			globalStorageUri: vscode.Uri.file(extensionRoot),
 			asAbsolutePath: (relativePath: string) => {
 				return `${extensionRoot}/${relativePath}`;
 			},

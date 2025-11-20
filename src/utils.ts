@@ -360,7 +360,7 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
                     const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "libraries", fileName);
                     const destinationPath = vscode.Uri.joinPath(destinationDirectory, lib + librarySourceVersion + ".tar.gz");
                     // download source file to destination path via https
-                    // try {
+                    try {
                         const downloadedFileUri: vscode.Uri = await fileDownloader.downloadFile(
                             sourceFileUrl,
                             fileName,
@@ -370,10 +370,10 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
                         await vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
                         logger.info(`Downloaded ${sourceFileUrl} to ${destinationPath}`);
 
-                    // } catch (error) {
-                    //     logger.error(`Failed to download ${sourceFileUrl}: ${error}`);
-                    //     continue;
-                    // }
+                    } catch (error) {
+                        logger.error(`Failed to download ${sourceFileUrl}: ${error}`);
+                        continue;
+                    }
                 }
             }
         }
