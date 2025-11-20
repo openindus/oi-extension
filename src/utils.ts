@@ -297,7 +297,7 @@ export async function downloadNewFirmwaresOnline(context: vscode.ExtensionContex
             }
         }
         // Clear all files in fildeDownloader
-        fileDownloader.deleteAllItems(context);
+        await fileDownloader.deleteAllItems(context);
 
     } catch (error) {
         vscode.window.showErrorMessage('Failed to fetch firmware files');
@@ -378,7 +378,7 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
             }
         }
         // Clear all files in fildeDownloader
-        fileDownloader.deleteAllItems(context);
+        await fileDownloader.deleteAllItems(context);
 
     } catch (error) {
         vscode.window.showErrorMessage('Failed to fetch libraries files');

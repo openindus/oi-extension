@@ -69,7 +69,7 @@
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile",
         "test": "vscode-test",
-        "clean": "rd /s /q out; rd /s /q resources\\binaries; rd /s /q resources\\libraries;"
+        "clean": "rd /s /q out; rd /s /q resources\\binaries; rd /s /q resources\\libraries; rd /s /q .vscode-test"
     },
     "devDependencies": {
         "@eslint/js": "^9.13.0",
