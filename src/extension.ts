@@ -15,7 +15,7 @@ let commandReadyFlashSlavesDevicesFirmware = true;
 
 export async function activate(context: vscode.ExtensionContext) {
 
-	startLogger();
+	startLogger(context);
 
 	vscode.window.registerTreeDataProvider('openindus-treeview', new OIAccessTreeProvider());
 

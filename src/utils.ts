@@ -8,19 +8,18 @@ import { OISerial } from './com/OISerial';
 
 export let logger: vscode.LogOutputChannel | Console;
 
-export function startLogger() {
-    if (process.env.VSCODE_TEST || process.env.NODE_ENV === 'test') {
+export function startLogger(context: vscode.ExtensionContext) {
+    if (context.extensionMode === vscode.ExtensionMode.Test) {
+        logger = console;
+    } else {
         logger = vscode.window.createOutputChannel("OpenIndus Extension", {log: true});
         logger.info("OpenIndus Extension Activated");
-    } else {
-        logger = console;
     }
 }
 
 export const webSiteAddress = "https://openindus.com/";
 
-export const deviceTypeList: string[] = 
-[
+export const deviceTypeList: string[] = [
     'OICore',
     'OICorelite',
     'OIDiscrete',

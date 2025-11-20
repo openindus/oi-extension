@@ -25,7 +25,7 @@ suite('Extension Test Suite', () => {
 			asAbsolutePath: (relativePath: string) => {
 				return `${extensionRoot}/${relativePath}`;
 			},
-			// Add other required properties as needed
+			extensionMode: vscode.ExtensionMode.Test
 		} as unknown as vscode.ExtensionContext;
 
 		// Clean up from previous test runs
@@ -54,7 +54,10 @@ suite('Extension Test Suite', () => {
 			{ type: "dc", port: "", serialNum: "", hardwareVar: "", versionSw: "", imgName: "", caseName: "" }
 		];
 
-		startLogger();
+		startLogger(mockContext);
+
+		// 			fix lib download in test mode
+
 
 		// Test the function without UI interactions
 		const ret = await createProject(mockContext, moduleInfo, slaveInfo, path.join(extensionRoot, 'tmp_test'), "TestProject", true, true);
