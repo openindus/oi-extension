@@ -16,7 +16,7 @@ export async function getStubJsonByChipName(chipName) {
     }
     
     // Construct path to stub JSON files in extension resources
-    const stubPath = vscode.Uri.joinPath(extensionUri, 'src',  'esptool-js', 'targets', 'stub_flasher');
+    const stubPath = vscode.Uri.joinPath(extensionUri, 'static', 'stub_flasher');
     const jsonPath = vscode.Uri.joinPath(stubPath, `stub_flasher_${chipName.toLowerCase().replace('esp', '').replace('-', '')}.json`);
     
     try {
