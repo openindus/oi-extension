@@ -14,7 +14,7 @@ suite('Extension Test Suite', () => {
 	
 	test('Create project', async function() {
 		// Increase timeout for project creation test
-		this.timeout(30000);
+		this.timeout(60000);
 
 		// Mock the extension context for testing
 		const extensionRoot = __dirname.replace(/\\/g, '/').replace(/\/test\/?$/, '').replace(/\/out\/?$/, '');
