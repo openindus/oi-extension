@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as CryptoJS from 'crypto-js';
 
-import { ModuleInfo, nameToType, deviceTypeList, getSimpleName, logger } from './utils';
+import { ModuleInfo, nameToType, deviceTypeList, getSimpleName, logger, getClassName } from './utils';
 import { NodeTransport, ESPLoader, LoaderOptions, FlashOptions } from './esptool-js/index';
 import { OISerial } from './com/OISerial';
 
@@ -52,13 +52,13 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
             }  
 
             // Show a message with current module info
-            progress.report({message: `OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`});
+            progress.report({message: `${getClassName(slaveModuleInfo.type)} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`});
 
             // Set the bin path and check it
             const firmware = vscode.Uri.joinPath(onDiskPath, slaveModuleInfo.type.replace('lite', '') + '_firmware-' + version + '.bin');
             if (fs.existsSync(firmware.fsPath) === false) { 
                 vscode.window.showErrorMessage(`Firmware file not found: ${firmware.fsPath}`);
-                flashErrorList.push(`OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) - Firmware file not found`);
+                flashErrorList.push(`${getClassName(slaveModuleInfo.type)} (SN:${slaveModuleInfo.serialNum}) - Firmware file not found`);
                 continue;
             }
 
@@ -72,7 +72,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
             }
             catch {
                 vscode.window.showErrorMessage(`Unexpected error while establishing communication with device OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) !`);
-                flashErrorList.push(`OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) - Communication error`);
+                flashErrorList.push(`${getClassName(slaveModuleInfo.type)} (SN:${slaveModuleInfo.serialNum}) - Communication error`);
                 continue;
             }
             
@@ -109,7 +109,7 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
                                 const progressPercent = (written / total) * 100;
                                 progress.report({
                                     increment: progressPercent / slavesModuleInfo.length - lastProgressWritten,
-                                    message: `OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`
+                                    message: `${getClassName(slaveModuleInfo.type)} (SN:${slaveModuleInfo.serialNum}) - ${slavesModuleInfo.indexOf(slaveModuleInfo)+1}/${slavesModuleInfo.length}`
                                 });
                                 lastProgressWritten = progressPercent / slavesModuleInfo.length;
                             }
@@ -141,8 +141,8 @@ export async function flashSlaveDeviceFirmware(context: vscode.ExtensionContext,
             }
 
             if (successFlash === false) {
-                vscode.window.showErrorMessage(`Unexpected error while flashing device OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum}) !`);
-                flashErrorList.push(`OI${slaveModuleInfo.type} (SN:${slaveModuleInfo.serialNum})`);
+                vscode.window.showErrorMessage(`Unexpected error while flashing device ${getClassName(slaveModuleInfo.type)} (SN:${slaveModuleInfo.serialNum}) !`);
+                flashErrorList.push(`${getClassName(slaveModuleInfo.type)} (SN:${slaveModuleInfo.serialNum})`);
                 continue;
             } else {
                 numberFlashedSuccessfully++;

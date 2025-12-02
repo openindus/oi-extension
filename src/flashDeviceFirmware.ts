@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as CryptoJS from 'crypto-js';
 
 import { NodeTransport, ESPLoader, LoaderOptions, CustomReset, FlashOptions } from './esptool-js/index';
-import { deviceTypeList, pickDevice, ModuleInfo, getSimpleName, logger } from './utils';
+import { deviceTypeList, pickDevice, ModuleInfo, getSimpleName, logger, getClassName } from './utils';
 
 export async function flashDeviceFirmware(context: vscode.ExtensionContext, portName?: string, inputModuleInfo?: ModuleInfo): Promise<void> {
     // Validate input parameters
@@ -127,7 +127,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     // Flash the firmware with progress reporting
     const successFlash = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: `Flashing OI${moduleInfo.type} on ${moduleInfo.port}`,
+        title: `Flashing ${getClassName(moduleInfo.type)} on ${moduleInfo.port}`,
         cancellable: true
     }, async (progress) => {
         return new Promise<boolean>(async (resolve) => {
@@ -180,7 +180,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
 
     // Show appropriate message based on result
     if (successFlash) {
-        vscode.window.showInformationMessage(`Device ${moduleInfo.type} on ${moduleInfo.port} flashed successfully!`);
+        vscode.window.showInformationMessage(`Device ${getClassName(moduleInfo.type)} on ${moduleInfo.port} flashed successfully!`);
     } else {
         vscode.window.showErrorMessage('Unexpected error while flashing device. Check the logs for details.');
     }

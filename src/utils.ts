@@ -138,7 +138,7 @@ export async function getDeviceInfoList(): Promise<ModuleInfo[]> {
                 await serial.getInfo().then((data: Record<string, string>) => {
                     moduleInfoList.push({
                         port: port.path,
-                        type: typeToName(data.type),
+                        type: getClassName(typeToName(data.type)),
                         serialNum: data.serialNum,
                         hardwareVar: data.hardwareVar,
                         versionSw: data.versionFw,

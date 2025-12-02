@@ -21,6 +21,9 @@ body {
     /* max-width: 1800px; */
     gap: 24px;
     padding: 24px;
+}
+
+main-flex-stepper {
     margin-right: 344px; /* 320px for side nav + 24px for padding */
 }
 
