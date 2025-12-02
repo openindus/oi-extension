@@ -2,20 +2,22 @@
     "name": "oi-extension",
     "displayName": "OpenIndus",
     "description": "Programming environment for OpenIndus Devices",
-    "version": "1.2.1",
+    "version": "1.3.0",
     "publisher": "OpenIndus",
     "repository": {
         "type": "git",
         "url": "https://github.com/openindus/oi-extension.git"
     },
-    "icon": "resources/logo_blanc.png",
+    "icon": "static/logo_blanc.png",
     "engines": {
-        "vscode": "^1.87.0"
+        "vscode": "^1.100.0"
     },
     "categories": [
         "Other"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "onView:openindus-treeview"
+    ],
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
@@ -45,7 +47,7 @@
                 {
                     "id": "openindus-treeviewcontainer",
                     "title": "OpenIndus",
-                    "icon": "resources/logoMenu.png"
+                    "icon": "static/logoMenu.png"
                 }
             ]
         },
@@ -55,37 +57,52 @@
                     "id": "openindus-treeview",
                     "name": "OpenIndus",
                     "contextualTitle": "OpenIndus",
-                    "icon": "resources/logoMenu.png"
+                    "icon": "static/logoMenu.png"
                 }
             ]
         }
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
+        "vscode:prepublish": "npm run clean ; npm install ; npm run compile",
         "compile": "tsc -p ./",
+        "lint": "eslint",
         "watch": "tsc -watch -p ./",
-        "pretest": "npm run compile && npm run lint",
-        "lint": "eslint src --ext ts"
+        "pretest": "npm run compile",
+        "test": "vscode-test",
+        "clean": "powershell -Command \"@('out','resources', '.vscode-test') | ForEach-Object { Remove-Item -Path $_ -Recurse -ErrorAction SilentlyContinue }\""
     },
     "devDependencies": {
-        "@types/node": "^12.11.7",
-        "@types/vscode": "^1.60.0",
-        "@typescript-eslint/eslint-plugin": "^4.14.1",
-        "@typescript-eslint/parser": "^4.14.1",
-        "eslint": "^7.19.0",
-        "typescript": "^4.1.3"
+        "@eslint/js": "^9.13.0",
+        "@stylistic/eslint-plugin": "^2.9.0",
+        "@types/crypto-js": "^4.2.2",
+        "@types/node": "^22.19.1",
+        "@types/tar": "^6.1.13",
+        "@types/vscode": "^1.100.0",
+        "@vscode/test-cli": "^0.0.12",
+        "@vscode/test-electron": "^2.5.2",
+        "eslint": "^9.13.0",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.26.0"
     },
     "dependencies": {
         "@microsoft/vscode-file-downloader-api": "^1.0.1",
-        "@vscode/vsce": "^3.2.2",
+        "@vscode/vsce": "^3.7.0",
         "@vscode/webview-ui-toolkit": "^1.4.0",
         "async-mutex": "^0.5.0",
-        "platformio-node-helpers": "^11.3.0",
-        "python-shell": "^3.0.0",
-        "serialport": "^10.4.0",
-        "timers-promises": "^1.0.1"
+        "atob-lite": "^2.0.0",
+        "crypto-js": "4.2.0",
+        "pako": "^2.1.0",
+        "serialport": "^10.5.0",
+        "tar": "^7.5.2"
     },
+    "keywords": [
+        "openindus",
+        "esp32",
+        "firmware",
+        "flash"
+    ],
     "extensionDependencies": [
-        "platformio.platformio-ide"
+        "espressif.esp-idf-extension",
+        "mindaro-dev.file-downloader"
     ]
 }

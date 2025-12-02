@@ -1,32 +1,42 @@
 import * as vscode from 'vscode';
-import * as cp from "child_process";
-import { OISerial } from './com/OISerial';
-import { logger } from './extension';
+import * as fs from 'fs';
+import * as https from 'https';
+
 import { getApi, FileDownloader } from "@microsoft/vscode-file-downloader-api";
-const pioNodeHelpers = require('platformio-node-helpers');
-var path = require('path');
-const https = require('https');
-const fs = require('fs');
-export const pioProjects = require('os').homedir() + '/Documents/PlatformIO/Projects';
+
+import { OISerial } from './com/OISerial';
+
+export let logger: vscode.LogOutputChannel | Console;
+
+export function startLogger(context: vscode.ExtensionContext) {
+    if (context.extensionMode === vscode.ExtensionMode.Test) {
+        logger = console;
+    } else {
+        logger = vscode.window.createOutputChannel("OpenIndus Extension", {log: true});
+        logger.info("OpenIndus Extension Activated");
+    }
+}
+
 export const webSiteAddress = "https://openindus.com/";
 
-export const deviceTypeList: string[] = 
-[
-    'core',
-    'corelite',
-    'discrete',
-    'discreteve',
-    'stepper',
-    'stepperve',
-    'mixed',  
-    'analogls',
-    'relaylp',
-    'relayhp',
-    'dc'
+export const deviceTypeList: string[] = [
+    'OICore',
+    'OICorelite',
+    'OIDiscrete',
+    'OIDiscreteVE',
+    'OIStepper',
+    'OIStepperVE',
+    'OIMixed',
+    'OIMixedVE',
+    'OIAnalogLS',
+    'OIRelayLP',
+    'OIRelayHP',
+    'OIBrushless',
+    'OIDC'
 ];
 
 export function typeToName(input: string): string {
-    const typeMap: { [key: string]: string } = {
+    const typeMap: Record<string, string> = {
         '3': 'core',
         '4': 'corelite',
         '6': 'discrete',
@@ -37,13 +47,15 @@ export function typeToName(input: string): string {
         '11': 'stepper',
         '12': 'stepperve',
         '13': 'analogls',
+        '14': 'mixedve',
+        '18': 'brushless',
         '21': 'dc'
     };
-    return typeMap[input] || 'Unknown';
+    return typeMap[getSimpleName(input)] || 'Unknown';
 }
 
 export function nameToType(input: string): string {
-    const nameMap: { [key: string]: string } = {
+    const nameMap: Record<string, string> = {
         'core': '3',
         'corelite': '4',
         'discrete': '6',
@@ -54,53 +66,55 @@ export function nameToType(input: string): string {
         'stepper': '11',
         'stepperve': '12',
         'analogls': '13',
+        'mixedve': '14',
+        'brushless': '18',
         'dc': '21'
     };
-    return nameMap[input] || 'Unknown';
+    return nameMap[getSimpleName(input)] || 'Unknown';
 }
 
 // Return a board without 'OI', '_' and '-'
-export function formatStringOItoEnvName(input: string): string {
+export function getSimpleName(input: string): string {
     return input.toLowerCase().replaceAll('oi', '').replaceAll('_', '').replaceAll('-', '');
 }
 
-// Return the oi-firmware env name from a given non formatted board name
-export function getClassNameFromEnv(str: string): string {
-    var envName = formatStringOItoEnvName(str);
+export function getClassName(str: string): string {
+    const envName = getSimpleName(str);
     return ("OI" + envName.charAt(0).toUpperCase() + envName.slice(1).toLowerCase())
             .replaceAll('ls', 'LS')
             .replaceAll('ve', 'VE')
             .replaceAll('hp', 'HP')
             .replaceAll('lp', 'LP')
-            .replaceAll('lite', '');
+            .replaceAll('lite', 'Lite');
 }
 
-export function getNiceNameFromEnv(str: string): string {
-    var envName = formatStringOItoEnvName(str);
-    return ("OI " + envName.charAt(0).toUpperCase() + envName.slice(1).toLowerCase())
-            .replaceAll('ls', ' LS')
-            .replaceAll('ve', ' VE')
-            .replaceAll('hp', ' HP')
-            .replaceAll('lp', ' LP')
-            .replaceAll('lite', ' Lite');
+export function getDefineName(str: string): string {
+    const envName = getSimpleName(str);
+    return ("OI_" + envName.toUpperCase())
+            .replaceAll('LS', '_LS')
+            .replaceAll('VE', '_VE')
+            .replaceAll('HP', '_HP')
+            .replaceAll('LP', '_LP')
+            .replaceAll('LITE', '');
 }
 
 export const caseImg = [
     {moduleName: "core", imgName: "core.png", caseName: "BOI23"},
-    {moduleName: "coreLite", imgName: "corelite.png", caseName: "BOI13"},
+    {moduleName: "corelite", imgName: "corelite.png", caseName: "BOI13"},
     {moduleName: "discrete", imgName: "discrete.png", caseName: "BOI12"},
     {moduleName: "discreteve", imgName: "discrete.png", caseName: "BOI12"},
     {moduleName: "stepper", imgName: "stepper.png", caseName: "BOI13"},
     {moduleName: "stepperve", imgName: "stepper.png", caseName: "BOI13"},
     {moduleName: "mixed", imgName: "discrete.png", caseName: "BOI12"},
+    {moduleName: "mixedve", imgName: "discrete.png", caseName: "BOI12"},
     {moduleName: "analogls", imgName: "discrete.png", caseName: "BOI12"},
     {moduleName: "relaylp", imgName: "stepper.png", caseName: "BOI13"},
     {moduleName: "relayhp", imgName: "stepper.png", caseName: "BOI13"},
+    {moduleName: "brushless", imgName: "stepper.png", caseName: "BOI13"},
     {moduleName: "dc", imgName: "stepper.png", caseName: "BOI13"}
 ];
 
-
-export type ModuleInfo = {
+export interface ModuleInfo {
     port: string;
     type: string;
     serialNum: string;
@@ -110,66 +124,49 @@ export type ModuleInfo = {
     caseName: string;
 };
 
-export const execShell = (cmd: string, path: string) =>
-    new Promise<string>((resolve, reject) => {
-        cp.exec(cmd, {cwd: path}, (err, out) => {
-            if (err) {
-                return reject(err);
-            }
-            return resolve(out);
-        });
-    });
-
-export const IS_WINDOWS = process.platform.startsWith('win');
-export function getPlatformIOPythonPath() : string { return path.join(pioNodeHelpers.core.getEnvBinDir(), IS_WINDOWS ? 'python.exe': 'python'); }
-export function getEsptoolPath() : string { return path.join(pioNodeHelpers.core.getEnvBinDir(), IS_WINDOWS ? 'esptool.exe': 'esptool.py'); }
-
-export async function getDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken): Promise<ModuleInfo[]> {
+export async function getDeviceInfoList(): Promise<ModuleInfo[]> {
 
 	// Retrieve available devices with getConnectedBoards.py
-	let moduleInfoList: ModuleInfo[] = [];
-
-    let targetVid = '10C4';
-    let ports = await OISerial.list();
+	const moduleInfoList: ModuleInfo[] = [];
+    const targetVid = '10C4';
+    const ports = await OISerial.list();
     for await (const port of ports) {
         if (port.vendorId === targetVid) {
-            var serial = new OISerial(port.path);
+            const serial = new OISerial(port.path);
             try {
                 await serial.connect();
-                await serial.getInfo().then((data: { type: string; serialNum: string; hardwareVar: string; versionFw: string }) => {
+                await serial.getInfo().then((data: Record<string, string>) => {
                     moduleInfoList.push({
                         port: port.path,
-                        type: typeToName(data.type),
+                        type: getClassName(typeToName(data.type)),
                         serialNum: data.serialNum,
                         hardwareVar: data.hardwareVar,
                         versionSw: data.versionFw,
                         imgName: "",
                         caseName: ""});
                 });
-                await serial.disconnect();
             }
-            catch (error) {
-                await serial.disconnect();
+            catch {
                 moduleInfoList.push({port: port.path, type: "undefined", serialNum: "undefined", hardwareVar: "undefined", versionSw: "undefined", imgName: "", caseName: ""});
+            }
+            finally {
+                await serial.disconnect();
             }
         }
     }
-
     return moduleInfoList;
 }
 
-export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, token: vscode.CancellationToken, port: string): Promise<ModuleInfo[] | undefined> {
+export async function getSlaveDeviceInfoList(port: string): Promise<ModuleInfo[] | undefined> {
 
 	// Retrieve available devices with getConnectedBoards.py
-	let moduleInfoList: ModuleInfo[] = [];
-
-    var serial = new OISerial(port);
-
+	let moduleInfoList: ModuleInfo[] | undefined = [];
+    const serial = new OISerial(port);
     try {
         await serial.connect();
-        await serial.getSlaves().then((data: { port: string; type: string; serialNum: string; hardwareVar: string; versionSw: string }[]) => {
-            data.forEach((element: { port: string; type: string; serialNum: string, hardwareVar: string, versionSw: string}) => {
-                moduleInfoList.push({
+        await serial.getSlaves().then((data: Record<string, string>[]) => {
+            data.forEach((element: Record<string, string>) => {
+                moduleInfoList!.push({
                     port: element.port,
                     type: typeToName(element.type),
                     serialNum: element.serialNum,
@@ -180,34 +177,30 @@ export async function getSlaveDeviceInfoList(context: vscode.ExtensionContext, t
                 });
             });
         });
-        await serial.disconnect();
     }
-    catch (error) {
+    catch (error: any) {
         logger.error(error);
-        await serial.disconnect();
-        return undefined;
+        moduleInfoList = undefined;
     }
-
+    finally {
+        await serial.disconnect();
+    }
     return moduleInfoList;
 }
 
-export async function pickDevice(context: vscode.ExtensionContext, portName?: string): Promise<ModuleInfo | undefined> {
+export async function pickDevice(portName?: string): Promise<ModuleInfo | undefined> {
     
     let moduleInfoList: ModuleInfo[] | undefined;
-
     // Progress notification with option to cancel while getting device list
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: "Retrieving modules informations",
         cancellable: true
-    }, async (progress, token) => {
-        moduleInfoList = await getDeviceInfoList(context, token);
+    }, async () => {
+        moduleInfoList = await getDeviceInfoList();
     });
 
-
-    if (moduleInfoList === undefined) {
-        return;
-    }
+    if (moduleInfoList === undefined) { return; }
     if (moduleInfoList.length === 0) {
         vscode.window.showWarningMessage("No device connected, please check connection between device and computer");
         return;
@@ -232,7 +225,7 @@ export async function pickDevice(context: vscode.ExtensionContext, portName?: st
     else if (moduleInfoList.length > 1) {
         deviceInfoSelected = await vscode.window.showQuickPick(deviceInfoQuickPickItem, { placeHolder: 'Select the master device', ignoreFocusOut: true });
     } 
-    else if (moduleInfoList.length = 1) {
+    else if (moduleInfoList.length === 1) {
         deviceInfoSelected = deviceInfoQuickPickItem[0];
     }
 
@@ -247,10 +240,10 @@ export async function pickDevice(context: vscode.ExtensionContext, portName?: st
     return moduleInfo;
 }
 
-export async function downloadNewFirmwareOnline(context: vscode.ExtensionContext) : Promise<void> {
+export async function downloadNewFirmwaresOnline(context: vscode.ExtensionContext) : Promise<void> {
 
     const fileDownloader: FileDownloader = await getApi();
-    const destinationDirectory = vscode.Uri.joinPath(context.extensionUri, 'resources');
+    const destinationDirectory = vscode.Uri.joinPath(context.extensionUri, 'resources', 'binaries');
 
     // Create directory "resources" if it doesn't exist
     if (!fs.existsSync(destinationDirectory.fsPath)) {
@@ -267,33 +260,32 @@ export async function downloadNewFirmwareOnline(context: vscode.ExtensionContext
                 res.on('error', reject);
             });
         });
-        
+
         // Parse the html file to detect all firmware version available
-        const sourceDirectories = (response as string).match(/binaries\/oi-firmware-\d+\.\d+\.\d+\//g) || [];
-        logger.info("Firmware files found: " + sourceDirectories);
+        const firmwareSourceVersionList =  Array.from(new Set((response as string).match(/oi-firmware-v\d+\.\d+\.\d+/g))) || [];
+        logger.info("Firmware files found: " + firmwareSourceVersionList);
 
         // For all versions found, if the directory does not exist, download the files
-        for (const sourceVersion of sourceDirectories) {
-            if (fs.existsSync(vscode.Uri.joinPath(destinationDirectory, sourceVersion).fsPath)) {
-                logger.info("Directory already exists: " + sourceVersion);
+        for (const firmwareSourceVersion of firmwareSourceVersionList) {
+            if (fs.existsSync(vscode.Uri.joinPath(destinationDirectory, firmwareSourceVersion).fsPath)) {
+                logger.info("Directory already exists: " + firmwareSourceVersion);
                 continue; // Skip if the directory already exists
             } else {
-                logger.info("Downloading firmware files from: " + sourceVersion);
+                logger.info("Downloading firmware files from: " + firmwareSourceVersion);
                 for (const deviceType of deviceTypeList) {
                     for (const file of ['bootloader', 'partitions', 'ota_data_initial', 'firmware']) {
-                        const binaryName = `${deviceType.toLowerCase()}_${file}-${sourceVersion.split('-')[2].split('/')[0]}.bin`;
-                        const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), sourceVersion, binaryName);
-                        const destinationPath = vscode.Uri.joinPath(destinationDirectory, sourceVersion, binaryName);
+                        const fileName = `${getSimpleName(deviceType).toLowerCase()}_${file}-${firmwareSourceVersion.split('-')[2].split('/')[0]}.bin`;
+                        const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "binaries", firmwareSourceVersion, fileName);
+                        const destinationPath = vscode.Uri.joinPath(destinationDirectory, firmwareSourceVersion, fileName);
                         // download source file to destination path via https
                         try {
                             const downloadedFileUri: vscode.Uri = await fileDownloader.downloadFile(
                                 sourceFileUrl,
-                                binaryName,
+                                fileName,
                                 context
                             );
-                           
                             // Copy the downloaded file to the destination path
-                            vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
+                            await vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
                             logger.info(`Downloaded ${sourceFileUrl} to ${destinationPath}`);
 
                         } catch (error) {
@@ -305,10 +297,91 @@ export async function downloadNewFirmwareOnline(context: vscode.ExtensionContext
             }
         }
         // Clear all files in fildeDownloader
-        fileDownloader.deleteAllItems(context);
+        await fileDownloader.deleteAllItems(context);
 
     } catch (error) {
         vscode.window.showErrorMessage('Failed to fetch firmware files');
+        throw error;
+    }
+}
+
+export async function downloadNewLibrariesOnline(context: vscode.ExtensionContext) : Promise<void> {
+
+    const fileDownloader: FileDownloader = await getApi();
+    const destinationDirectory = vscode.Uri.joinPath(context.extensionUri, 'resources', 'libraries');
+
+    // Create directory "resources" if it doesn't exist
+    if (!fs.existsSync(destinationDirectory.fsPath)) {
+        fs.mkdirSync(destinationDirectory.fsPath, { recursive: true });
+    }
+
+    // Get list of files from server
+    try {
+        const response = await new Promise((resolve, reject) => {
+            https.get(`${webSiteAddress}libraries/
+                `, res => {
+                let data = '';
+                res.on('data', chunk => { data += chunk; });
+                res.on('end', () => resolve(data));
+                res.on('error', reject);
+            });
+        });
+
+        // Parse the html file to detect all openindus libraries version available
+        const openindusLibrariesDirectories = Array.from(new Set((response as string).match(/openindus-v\d+\.\d+\.\d+\.tar.gz/g))) || [];
+        logger.info("OpenIndus libraries files found: " + openindusLibrariesDirectories);
+
+        // Parse the html file to detect all libraries version available
+        const arduinoLibrariesDirectories = Array.from(new Set((response as string).match(/arduino-esp32-v\d+\.\d+\.\d+.tar.gz/g))) || [];
+        logger.info("Arduino libraries files found: " + arduinoLibrariesDirectories);
+
+        // Check that both openindus and arduino libraries are found with same version and make a version common list
+        const librariesSourceVersionList: string[] = [];
+        openindusLibrariesDirectories.forEach((openindusVersion) => {
+            arduinoLibrariesDirectories.forEach((arduinoVersion) => {
+                if (openindusVersion.split('openindus-')[1] === arduinoVersion.split('arduino-esp32-')[1]) {
+                        librariesSourceVersionList.push(openindusVersion.match(/v\d+\.\d+\.\d+/)![0]);
+                }
+            });
+        });
+        logger.info("Common libraries versions found: " + librariesSourceVersionList);
+
+        // For all versions found, if the directory does not exist, download the files
+        for (const librarySourceVersion of librariesSourceVersionList) {
+            // Download openindus and arduino libraries
+            for (const lib of ["openindus-", "arduino-esp32-"]) {
+                // OpenIndus libraries
+                if (fs.existsSync(vscode.Uri.joinPath(destinationDirectory, lib + librarySourceVersion + ".tar.gz").fsPath)) {
+                    logger.info("Library already exists: " + lib + librarySourceVersion + ".tar.gz");
+                    continue; // Skip if the directory already exists
+                } else {
+                    logger.info("Downloading library " + lib + librarySourceVersion + ".tar.gz");
+                    const fileName = lib + librarySourceVersion + ".tar.gz";
+                    const sourceFileUrl = vscode.Uri.joinPath(vscode.Uri.parse(webSiteAddress), "libraries", fileName);
+                    const destinationPath = vscode.Uri.joinPath(destinationDirectory, lib + librarySourceVersion + ".tar.gz");
+                    // download source file to destination path via https
+                    try {
+                        const downloadedFileUri: vscode.Uri = await fileDownloader.downloadFile(
+                            sourceFileUrl,
+                            fileName,
+                            context
+                        );
+                        // Copy the downloaded file to the destination path
+                        await vscode.workspace.fs.copy(downloadedFileUri, destinationPath, { overwrite: true });
+                        logger.info(`Downloaded ${sourceFileUrl} to ${destinationPath}`);
+
+                    } catch (error) {
+                        logger.error(`Failed to download ${sourceFileUrl}: ${error}`);
+                        continue;
+                    }
+                }
+            }
+        }
+        // Clear all files in fildeDownloader
+        await fileDownloader.deleteAllItems(context);
+
+    } catch (error) {
+        vscode.window.showErrorMessage('Failed to fetch libraries files');
         throw error;
     }
 }

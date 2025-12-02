@@ -2,13 +2,12 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { ModuleInfo, caseImg, getNiceNameFromEnv, getSlaveDeviceInfoList, pickDevice } from '../utils';
-import { logger } from "../extension";
+import { ModuleInfo, caseImg, getClassName, getSlaveDeviceInfoList, pickDevice, logger } from '../utils';
 import {Mutex} from 'async-mutex';
 
 export async function getSystemInfo(context: vscode.ExtensionContext, portName?: string) {
 
-    let moduleInfo: ModuleInfo = await pickDevice(context, portName);
+    const moduleInfo: ModuleInfo | undefined = await pickDevice(portName);
 
     if (moduleInfo === undefined) { return; }
     if (moduleInfo.port === undefined) { return; }
@@ -22,9 +21,9 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
             location: vscode.ProgressLocation.Notification,
             title: "Reading slaves modules informations",
             cancellable: true
-        }, async (progress, token) => {
+        }, async () => {
             if (moduleInfo !== undefined) {
-                slaveInfoList = await getSlaveDeviceInfoList(context, token, moduleInfo.port);
+                slaveInfoList = await getSlaveDeviceInfoList(moduleInfo.port);
             }
         });
     }
@@ -61,7 +60,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
         {enableScripts: true}
     );
 
-    const contentUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'resources', 'html', 'content')).toString();
+    const contentUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'static', 'html', 'content')).toString();
 
     let slaveModuleHtml = '';
     if (slaveInfoList !== undefined && slaveInfoList.length !== undefined && slaveInfoList.length > 0) {   
@@ -78,13 +77,13 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
                         <div class="flex-container slave">
                             <div class="item auto ${slave.caseName}"><img src="${contentUri}/${slave.imgName}"></div>
                             <div class="item auto">
-                                <h3>${getNiceNameFromEnv(slave.type)}</h3>
+                                <h3>${getClassName(slave.type)}</h3>
                                 <div style="border:1px solid #1F1F1F;"></div>
                                 <p>
                                     Connected on Bus<br>
                                     <b>Serial Number:</b> ${slave.serialNum}<br>
                                     <b>Hardware Version:</b> ${slave.hardwareVar}<br>
-                                    <b>Software version:</b> v${slave.versionSw}
+                                    <b>Software version:</b> ${slave.versionSw}
                                 </p>
                                 <button onClick="flashSlave(` + id + `)">Update firmware</button>
                             </div>
@@ -97,13 +96,13 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
                     </div>`;
                 }
 
-    fs.readFile(path.join(context.extensionPath, 'resources', 'html', 'information.html'), (err,data) => {
+    fs.readFile(path.join(context.extensionPath, 'static', 'html', 'information.html'), (err,data) => {
         if (err) {
             logger.error(err);
         } else {
             let rawHTML = data.toString();
             rawHTML = rawHTML.replaceAll('${content}', contentUri)
-                .replace('${moduleType}', getNiceNameFromEnv(moduleInfo.type))
+                .replace('${moduleType}', getClassName(moduleInfo.type))
                 .replace('${modulePort}', moduleInfo.port)
                 .replace('${moduleSerialNum}', moduleInfo.serialNum)
                 .replace('${moduleHardwareVar}', moduleInfo.hardwareVar)
@@ -115,7 +114,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
         }
     });		
     
-  	var receivedMessageMutex = new Mutex();
+  	const receivedMessageMutex = new Mutex();
 
     // Handle messages from the webview
     panel.webview.onDidReceiveMessage(
@@ -146,7 +145,7 @@ export async function getSystemInfo(context: vscode.ExtensionContext, portName?:
                     case 'flash-slave':
                         logger.info("flash slave: " + message.text + " clicked !");
                         if (moduleInfo !== undefined && slaveInfoList !== undefined) {
-                            let selectedSlaveInfoList: ModuleInfo[] = []; // We need a list even if there is only one module
+                            const selectedSlaveInfoList: ModuleInfo[] = []; // We need a list even if there is only one module
                             selectedSlaveInfoList.push(slaveInfoList[Number(message.text)]);
                             vscode.commands.executeCommand('openindus.flashSlavesDevicesFirmware', moduleInfo.port, selectedSlaveInfoList);
                         }

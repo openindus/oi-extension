@@ -1,6 +1,0 @@
-cmake_minimum_required(VERSION 3.16.0)
-include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-list(APPEND EXTRA_COMPONENT_DIRS lib/%ENV%/OpenIndus/components)
-list(APPEND kconfigs "${CMAKE_SOURCE_DIR}/lib/%ENV%/OpenIndus/components/middleware/Kconfig")
-list(APPEND EXTRA_COMPONENT_DIRS lib/%ENV%/OpenIndus/external_components/espressif)
-project(%PROJECT%)

@@ -1,25 +1,21 @@
 import * as vscode from 'vscode';
+
 import { OIAccessTreeProvider } from './customTreeView';
 import { createProject } from './createProject';
+import { startLogger, ModuleInfo, downloadNewFirmwaresOnline, downloadNewLibrariesOnline } from './utils';
 import { flashDeviceFirmware } from './flashDeviceFirmware';
-import { getSystemInfo } from './pannels/systemInfoPannel';
-import { ModuleInfo, execShell, getPlatformIOPythonPath, downloadNewFirmwareOnline } from './utils';
 import { flashSlaveDeviceFirmware } from './flashSlaveDeviceFirmware';
+import { getSystemInfo } from './pannels/systemInfoPannel';
 import { startStepperPanelConfig } from './pannels/stepperParamPannel';
 
-const pioNodeHelpers = require('platformio-node-helpers');
-
-var commandReadyCreateProject: Boolean = true;
-var commandReadyGetSystemInfo: Boolean = true;
-var commandReadyFlashDeviceFirmware: Boolean = true;
-var commandReadyFlashSlavesDevicesFirmware: Boolean = true;
-
-export var logger: vscode.LogOutputChannel;
+let commandReadyCreateProject = true;
+let commandReadyGetSystemInfo = true;
+let commandReadyFlashDeviceFirmware = true;
+let commandReadyFlashSlavesDevicesFirmware = true;
 
 export async function activate(context: vscode.ExtensionContext) {
 
-    logger = vscode.window.createOutputChannel("OpenIndus Extension", {log: true});
-	logger.info("OpenIndus Extension Activated");
+	startLogger(context);
 
 	vscode.window.registerTreeDataProvider('openindus-treeview', new OIAccessTreeProvider());
 
@@ -63,17 +59,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		await startStepperPanelConfig(context, portName, moduleInfo);
 	}));
 
-	// Check if .platformio path contains a space
-	if (pioNodeHelpers.core.getCoreDir().indexOf(' ') >= 0)
-	{
-		vscode.window.showErrorMessage("We detected that you platformio path contains a white space, this will cause an error. Please check for available solutions on our website's FAQ");
-	}
-
-	// Install esptool if not already installed
-	logger.info(await execShell(getPlatformIOPythonPath() + ' -m pip install esptool', './'));
-
 	// Download the latets firmware from openindus server at each launch of application
-	await downloadNewFirmwareOnline(context);
+	await downloadNewFirmwaresOnline(context);
+	await downloadNewLibrariesOnline(context);
 }
 
 // this method is called when your extension is deactivated

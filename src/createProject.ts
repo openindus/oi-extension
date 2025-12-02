@@ -1,16 +1,32 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { ModuleInfo, deviceTypeList, execShell, formatStringOItoEnvName, pioProjects, getPlatformIOPythonPath, IS_WINDOWS, getClassNameFromEnv } from './utils';
+import * as path from 'path';
+import * as tar from 'tar';
+import { ModuleInfo, deviceTypeList, getClassName, getDefineName, getSimpleName, logger} from './utils';
 
-export async function createProject(context: vscode.ExtensionContext, master?: ModuleInfo, slaves?: ModuleInfo[]) {
+export async function createProject(
+    context: vscode.ExtensionContext, 
+    master?: ModuleInfo, 
+    slaves?: ModuleInfo[], 
+    projectPath?: string, 
+    projectName?: string,
+    useArduinoLib?: boolean,
+    useLastLibVersion?: boolean): Promise<boolean> {
     
-    const boardsNames: vscode.QuickPickItem[] = deviceTypeList.map(label => ({ label }));
-    const modeNames: vscode.QuickPickItem[] = [ {label: 'Master', detail:'Choose "master" if the module you are programming on is used to control other modules'},
-                                                {label: 'Standalone', detail: 'Choose "standalone" if the module you are programming on is use alone'},
-                                                {label: 'Slave', detail: 'Choose "slave" if the module is controlled by a "master" module (not recommended)'}];
-	const yesNoList: string[] = ['yes', 'no'];
-    const yesNoQuickPick: vscode.QuickPickItem[] = yesNoList.map(label => ({ label }));
-    const path = require('path');
+    logger.info('Starting project creation process');
+
+    const boardsNames: vscode.QuickPickItem[] = deviceTypeList.map(element => ({ label:getClassName(element) }));
+
+    const modeNames: vscode.QuickPickItem[] = [ 
+        {label: 'Master', detail:'Choose "master" if the module you are programming on is used to control other modules'},
+        {label: 'Standalone', detail: 'Choose "standalone" if the module you are programming on is use alone'},
+        {label: 'Slave', detail: 'Choose "slave" if the module is controlled by a "master" module (not recommended)'}
+    ];
+
+    const useArduinoQuickPick: vscode.QuickPickItem[] = [
+        {label: 'Use Arduino Library', detail: 'Recommended: Allow use of Arduino functions and libraries'},
+        {label: 'Do Not Use Arduino Library', detail: 'For Advanced users: ESP-IDF framework functions directly - faster project setup and shorter build times'}
+    ];
 
 	const optionsSelectFolder: vscode.OpenDialogOptions = {
 		canSelectMany: false,
@@ -21,19 +37,22 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
 	};
 
 	interface State {
-		title: string;
 		board: vscode.QuickPickItem;
 		name: string;
         path: string;
         mode: vscode.QuickPickItem;
+        useArduinoLib: vscode.QuickPickItem;
+        libraryVersion: string;
 	}
 
-    let state = {} as Partial<State>;
+    const state = {} as Partial<State>;
 
+    // --------------------------------------------------------------------------------------------
     // First STEP: select board
+    // --------------------------------------------------------------------------------------------
     if (master !== undefined) {
         boardsNames.forEach((boardsName: vscode.QuickPickItem) => {
-            if (boardsName.label === master.type) { // TODO check if master type need formatting
+            if (getSimpleName(boardsName.label) === getSimpleName(master.type)) { // TODO check if master type need formatting
                 state.board = boardsName;
             }
         });
@@ -41,167 +60,267 @@ export async function createProject(context: vscode.ExtensionContext, master?: M
         state.board = await vscode.window.showQuickPick(boardsNames, {
             title: "Create a Project",
             placeHolder: "Select the name of the board you will program on",
-            ignoreFocusOut: true,
+            ignoreFocusOut: false
         });
     }
 
-    if (state.board === undefined) { return; }
+    if (state.board === undefined) { return false; }
 
+    // --------------------------------------------------------------------------------------------
     // Second STEP: select folder
-    const customPath = await vscode.window.showQuickPick(yesNoQuickPick, {
-        title: "Create a Project",
-        placeHolder: "Do you want to use default location ? (Documents/PlatformIO/Projects)",
-        ignoreFocusOut: true,
-    });
+    // --------------------------------------------------------------------------------------------
+    if (projectPath !== undefined) {
+        state.path = projectPath;
+    } else {
+        const folderUri = await vscode.window.showOpenDialog(optionsSelectFolder);
+        state.path = folderUri && folderUri[0] ? folderUri[0].fsPath : undefined;
+    }
+    
+    if (state.path === undefined) { return false; }
 
-    if (customPath?.label === "no") {
-        state.path = await vscode.window.showOpenDialog(optionsSelectFolder).then(fileUri => {
-            if (fileUri && fileUri[0]) {
-                return fileUri[0].fsPath;
-            }
-            else {
-                return undefined;
+    // --------------------------------------------------------------------------------------------
+    // Third STEP: select project name
+    // --------------------------------------------------------------------------------------------
+    if (projectName !== undefined) {
+        state.name = projectName
+    } else {
+        state.name = await vscode.window.showInputBox({
+            title: "Create a Project",
+            value: "my_project",
+            prompt: 'Enter a name for your project',
+            ignoreFocusOut: true,
+            validateInput: (text: string): string | undefined => {
+                if (text !== path.basename(text)) { 
+                    return "Name is not valid";
+                } else if (fs.existsSync(state.path + '/' + text) && text !== "") { // Check is folder already exists
+                    return "Folder already exits";
+                } else if (text.indexOf(' ') >= 0) { // Check for white space
+                    return "Project name can not contains white space";
+                } else if (text.indexOf('*') >= 0) { // Check for "*"
+                    return "Project name can not contains *";
+                } else {
+                    return undefined;
+                }
             }
         });
     }
-    else {
-        state.path = pioProjects;
-    }
-    
-    if (state.path === undefined) { return; }
 
-    // Third STEP: select project name
-    state.name = await vscode.window.showInputBox({
-        title: "Create a Project",
-        value: "my_project",
-        prompt: 'Enter a name for your project',
-        ignoreFocusOut: true,
-        validateInput: (text: string): string | undefined => {
-            if (text !== path.basename(text)) { 
-                return "Name is not valid";
-            } else if (fs.existsSync(state.path + '/' + text) && text !== "") { // Check is folder already exists
-                return "Folder already exits";
-            } else if (text.indexOf(' ') >= 0) { // Check for white space
-                return "Project name can not contains white space";
-            } else if (text.indexOf('*') >= 0) { // Check for "*"
-                return "Project name can not contains *";
-            } else {
-                return undefined;
-            }
-        }
-    });
-    
-    if (state.name === undefined) { return; }
+    if (state.name === undefined) { return false; }
 
+    // --------------------------------------------------------------------------------------------
     // Fourth STEP: select project mode: master, standalone or slave
+    // --------------------------------------------------------------------------------------------
     if (master !== undefined) {
         state.mode = modeNames[0]; // If master infos are given; select "master" mode without asking
     } else {
         state.mode = await vscode.window.showQuickPick(modeNames, {
             title: "Choose your configuration",
             placeHolder: "Which configuration do you want to use ?",
-            ignoreFocusOut: true,
-            
+            ignoreFocusOut: true // to prevent closing when clicking outside at this step
         });
     }
 
-    await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: `Creating project ${state.name}`,
-        cancellable: false
-    }, async () => {
+    if (state.mode === undefined) { return false; }
 
-        if (state.mode === undefined) { return; }
-        if (state.board === undefined) { return; }
+    // --------------------------------------------------------------------------------------------
+    // Fifth STEP: select if use arduino library or not
+    // --------------------------------------------------------------------------------------------
+    if (useArduinoLib !== undefined) {
+        state.useArduinoLib = useArduinoLib ? useArduinoQuickPick[0] : useArduinoQuickPick[1];
+    } else {
+        state.useArduinoLib = await vscode.window.showQuickPick(useArduinoQuickPick, {
+            title: "Choose Library Option",
+            placeHolder: "Do you want to use Arduino library in your project ?",
+            ignoreFocusOut: true // to prevent closing when clicking outside at this step
+        });
+    }
 
-        // Fith STEP: check last version of openindus library in pio registry
-        let data = await execShell(getPlatformIOPythonPath() + " -m platformio pkg show \"openindus/OpenIndus\"", "./");
-        let libVersionResults = data?.match(/\d+.\d+.\d+/);
-        let libVersion = "";
-        if (libVersionResults !== null) {
-            libVersion = "@^" + libVersionResults[0];
+    if (state.useArduinoLib === undefined) { return false; }
+
+    // --------------------------------------------------------------------------------------------
+    // Sixth STEP: select library version
+    // --------------------------------------------------------------------------------------------
+
+    // Get library versions from resources directory
+    const librariesPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'libraries');
+    let librariesVersions: [string, vscode.FileType][] = [];
+    try {
+        librariesVersions = await vscode.workspace.fs.readDirectory(librariesPath);
+    } catch (err) {
+        // Handle missing resources directory gracefully (may happen in test environments)
+        logger.warn(`Failed to read libraries directory: ${err}`);
+    }
+    
+    // Filter valid firmware versions (must be directories and have version format like oi-firmware-x.x.x)
+    const validVersions = librariesVersions
+        .filter(([name, type]) => type === vscode.FileType.File && name.startsWith('openindus'))
+        .map(([name]) => name.substring('openindus-v'.length).replace('.tar.gz', ''))
+        .filter(version => version.length >= 5) // Ensure version format is at least x.x.x
+        .map(label => ({ label } as vscode.QuickPickItem))
+        .reverse(); // Show latest versions first
+
+    // If no valid versions found, show error
+    if (validVersions.length === 0) {
+        vscode.window.showErrorMessage('No libraries versions found in resources/libraries');
+        logger.error('No valid libraries versions found in resources/libraries');
+        return false;
+    }
+
+    // Add a (recommended) flag to last version
+    validVersions[0].description = "(Recommended)";
+
+    // Prompt user to select firmware version
+    if (useLastLibVersion !== undefined) {
+        state.libraryVersion = validVersions[0].label;
+    } else {
+        const selectedVersion = await vscode.window.showQuickPick(validVersions, {
+            placeHolder: 'Select the version',
+            ignoreFocusOut: true
+        });
+
+        if (!selectedVersion?.label) {
+            logger.info('Firmware version selection cancelled');
+            return false;
         }
-        libVersion = "openindus/OpenIndus" + libVersion;
-        let envName = formatStringOItoEnvName(state.board.label).replaceAll('lite', ''); // Todo find a better way to remove 'lite
-        let className = getClassNameFromEnv(state.board.label);
 
-        // Sixth STEP: create the project directory and copy item
-        // Create src directory and copy main.cpp
-        await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/src'));
-        await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/main.cpp')), vscode.Uri.file(state.path + '/' + state.name + '/src/main.cpp'));
-        
-        // Add modules instance to main.cpp
-        let mainSetupText: string = "%MODULE_INIT%";
-        var mainInitText: string = "";
-        
-        mainInitText += '\r\n// First, init the master device\r\n'; // empty line + master comment
-        mainInitText += className + " " + envName + ";\r\n";  // master instance line
-        mainInitText += "\r\// Then add slaves devices here :\r\n";
-        if (slaves !== undefined) {
-            let i = 1;
-            slaves.forEach((slave: ModuleInfo) => {
-                // /!\ OIStepperVE = OIStepper ? Really ??
-                mainInitText += getClassNameFromEnv(slave.type) + " " + formatStringOItoEnvName(slave.type) + String(i) + ";\r\n"; // slave instance line
-                i++;
-            });
-        } else {
-            // Put examples in comment
-            mainInitText += "// OIDiscrete discrete1;\r\n// OIDiscrete discrete2;\r\n// ...\r\n";
-        }
-        mainInitText += '\r\n'; // empty line
+        state.libraryVersion = selectedVersion.label;
+    }
+
+    if (state.libraryVersion === undefined) { return false; }
+
+
+    // --------------------------------------------------------------------------------------------
+    // Seventh STEP: Create project with progress bar
+    // --------------------------------------------------------------------------------------------
+    let projectCreated = true;
+    try {
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: `Creating project ${state.name}`,
+            cancellable: false
+        }, async () => {
+
+            // Create src directory
+            await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/main'));
+
+            // sdkconfig.defaults
+            await vscode.workspace.fs.copy(
+                vscode.Uri.file(context.asAbsolutePath('/static/project_files/sdkconfig.defaults')),
+                vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults')
+            );            
+            // Modify sdkconfig.defaults to add right module type
+            let sdkconfigFile = fs.readFileSync(state.path + '/' + state.name + '/sdkconfig.defaults', 'utf8');
+            let configString = `\r\n# Module type configuration`;
+            configString += `\r\nCONFIG_${getDefineName(state.board!.label!)}=y`;
+            if (state.mode!.label !== 'Standalone') { configString += `\r\nCONFIG_MODULE_${state.mode!.label!.toUpperCase()}=y`; }
+            sdkconfigFile = sdkconfigFile.replace("%CONFIG_OI%", configString);
+            fs.writeFileSync(state.path + '/' + state.name + '/sdkconfig.defaults', sdkconfigFile, 'utf8');
+            // Copy sdkconfig.defaults to sdkconfig so that configuration is taken into account at first build
+            await vscode.workspace.fs.copy(
+                vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'),
+                vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig')
+            );
+
+            // CMakeLists.txt
+            await vscode.workspace.fs.copy(
+                vscode.Uri.file(context.asAbsolutePath('/static/project_files/CMakeLists.txt')),
+                vscode.Uri.file(state.path + '/' + state.name + '/CMakeLists.txt')
+            );
+            // Replace %PROJECT% in CMakeLists.txt
+            let cmakelistsFile = fs.readFileSync(state.path + '/' + state.name + '/CMakeLists.txt', 'utf8');
+            cmakelistsFile = cmakelistsFile.replace("%PROJECT%", state.name!);
+            fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
+
+            // main.cpp and CMakeLists.txt in /main
+            const mainFolder = state.useArduinoLib!.label === 'Use Arduino Library' ? 'main_arduino' : 'main_espidf';
+            await vscode.workspace.fs.copy(
+                vscode.Uri.file(context.asAbsolutePath('/static/project_files/' + mainFolder + '/CMakeLists.txt')),
+                vscode.Uri.file(state.path + '/' + state.name + '/main/CMakeLists.txt')
+            );
+            await vscode.workspace.fs.copy(
+                vscode.Uri.file(context.asAbsolutePath('/static/project_files/' + mainFolder + '/main.cpp')),
+                vscode.Uri.file(state.path + '/' + state.name + '/main/main.cpp')
+            );
+
+            // Add modules instance to main.cpp
+            const envName = getSimpleName(state.board!.label);
+            const className = getClassName(state.board!.label);
+            const mainSetupText = "%MODULE_INIT%";
+            let mainInitText = "";
             
-        // Replace text in main.cpp
-        let mainFile = fs.readFileSync(state.path + '/' + state.name + '/src/main.cpp', 'utf8');
-        mainFile = mainFile.replaceAll(mainSetupText, mainInitText);
-        fs.writeFileSync(state.path + '/' + state.name + '/src/main.cpp', mainFile, 'utf8');
-        
-        // Create lib directory
-        await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/lib/' + envName));
-        
-        // Copy sdkconfig.defaults
-        await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/sdkconfig.defaults')), vscode.Uri.file(state.path + '/' + state.name + '/sdkconfig.defaults'));
-        
-        // Install lib manually (by doing this, pio can find board and scripts before making initialization)
-        await execShell(getPlatformIOPythonPath() + " -m platformio pkg install --library \"" + libVersion + "\"  --storage-dir ./lib/" + envName, state.path + '/' + state.name);
-        
-        if (envName === "core") {
-            libVersion = "\r\n\t" + libVersion;
-            libVersion += "\r\n\tlib/core/OpenIndus/external_components/Arduino";
-            libVersion += "\r\n\tpaulstoffregen/Ethernet@^2.0.0";
-            libVersion += "\r\n\tfelis/USB-Host-Shield-20@^1.6.0";
-        }
-        
-        // Copy CMakeLists.txt and replace %VAR% by the user selection
-        await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/CMakeLists.txt')), vscode.Uri.file(state.path + '/' + state.name + '/CMakeLists.txt'));
-        let cmakelistsFile = fs.readFileSync(state.path + '/' + state.name + '/CMakeLists.txt', 'utf8');
-        cmakelistsFile = cmakelistsFile.replaceAll("%ENV%", envName);
-        cmakelistsFile = cmakelistsFile.replace("%PROJECT%", state.name!);
-        fs.writeFileSync(state.path + '/' + state.name + '/CMakeLists.txt', cmakelistsFile, 'utf8');
+            // Master module init
+            mainInitText += '\r\n// First, init the master device\r\n'; // empty line + master comment
+            mainInitText += className + " " + envName + ";\r\n";  // master instance line
+            mainInitText += "\r\n// Then add slaves devices here :\r\n";
+            // Slave modules init
+            if (slaves !== undefined) {
+                let i = 1;
+                slaves.forEach((slave: ModuleInfo) => {
+                    // /!\ OIStepperVE = OIStepper ? Really ?? 
+                    mainInitText += getClassName(slave.type) + " " + getSimpleName(slave.type) + String(i) + ";\r\n"; // slave instance line
+                    i++;
+                });
+            } else {
+                // Put examples in comment
+                mainInitText += "// OIDiscrete discrete1;\r\n// OIDiscrete discrete2;\r\n// ...\r\n";
+            }
+            mainInitText += '\r\n'; // empty line
+            // Replace text in main.cpp
+            let mainFile = fs.readFileSync(state.path + '/' + state.name + '/main/main.cpp', 'utf8');
+            mainFile = mainFile.replaceAll(mainSetupText, mainInitText);
+            fs.writeFileSync(state.path + '/' + state.name + '/main/main.cpp', mainFile, 'utf8');
+            
+            // Create component directory
+            await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/components/openindus'));
+            
+            // Extract OpenIndus component to project
+            await tar.extract({
+                file: context.asAbsolutePath(`/resources/libraries/openindus-v${state.libraryVersion}.tar.gz`),
+                cwd: state.path + '/' + state.name + '/components/openindus/'
+            });
 
-        // Copy versionFile.txt and replace %LIB_VERSION%
-        await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/version.txt')), vscode.Uri.file(state.path + '/' + state.name + '/version.txt'));
-        let versionFile = fs.readFileSync(state.path + '/' + state.name + '/version.txt', 'utf8');
-        if (libVersionResults !== null) {
-            versionFile = versionFile.replace("%LIB_VERSION%", libVersionResults[0]);
-        } else {
-            versionFile = versionFile.replace("%LIB_VERSION%", "1.0.0");
-        }
-        fs.writeFileSync(state.path + '/' + state.name + '/version.txt', versionFile, 'utf8');
+            // Extract Arduino component to project if needed
+            if (state.useArduinoLib!.label === 'Use Arduino Library') {
+                await vscode.workspace.fs.createDirectory(vscode.Uri.file(state.path + '/' + state.name + '/components/arduino'));
+                await tar.extract({
+                    file: context.asAbsolutePath(`/resources/libraries/arduino-esp32-v${state.libraryVersion}.tar.gz`),
+                    cwd: state.path + '/' + state.name + '/components/arduino/'
+                });
+            }
 
-        // Copy platformio.ini and replace %VAR% by the user selection
-        await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/resources/project_files/platformio.ini')), vscode.Uri.file(state.path + '/' + state.name + '/platformio.ini'));
-        let pioFile = fs.readFileSync(state.path + '/' + state.name + '/platformio.ini', 'utf8');
-        pioFile = pioFile.replaceAll("%ENV%", envName);
-        pioFile = pioFile.replace("%LIB_VERSION%", libVersion);
-        pioFile = pioFile.replace("%MODULE%", envName.toUpperCase());
-        pioFile = pioFile.replace("%MODE%", state.mode.label.toUpperCase());
-        if (IS_WINDOWS === false) {
-            pioFile = pioFile.replace("monitor_rts = 1", "monitor_rts = 0");
-            pioFile = pioFile.replace("monitor_dtr = 1", "monitor_dtr = 0");
-        }
-        fs.writeFileSync(state.path + '/' + state.name + '/platformio.ini', pioFile, 'utf8');
-    });
+            // Copy versionFile.txt and replace %LIB_VERSION%
+            await vscode.workspace.fs.copy(vscode.Uri.file(context.asAbsolutePath('/static/project_files/version.txt')), vscode.Uri.file(state.path + '/' + state.name + '/version.txt'));
+            let versionFile = fs.readFileSync(state.path + '/' + state.name + '/version.txt', 'utf8');
+            if (state.libraryVersion !== null) {
+                versionFile = versionFile.replace("%LIB_VERSION%", state.libraryVersion!);
+            } else {
+                versionFile = versionFile.replace("%LIB_VERSION%", "1.0.0");
+            }
+            fs.writeFileSync(state.path + '/' + state.name + '/version.txt', versionFile, 'utf8');
 
-    // Last STEP: Open folfer
-    await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name), { forceNewWindow: true });
+            // Copy partition.csv to root project folder
+            await vscode.workspace.fs.copy(
+                vscode.Uri.file(state.path + '/' + state.name + '/components/openindus/partitions.csv'),
+                vscode.Uri.file(state.path + '/' + state.name + '/partitions.csv')
+            );
+
+            logger.info(`Project ${state.name} created successfully at ${state.path}`);
+        });
+    }
+    catch (error) {
+        logger.error("Error while creating project: " + error);
+        vscode.window.showErrorMessage("Error while creating project: " + error);
+        projectCreated = false;
+    }
+
+    // Last STEP: Open folder
+    if (projectCreated) {
+        // Skip opening folder when running tests or in non-interactive environments
+        try {
+            await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(state.path + '/' + state.name), { forceNewWindow: true });
+        } catch (err) {
+            logger.warn('Could not open folder in editor: ' + err);
+        }
+    }
+    return projectCreated;
 }

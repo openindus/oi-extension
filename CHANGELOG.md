@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.3.0]
+
+- Update for new library version v2.0.0
+- Project is now pure ESP-IDF and platformio is not a dependency anymore
+
+
 ## [1.2.1]
 
 - Improve stability

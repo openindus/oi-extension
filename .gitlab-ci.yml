@@ -1,0 +1,21 @@
+image: espressif/idf:v5.5
+
+workflow:
+  rules:
+    - if: '($CI_PIPELINE_SOURCE == "merge_request_event") && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master")'
+
+stages:
+    - build
+
+build:
+  stage: build
+  script:
+    - apt update
+    - apt install nodejs npm xvfb xauth dbus-x11 libgtk-3-0 libnss3 libnspr4 libx11-xcb1 libxss1 libatk-bridge2.0-0 -y
+    - rm -rf /var/lib/apt/lists/*
+    - npm install
+    - xvfb-run -a npm test
+    - cd tmp_test/TestProject
+    - idf.py build
+  tags:
+    - oi-extension

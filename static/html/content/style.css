@@ -1,0 +1,306 @@
+/* OpenIndus Stepper Configuration Tool - Professional Theme - Updated for Step Layouts */
+
+body {
+    background-color: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
+    margin: 0;
+    padding: 0 0 40px 0;
+    min-height: 100vh;
+}
+
+.presentation-text {
+    background-color: var(--vscode-editor-background);
+    padding: 12px 48px;
+}
+
+.main-flex {
+    display: flex;
+    flex-flow: row;
+    justify-content: center;
+    align-items: flex-start;
+    /* max-width: 1800px; */
+    gap: 24px;
+    padding: 24px;
+}
+
+main-flex-stepper {
+    margin-right: 344px; /* 320px for side nav + 24px for padding */
+}
+
+.flex-col-big {
+    width: 900px;
+}
+
+.side-nav {
+    position: fixed;
+    top: 90px;
+    right: 24px;
+    width: 320px;
+    padding: var(--vscode-editor-fontSize);
+}
+
+#motor-status button {
+    min-width: 100px;
+    margin: 10px 4px;
+}
+
+.flex-block {
+    padding: 12px 24px 24px 24px;
+}
+
+.flex-block button {
+    min-width: 140px;
+}
+
+.toggle-view {
+    padding-bottom: 0;
+}
+
+.toggle-view:hover {
+    cursor: pointer;
+}
+
+.flex-command {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.motor-selection {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    padding: 16px;
+}
+
+#motor-move, #motor-configuration, #motor-switches {
+    border-width: 0px;
+    padding-top: 0;
+}
+
+#motor-configuration label {
+    min-width: 220px;
+}
+
+.h2notselect {
+    font-weight: 300;
+    font-size: 18px;
+    border-left: 4px solid var(--vscode-button-secondaryBackground);
+    color: var(--vscode-editor-secondaryForeground);
+    -webkit-transition: all 0.15s linear;
+    -moz-transition: all 0.15s linear;
+    -o-transition: all 0.15s linear;
+    transition: all 0.15s linear;
+}
+
+.h2select {
+    font-weight: 700;
+    font-size: 26px;
+    border-left: 4px solid var(--vscode-button-background);
+    color: var(--vscode-editor-foreground);
+    -webkit-transition: all 0.15s linear;
+    -moz-transition: all 0.15s linear;
+    -o-transition: all 0.15s linear;
+    transition: all 0.15s linear;
+}
+
+h1, h2, h3 {
+    font-weight: 700;
+    margin-top: 0;
+}
+
+h1 {
+    font-size: 2.2rem;
+    padding: 24px;
+    text-align: center;
+    width: 100%;
+}
+
+h2 {
+    font-size: 26px;
+    margin : 10px 0;
+    border-left: 4px solid var(--vscode-button-background);
+    color: var(--vscode-editor-foreground);
+    padding-left: 12px;
+    user-select: none;
+}
+
+h3 {
+    font-size: 1.1rem;
+    margin: 24px 0;
+}
+
+label {
+    font-size: var(--vscode-editor-fontSize);
+    padding: 0 12px;
+    min-width: 60px;
+    text-align: right;
+}
+
+input[type="number"], select {
+    min-width: 125px;
+    box-sizing: border-box;
+    padding: 6px;
+    margin: 10px 8px 10px 0;
+    border: 1px solid var(--vscode-input-border);
+    border-radius: 2px;
+    background: var(--vscode-input-background);
+    font-size: var(--vscode-editor-fontSize);
+    color: var(--vscode-editor-foreground)
+}
+
+input[type="radio"] {
+    background-color: var(--vscode-radio-background);;
+}
+
+/* Flat button design */
+button {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: none;
+    border-radius: 2px;
+    padding: 6px;
+    font-size: var(--vscode-editor-fontSize);
+    font-weight: 500;
+    margin: 10px 8px 10px 0;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    outline: none;
+}
+
+button:hover, button:focus {
+    background: var(--vscode-button-hoverBackground);
+    box-shadow: 0 2px 8px rgba(30,136,229,0.10);
+}
+
+.red-button {
+    background: #ac3a3a;
+}
+
+.red-button:hover, .red-button:focus {
+    background: #b71c1c;
+    box-shadow: 0 2px 8px rgba(229,115,115,0.10);
+}
+
+input[type="radio"] {
+    margin-right: 8px;
+}
+
+input[type="radio"] + label {
+    display: inline-block;
+    margin-right: 18px;
+    font-weight: 400;
+}
+
+input[type="checkbox"] + label {
+    display: inline-block;
+    margin-left: 6px;
+    margin-right: 18px;
+    vertical-align: middle;
+    font-weight: 400;
+    margin: 24px 10px;
+}
+
+input[type="checkbox"] {
+    vertical-align: middle;
+    margin: 0 0 0 2px;
+}
+
+input[type="radio"] {
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--vscode-editor-foreground);
+    border-radius: 50%;
+    outline: none;
+    background-color: var(--vscode-editor-background);
+}
+
+input[type="radio"]:checked {
+    background-color: var(--vscode-button-background);;
+}
+
+p, i {
+    font-size: var(--vscode-editor-fontSize);
+    margin-bottom: 1em;
+}
+
+hr {
+    border: none;
+    margin: 2em 0;
+}
+
+.logo {
+    display: block;
+    margin: 24px auto 12px auto;
+    height: 70px;
+}
+
+#refresh {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-right: 8px;
+    vertical-align: middle;
+    cursor: pointer;
+    min-width: 0;
+}
+
+#refresh img {
+    vertical-align: middle;
+    height: 32px;
+    width: 32px;
+}
+
+td {
+    text-align: center;
+}
+
+th {
+    padding: 12px;
+}
+
+.large-width {
+    width: 100%;
+    margin: auto;
+    text-align: center;
+}
+
+.BOI23,.BOI13 {
+    max-width: 150px;
+    min-width: 150px;
+    background-color: none;
+}
+
+.BOI12 {
+    max-width: 100px;
+    min-width: 100px;
+    background-color: none;
+    margin: 0 25px;
+}
+
+.slave-container, .master-container {
+    display: flex;
+}
+
+.auto {
+    flex: auto;
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+}
+
+canvas {
+    max-width: 200px;
+}
+
+.flex-container {
+    display: flex;
+    width: auto;
+    align-items: center;
+    background-color: var(--vscode-editorWidget-border);
+    border-radius: 5px;
+    margin: 5px;
+}

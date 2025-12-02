@@ -4,13 +4,10 @@ import * as fs from 'fs';
 
 import {Mutex} from 'async-mutex';
 import { OIStepper } from "../com/OIStepper";
-import { logger } from "../extension";
-import { ModuleInfo } from '../utils';
-import { setTimeout } from 'timers-promises';
+import { ModuleInfo, logger } from '../utils';
 
-
-var currentPanel:vscode.WebviewPanel = undefined;
-var stepper:OIStepper = undefined;
+let currentPanel:vscode.WebviewPanel | undefined;
+let stepper:OIStepper | undefined;
 
 export async function startStepperPanelConfig(context: vscode.ExtensionContext, portName?: string, stepperModuleInfo?: ModuleInfo) {
 
@@ -34,9 +31,9 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 
     currentPanel = pannel;
 
-	const contentUri = pannel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'resources', 'html', 'content'));
+	const contentUri = pannel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'static', 'html', 'content'));
 
-	fs.readFile(path.join(context.extensionPath, 'resources', 'html', 'stepper.html'), (err,data) => {
+	fs.readFile(path.join(context.extensionPath, 'static', 'html', 'stepper.html'), (err,data) => {
 		if (err) {
 			logger.error(err);
 		} else {
@@ -46,9 +43,9 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 		}
 	});
 
-	var receivedMessageMutex = new Mutex();
-	var lastCommand = '';
-	var normalDisconnect = false; // Set this var to true when the disconnection is wanted
+	const receivedMessageMutex = new Mutex();
+	let lastCommand = '';
+	let normalDisconnect = false; // Set this var to true when the disconnection is wanted
 
 	// Handler functions
 	async function handleConnect(message: any) {
@@ -174,8 +171,8 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 
 	async function handleSaveParameters(message: any) {
 		await vscode.window.showSaveDialog().then((fileUri) => {
-			if (fileUri.fsPath !== undefined) {
-				fs.writeFileSync(fileUri.fsPath, JSON.stringify(message.args[0], null, 2));
+			if (fileUri!.fsPath !== undefined) {
+				fs.writeFileSync(fileUri!.fsPath, JSON.stringify(message.args[0], null, 2));
 			}
 		});
 	}
@@ -193,7 +190,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
 							pannel.webview.postMessage({ command: message.command, response: parameters }).then(() => {
 								vscode.window.showInformationMessage("Parameters where loaded successfully from " + filePath);
 							});
-						} catch (parseError) {
+						} catch (parseError: any) {
 							vscode.window.showErrorMessage("Error parsing JSON: " + parseError.message);
 						}
 					}
@@ -268,7 +265,7 @@ export async function startStepperPanelConfig(context: vscode.ExtensionContext, 
         context.subscriptions
 	);
 
-	pannel.onDidChangeViewState((e) => {
+	pannel.onDidChangeViewState(() => {
 		if (!pannel.visible && stepper !== undefined) {
 			handleDisconnect({command: 'disconnect', doNotDelete: true});
 		} else if (pannel.visible && stepper !== undefined) {

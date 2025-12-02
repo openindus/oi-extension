@@ -1,11 +1,15 @@
 import { SerialPort, ReadlineParser, ReadyParser } from 'serialport';
-import { setTimeout } from 'timers-promises';
-import { logger } from '../extension';
+import { logger } from '../utils';
 import {Mutex} from 'async-mutex';
+
+function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export class OISerial extends SerialPort {
 
     private lineParser: ReadlineParser;
-    private readyParser: ReadyParser;
+    private readyParser: ReadyParser | undefined;
     private lastResponse: string[] = [];
     private serialMutex: Mutex;
 
@@ -77,7 +81,7 @@ export class OISerial extends SerialPort {
         return new Promise(async (resolve, reject) => {
 
             // Wait for the board to be ready 50ms
-            await setTimeout(50);
+            await sleep(50);
             
             // Send EOL to check if we have the prompt
             super.write("\n");
@@ -85,13 +89,13 @@ export class OISerial extends SerialPort {
 
             // Check if we've got the prompt with a timeout of 100ms
             const startTime = Date.now();
-            while (!this.readyParser.ready) {
+            while (!this.readyParser!.ready) {
                 if (Date.now() - startTime > 100) { break; }
-                await setTimeout(10);
+                await sleep(10);
             }
 
             // If prompt is ok; return
-            if (this.readyParser.ready) {
+            if (this.readyParser!.ready) {
                 resolve(">");
                 return;
             }
@@ -99,21 +103,21 @@ export class OISerial extends SerialPort {
             // Otherwise, reset the board to get the console
             this.setDTR(false); // Important
             this.setRTS(true); // Important
-            await setTimeout(10);
+            await sleep(10);
             this.setDTR(true); // Important
             this.setRTS(false); // Important
-            await setTimeout(10);
+            await sleep(10);
             this.setDTR(false); // Important
             this.setRTS(false); // Important
-            await setTimeout(10);
+            await sleep(10);
             super.write("console\n"); // To activate console
             super.drain();
 
             // Check if we've got the prompt with a timeout of 2000ms
             const startTime2 = Date.now();
-            while (!this.readyParser.ready) {
+            while (!this.readyParser!.ready) {
                 if (Date.now() - startTime2 > 2000) { reject("Prompt not available"); }
-                await setTimeout(10);
+                await sleep(10);
             }
 
             resolve(">");
@@ -162,13 +166,13 @@ export class OISerial extends SerialPort {
         }); 
     }
 
-    protected async waitForResponse(timeout: number = 300): Promise<void> {
+    protected async waitForResponse(timeout = 300): Promise<void> {
         const startTime = Date.now();
         while (this.lastResponse.length === 0) {
             if (Date.now() - startTime > timeout) {
                 return;
             }
-            await setTimeout(1);
+            await sleep(1);
         }
     }
 
@@ -190,7 +194,7 @@ export class OISerial extends SerialPort {
                     // Retry sending the message after reconnecting
                     this.serialMutex.cancel();
                     this.sendMsg(args, tryNumber + 1).then(resolve).catch(reject);
-                } else if (!this.readyParser.ready || !super.isOpen) {
+                } else if (!this.readyParser!.ready || !super.isOpen) {
                     reject("Failed to send message: disconnected or not ready");
                     return;
                 } else {
@@ -236,7 +240,7 @@ export class OISerial extends SerialPort {
                     // Retry sending the message after reconnecting
                     this.serialMutex.cancel();
                     this.sendMsgWithReturn(args, tryNumber + 1).then(resolve).catch(reject);
-                } else if (!this.readyParser.ready || !super.isOpen) {
+                } else if (!this.readyParser!.ready || !super.isOpen) {
                     reject("Failed to send message: disconnected or not ready");
                     return;
                 } else {
@@ -254,7 +258,7 @@ export class OISerial extends SerialPort {
                             const startTime = Date.now();
                             while (txt === undefined) {
                                 if (Date.now() - startTime > 2000) { break; }
-                                await setTimeout(10);
+                                await sleep(10);
                                 txt = this.lastResponse.shift();
                             }
                             // If we've got a response, return it
@@ -276,9 +280,9 @@ export class OISerial extends SerialPort {
         });
     }
 
-    async getInfo(): Promise<{ [key: string]: string }> {
+    async getInfo(): Promise<Record<string, string>> {
         logger.info("Getting device info");
-        const deviceInfo: { [key: string]: string } = {
+        const deviceInfo: Record<string, string> = {
             type: "undefined",
             serialNum: "undefined",
             hardwareVar: "undefined",
@@ -302,9 +306,9 @@ export class OISerial extends SerialPort {
         return deviceInfo;
     }
 
-    async getSlaves(): Promise<{ [key: string]: string }[]> {
+    async getSlaves(): Promise<Record<string, string>[]> {
         logger.info("Getting slaves info");
-        const slaveInfo: { [key: string]: string }[] = [];
+        const slaveInfo: Record<string, string>[] = [];
         let slaveSNList: any[] = [];
 
         await this.sendMsgWithReturn('discover-slaves').then((response) => {
@@ -312,7 +316,7 @@ export class OISerial extends SerialPort {
         }).catch((error) => { throw(error); });
 
         for (const slaveSn of slaveSNList) {
-            const deviceInfo: { [key: string]: string } = {
+            const deviceInfo: Record<string, string> = {
                 port: "undefined",
                 type: "undefined",
                 serialNum: "undefined",

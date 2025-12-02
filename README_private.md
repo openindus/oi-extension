@@ -9,12 +9,6 @@
 1. Ouvrir le dossier dans visual studio
 1. Run > Start debugging
 
-Si des erreurs surviennent, installer manuellement des packages: ex : `npm install @microsoft/vscode-file-downloader-api`
-
-# Mettre à jour les fichiers binaires
-
-Pour ajouter une version de fichier binaire, copier le dossier généré par oi-firmware (./oi/bin/oi-firware-X.X.X/) dans resources/bin/
-
 # Comment publier l'extension
 
 Suivre le guide suivant https://code.visualstudio.com/api/working-with-extensions/publishing-extension#publishing-extensions
