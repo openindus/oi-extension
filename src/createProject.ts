@@ -82,7 +82,7 @@ export async function createProject(
     // Third STEP: select project name
     // --------------------------------------------------------------------------------------------
     if (projectName !== undefined) {
-        state.name = projectName
+        state.name = projectName;
     } else {
         state.name = await vscode.window.showInputBox({
             title: "Create a Project",

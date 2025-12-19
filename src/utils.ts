@@ -253,11 +253,15 @@ export async function downloadNewFirmwaresOnline(context: vscode.ExtensionContex
     // Get list of files from server
     try {
         const response = await new Promise((resolve, reject) => {
-            https.get(`${webSiteAddress}binaries/`, res => {
+            const req = https.get(`${webSiteAddress}binaries/`, res => {
                 let data = '';
                 res.on('data', chunk => { data += chunk; });
                 res.on('end', () => resolve(data));
                 res.on('error', reject);
+            });
+            req.setTimeout(10000, () => {
+                req.destroy();
+                reject(new Error('Request timed out'));
             });
         });
 
@@ -318,12 +322,16 @@ export async function downloadNewLibrariesOnline(context: vscode.ExtensionContex
     // Get list of files from server
     try {
         const response = await new Promise((resolve, reject) => {
-            https.get(`${webSiteAddress}libraries/
+            const req = https.get(`${webSiteAddress}libraries/
                 `, res => {
                 let data = '';
                 res.on('data', chunk => { data += chunk; });
                 res.on('end', () => resolve(data));
                 res.on('error', reject);
+            });
+            req.setTimeout(10000, () => {
+                req.destroy();
+                reject(new Error('Request timed out'));
             });
         });
 

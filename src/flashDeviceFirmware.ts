@@ -28,7 +28,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     }
 
     // Ensure device type is valid
-    if (!deviceTypeList.map(getSimpleName).includes(moduleInfo.type)) {
+    if (!deviceTypeList.includes(moduleInfo.type)) {
         const deviceSelected = await vscode.window.showQuickPick(deviceTypeList, {
             placeHolder: 'Choose the device type',
             ignoreFocusOut: true
