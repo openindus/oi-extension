@@ -129,19 +129,23 @@ export class NodeTransport {
             highWaterMark: 256
         });
 
-        // Initialize port
-        await new Promise<void>((resolve, reject) => {
-            this.port!.open((err?: Error | null) => {
-                if (err) {
-                    this.trace('Serial port open error: ' + String(err));
-                    reject(err);
-                } else {
-                    this.trace(`Connected ${this.device} @ ${this.baudrate}`);
-                    resolve();
-                }
+        try {
+            // Initialize port
+            await new Promise<void>((resolve, reject) => {
+                this.port!.open((err?: Error | null) => {
+                    if (err) {
+                        this.trace('Serial port open error: ' + String(err));
+                        reject(err);
+                    } else {
+                        this.trace(`Connected ${this.device} @ ${this.baudrate}`);
+                        resolve();
+                    }
+                });
             });
-        });
-
+        } catch (error) {
+            logger.error('Error during port open:', error);
+            throw error;
+        }
         // Add initialization delay
         await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -371,6 +375,8 @@ export class NodeTransport {
                 this.port!.close((err?: Error | null) => err ? reject(err) : resolve());
             });
             this.trace(`Disconnected ${this.device}`);
+        } catch (error) {
+            logger.error('Error during port close:', error);
         } finally {
             this.port = undefined;
             this.buffer = new Uint8Array(0);
