@@ -28,7 +28,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     }
 
     // Ensure device type is valid
-    if (!deviceTypeList.map(getSimpleName).includes(moduleInfo.type)) {
+    if (!deviceTypeList.includes(moduleInfo.type)) {
         const deviceSelected = await vscode.window.showQuickPick(deviceTypeList, {
             placeHolder: 'Choose the device type',
             ignoreFocusOut: true
@@ -167,7 +167,7 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
             } 
             catch (error) {
                 logger.error('Error during flashing process:', error);
-                result = true;
+                result = false;
             }
             finally {
                 await transport.resetToMainApp();
@@ -182,6 +182,6 @@ export async function flashDeviceFirmware(context: vscode.ExtensionContext, port
     if (successFlash) {
         vscode.window.showInformationMessage(`Device ${getClassName(moduleInfo.type)} on ${moduleInfo.port} flashed successfully!`);
     } else {
-        vscode.window.showErrorMessage('Unexpected error while flashing device. Check the logs for details.');
+        vscode.window.showErrorMessage('Unexpected error while flashing device. Check if you don\'t have the port open elsewhere.');
     }
 }
