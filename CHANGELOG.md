@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.2]
+
+- Fix bad log filtering which cause get system info to fail
+
 ## [1.3.1]
 
 - Fix stepper stall-th value above 16.3A
